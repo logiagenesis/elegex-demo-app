@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import DashboardLayout from "@/components/DashboardLayout";
-import { canAccessWorkspaceAdministration } from "@/lib/access";
+import { canAccessWorkspaceRoute } from "@/lib/access";
 import { trpc } from "@/lib/trpc";
 import { Route, Switch, useLocation } from "wouter";
 import { Component, lazy, ReactNode, Suspense } from "react";
@@ -25,10 +25,10 @@ const StagingReadinessPage = lazy(() => import("@/pages/FieldServicePages").then
 
 function RouteLoading() { return <div className="grid min-h-[60vh] place-items-center text-sm font-medium text-[#667085]">Loading workspace view…</div>; }
 
-function PrivilegedRoute({ children }: { children: ReactNode }) {
+function PrivilegedRoute({ children, path }: { children: ReactNode; path: "/staging" | "/admin" | "/settings" }) {
   const workspace = trpc.elegex.workspace.current.useQuery();
   if (workspace.isLoading) return <RouteLoading />;
-  if (!canAccessWorkspaceAdministration(workspace.data?.role)) return <section className="grid min-h-[60vh] place-items-center text-center"><div className="max-w-md rounded-3xl border border-[#E4EAF4] bg-white p-8 shadow-[0_16px_45px_rgba(24,54,108,0.08)]"><p className="text-xs font-bold tracking-[0.16em] text-[#C63550]">RESTRICTED VIEW</p><h1 className="mt-3 text-2xl font-semibold text-[#14213D]">This route is reserved for workspace administrators.</h1><p className="mt-3 text-sm leading-6 text-[#667085]">Your current role can continue to use the operational workspace, but cannot access release or administration controls.</p></div></section>;
+  if (!canAccessWorkspaceRoute(path, workspace.data?.role)) return <section className="grid min-h-[60vh] place-items-center text-center"><div className="max-w-md rounded-3xl border border-[#E4EAF4] bg-white p-8 shadow-[0_16px_45px_rgba(24,54,108,0.08)]"><p className="text-xs font-bold tracking-[0.16em] text-[#C63550]">RESTRICTED VIEW</p><h1 className="mt-3 text-2xl font-semibold text-[#14213D]">This route is reserved for workspace administrators.</h1><p className="mt-3 text-sm leading-6 text-[#667085]">Your current role can continue to use the operational workspace, but cannot access release or administration controls.</p></div></section>;
   return <>{children}</>;
 }
 
@@ -58,10 +58,10 @@ function Router() {
     <Route path="/tasks" component={TasksPage} />
     <Route path="/documents" component={DocumentsPage} />
     <Route path="/reports" component={FieldReportsPage} />
-    <Route path="/staging">{() => <PrivilegedRoute><StagingReadinessPage /></PrivilegedRoute>}</Route>
+    <Route path="/staging">{() => <PrivilegedRoute path="/staging"><StagingReadinessPage /></PrivilegedRoute>}</Route>
     <Route path="/notifications" component={NotificationsPage} />
-    <Route path="/admin">{() => <PrivilegedRoute><AdminPage /></PrivilegedRoute>}</Route>
-    <Route path="/settings">{() => <PrivilegedRoute><AdminPage settingsOnly /></PrivilegedRoute>}</Route>
+    <Route path="/admin">{() => <PrivilegedRoute path="/admin"><AdminPage /></PrivilegedRoute>}</Route>
+    <Route path="/settings">{() => <PrivilegedRoute path="/settings"><AdminPage settingsOnly /></PrivilegedRoute>}</Route>
     <Route><NotFound /></Route>
   </Switch></Suspense></RouteLoadBoundary></DashboardLayout>;
 }

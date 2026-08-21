@@ -42,4 +42,15 @@ describe("database connector", () => {
     })).resolves.toBe("committed");
     expect(mocks.transaction).toHaveBeenCalledTimes(1);
   });
+
+  it("propagates a workflow failure through the transaction callback so the database driver can roll back", async () => {
+    const transaction = { transactionId: "rollback-test" };
+    mocks.transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => callback(transaction));
+    const failure = new Error("simulated dependent write failure");
+    await expect(withTransaction(async tx => {
+      expect(tx).toBe(transaction);
+      throw failure;
+    })).rejects.toBe(failure);
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
+  });
 });

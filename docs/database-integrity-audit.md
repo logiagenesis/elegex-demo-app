@@ -36,6 +36,10 @@ The relational schema intentionally does **not** declare database foreign keys. 
 
 Contacts, projects, cases, tasks, and jobs are logically removed with `deletedAt`. Read and mutation predicates used by the workspace exclude soft-deleted records, and all relationship guards reject deleted targets. Documents, evidence, invoices, release evidence, outbox records, and snapshots are retained as immutable operational history until an explicit synthetic-demo reset.
 
+## Managed document health
+
+Document actions classify a record as available only when it has both a non-empty managed storage key and a `/manus-storage/` URL. Uploads allow only explicitly listed MIME types, require matching base64 data URL metadata, enforce a 5 MB decoded payload limit, validate a single tenant-owned target before storage upload, and use a collision-resistant object key. The reset synthetic tenant contains three document rows with complete managed metadata. A published health check followed the representative job-card URL through its signed 307 storage redirect to a 679-byte encrypted object, confirming that the visible download affordance corresponds to a resolving managed file. Unit and protected-procedure tests also cover unavailable references, invalid metadata, unsupported MIME types, oversize decoded payloads, and tenant-target rejection before storage access.
+
 ## Reset and reseed integrity
 
 The privileged reset flow deletes child rows before their parents: release checks before releases, quote items before quotes, integration events before integration connections, then operational job children before jobs, and finally workspace records. Tenant application settings are deleted before the tenant seed runs, so the reset is idempotent against the settings unique key. Managed document keys become unreachable when their metadata is removed; the storage adapter intentionally does not expose a direct deletion endpoint. The reset then reseeds one labelled synthetic workspace without crossing organization boundaries.

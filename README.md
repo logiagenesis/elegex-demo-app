@@ -35,7 +35,7 @@ flowchart LR
   Workflow --> Storage[Object storage]
 ```
 
-Read the detailed [architecture guide](ARCHITECTURE.md), [connector design](docs/database-connectors.md), [protected contract map](docs/api-contracts.md), [procedure catalogue](docs/procedure-catalogue.md), [entity relationship guide](docs/entity-relationship.md), [migration and reseed runbook](docs/migration-runbook.md), [database integrity audit](docs/database-integrity-audit.md), [synthetic demo coverage](docs/audit/demo-data-coverage.md), and [reference UX analysis](docs/audit/reference-ux-analysis.md).
+Read the detailed [architecture guide](ARCHITECTURE.md), [connector design](docs/database-connectors.md), [protected contract map](docs/api-contracts.md), [procedure catalogue](docs/procedure-catalogue.md), [entity relationship guide](docs/entity-relationship.md), [migration and reseed runbook](docs/migration-runbook.md), [production operations guide](docs/production-operations.md), [production failure classification](docs/audit/production-failure-classification.md), [database integrity audit](docs/database-integrity-audit.md), [synthetic demo coverage](docs/audit/demo-data-coverage.md), and [reference UX analysis](docs/audit/reference-ux-analysis.md).
 
 ## Quick start
 

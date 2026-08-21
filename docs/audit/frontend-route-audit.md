@@ -45,6 +45,10 @@ Finally, a synthetic draft quote (`QT-SYN-2042`, USD 845) was captured against t
 
 The managed database subsequently verified the complete synthetic lifecycle for job `#2042`: check-in time, check-out time, and invoice-ready time are recorded; its stage is **ready_for_invoicing**; the synthetic material, evidence, and draft quote are persisted; and audit events show `checked_in`, `material_recorded`, `evidence_captured`, `quote_captured`, and `foreman_completed`. The connected browser timed out only after this server-side completion was already committed, so the final state is evidenced from the tenant database rather than inferred from the browser.
 
+## Route-role policy evidence
+
+The route registry is matched by the exported `workspaceRoutePolicy` test fixture. Every declared destination is listed in the fixture; standard office routes require an authenticated viewer or stronger, `/field` requires a member or stronger, and `/staging`, `/admin`, and `/settings` require an administrator or owner. The direct privileged-route guard uses the same policy helper as the test. The regression suite iterates **every declared route** for anonymous, viewer, member, manager, admin, and owner outcomes, as well as the unknown-route rejection. This makes role expectations explicit and prevents future route additions from bypassing the recorded policy.
+
 ## Remaining validation
 
 The release suite will still repeat the critical routes at a mobile viewport and perform public-domain, asset, client-console, and API-network checks after the final deployment checkpoint.

@@ -23,7 +23,9 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error) {
     const errorId = `ELX-${Date.now().toString(36).toUpperCase()}`;
-    console.error("[Elegex] Application recovery boundary", { errorId, message: error.message });
+    const recoveryEvent = { errorId, message: error.message, path: window.location.pathname, capturedAt: new Date().toISOString() };
+    console.error("[Elegex] Application recovery boundary", recoveryEvent);
+    try { window.sessionStorage.setItem("elegex:last-client-recovery", JSON.stringify(recoveryEvent)); } catch { /* Storage can be unavailable in hardened browsing modes. */ }
     this.setState({ errorId });
   }
 

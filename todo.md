@@ -63,18 +63,21 @@
 - [x] Add route-level load failure fallbacks for each lazy feature module and distinguish public, authenticated, and unavailable states.
 - [ ] Enumerate every declared frontend route and verify expected public, member, manager, administrator, and unknown-route behavior.
 - [ ] Enumerate every tRPC procedure and validate input schema, authentication, role capability, tenant scope, output shape, and error response through a protected procedure catalogue and targeted regression coverage.
-- [ ] Add a database constraint and index audit for tenant-scoped records, uniqueness, foreign keys, soft-deletes, outbox idempotency, and release evidence integrity.
+- [x] Add a database constraint and index audit for tenant-scoped records, uniqueness, foreign keys, soft-deletes, outbox idempotency, and release evidence integrity.
 - [ ] Add transaction, rollback, and failure-path tests for critical task, job, document, audit-log, and outbox workflows.
-- [ ] Add document-link health checks, storage-key validation, MIME and size policy tests, and safe missing-document states.
+- [x] Add document-link health checks, storage-key validation, MIME and size policy tests, and safe missing-document states.
 - [x] Expand synthetic demo data coverage with explicitly labelled global sample organizations, users, workflow states, lifecycle history, and report periods.
 - [ ] Add seed determinism checks and a test that reset/reseed restores every expected relationship without cross-tenant leakage.
-- [ ] Add API examples, entity-relationship documentation, a procedure catalogue, and database migration/runbook examples for GitHub reviewers.
+- [x] Add API examples, entity-relationship documentation, a procedure catalogue, and database migration/runbook examples for GitHub reviewers.
 - [ ] Add frontend interaction tests for navigation, search, filters, sorting, pagination, saved views, CSV export, form validation, loading, empty, error, and deletion states.
 - [ ] Add a browser-level release smoke suite for the public domain, each primary route, mobile layout, asset loading, document links, and client-console errors.
-- [ ] Add production monitoring guidance, readiness/liveness expectations, structured client error capture, release rollback criteria, and post-deploy verification steps.
+- [x] Add production monitoring guidance, readiness/liveness expectations, structured client error capture, release rollback criteria, and post-deploy verification steps.
 - [ ] Re-run the complete system audit after remediation and publish a clear acceptance report with evidence for every route, procedure, table, document, and release control.
 - [ ] Add functional foreman mobile workflows for today’s assigned visits, job-card check-in/out, materials, evidence, quote capture, signature/consent, completion, and sync status based on the supplied field-service UX reference.
 - [ ] Add tenant-scoped foreman workflow APIs, state-transition safeguards, persistence, and automated coverage so reference-inspired screens are operational rather than static mockups.
 - [x] Add a global reference-UX analysis that distinguishes presentation-only mock screens from implemented working Elegex flows and records deliberate global branding deviations.
 - [ ] Add an explicit foreman sync-status surface with pending, synced, and recoverable failure states plus browser-smoke evidence.
 - [ ] Make typed consent an explicit stored field signature artifact and expose the required before, after, note, and job-card evidence modes in the foreman UI.
+- [ ] Run and document one unified browser-level smoke pass against the published domain covering public entry, authenticated primary routes, mobile behavior, and client-console health; explicitly distinguish any dev-only authenticated evidence.
+- [ ] Add an exhaustive route-behavior matrix for every declared route across unauthenticated, member, manager, administrator, and unknown-route outcomes, with representative published-domain evidence.
+- [ ] Capture a reproducible production OAuth redirect and protected API evidence trail, or document a hard platform limitation with the observable request/response boundary.

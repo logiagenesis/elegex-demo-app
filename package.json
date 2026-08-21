@@ -15,7 +15,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "pnpm db:generate && pnpm db:migrate",
-    "verify": "pnpm check && pnpm test && pnpm build"
+    "verify": "pnpm check && pnpm test && pnpm build",
+    "smoke:release": "node scripts/release-smoke.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",

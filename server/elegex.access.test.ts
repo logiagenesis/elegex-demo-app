@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { canEditRecords, canManageRecords, canManageWorkspace, DEMO_DATA_EXPECTATIONS, getDocumentHealth } from "./db";
-import { canAccessWorkspaceAdministration, canEditWorkspaceRecords, canManageOperationalControls } from "../client/src/lib/access";
+import { canAccessWorkspaceAdministration, canAccessWorkspaceRoute, canEditWorkspaceRecords, canManageOperationalControls, workspaceRoutePolicy } from "../client/src/lib/access";
 
 describe("Elegex role capabilities", () => {
   it("makes viewers read-only", () => {
@@ -59,5 +59,18 @@ describe("Elegex role capabilities", () => {
     expect(canManageOperationalControls("viewer")).toBe(false);
     expect(canEditWorkspaceRecords("member")).toBe(true);
     expect(canEditWorkspaceRecords("viewer")).toBe(false);
+  });
+
+  it("maps every declared workspace destination to a tested minimum role", () => {
+    expect(workspaceRoutePolicy.map(entry => entry.path)).toEqual(["/", "/jobs", "/jobs/:id", "/field", "/dispatch", "/contacts", "/contacts/:id", "/projects", "/projects/:id", "/cases", "/cases/:id", "/tasks", "/documents", "/reports", "/notifications", "/staging", "/admin", "/settings"]);
+    for (const route of workspaceRoutePolicy) {
+      expect(canAccessWorkspaceRoute(route.path, undefined)).toBe(false);
+      expect(canAccessWorkspaceRoute(route.path, "owner")).toBe(true);
+      expect(canAccessWorkspaceRoute(route.path, "admin")).toBe(true);
+      expect(canAccessWorkspaceRoute(route.path, "manager")).toBe(route.minimumRole !== "admin");
+      expect(canAccessWorkspaceRoute(route.path, "member")).toBe(route.minimumRole === "viewer" || route.minimumRole === "member");
+      expect(canAccessWorkspaceRoute(route.path, "viewer")).toBe(route.minimumRole === "viewer");
+    }
+    expect(canAccessWorkspaceRoute("/unknown", "owner")).toBe(false);
   });
 });
