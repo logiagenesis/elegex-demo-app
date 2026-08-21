@@ -59,10 +59,10 @@
 - [ ] Add a non-authenticated public landing and recovery shell that renders without a session, database query, OAuth redirect, or lazy route dependency.
 - [ ] Remove every unsupported regional, currency, and country-specific assertion from interface copy, seed data, metadata, documents, tests, and developer documentation.
 - [ ] Replace the temporary logo reconstruction with a neutral global Elegex brand system and document the exact future original-logo replacement procedure.
-- [ ] Add a production-safe route-error boundary with meaningful recovery content and error identifiers instead of a blank canvas.
+- [x] Add a production-safe route-error boundary with meaningful recovery content and error identifiers instead of a blank canvas.
 - [ ] Add route-level load failure fallbacks for each lazy feature module and distinguish public, authenticated, and unavailable states.
 - [ ] Enumerate every declared frontend route and verify expected public, member, manager, administrator, and unknown-route behavior.
-- [ ] Enumerate every tRPC procedure and validate input schema, authentication, role capability, tenant scope, output shape, and error response.
+- [ ] Enumerate every tRPC procedure and validate input schema, authentication, role capability, tenant scope, output shape, and error response through a protected procedure catalogue and targeted regression coverage.
 - [ ] Add a database constraint and index audit for tenant-scoped records, uniqueness, foreign keys, soft-deletes, outbox idempotency, and release evidence integrity.
 - [ ] Add transaction, rollback, and failure-path tests for critical task, job, document, audit-log, and outbox workflows.
 - [ ] Add document-link health checks, storage-key validation, MIME and size policy tests, and safe missing-document states.

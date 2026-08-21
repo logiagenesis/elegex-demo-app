@@ -6,6 +6,9 @@ const mocks = vi.hoisted(() => ({
   archiveRecord: vi.fn(),
   updateTask: vi.fn(),
   createSavedView: vi.fn(),
+  validateDocumentTargets: vi.fn(),
+  storagePut: vi.fn(),
+  linkExternalInvoice: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -14,10 +17,14 @@ vi.mock("./db", () => ({
   archiveRecord: mocks.archiveRecord,
   updateTask: mocks.updateTask,
   createSavedView: mocks.createSavedView,
+  validateDocumentTargets: mocks.validateDocumentTargets,
+  linkExternalInvoice: mocks.linkExternalInvoice,
   canEditRecords: (role: string) => role !== "viewer",
   canManageRecords: (role: string) => ["owner", "admin", "manager"].includes(role),
   canManageWorkspace: (role: string) => ["owner", "admin"].includes(role),
 }));
+
+vi.mock("./storage", () => ({ storagePut: mocks.storagePut }));
 
 import { appRouter } from "./routers";
 
@@ -74,6 +81,19 @@ describe("Elegex protected procedure authorization", () => {
     await expect(viewerCaller.elegex.documents.upload({ fileName: "brief.pdf", mimeType: "application/pdf", dataUrl: "data:application/pdf;base64,QQ==" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("rejects malformed document metadata and invalid tenant attachment targets before object storage is touched", async () => {
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("member"));
+    const memberCaller = appRouter.createCaller(context(user));
+    await expect(memberCaller.elegex.documents.upload({ fileName: "brief.pdf", mimeType: "application/pdf", dataUrl: "data:text/plain;base64,QQ==" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(mocks.validateDocumentTargets).not.toHaveBeenCalled();
+    expect(mocks.storagePut).not.toHaveBeenCalled();
+
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("member"));
+    mocks.validateDocumentTargets.mockRejectedValueOnce(new Error("Contact is not available in this workspace"));
+    await expect(memberCaller.elegex.documents.upload({ fileName: "brief.pdf", mimeType: "application/pdf", dataUrl: "data:application/pdf;base64,QQ==", contactId: 999 })).rejects.toThrow("Contact is not available in this workspace");
+    expect(mocks.storagePut).not.toHaveBeenCalled();
+  });
+
   it("blocks viewers from database connector health and configuration procedures", async () => {
     mocks.ensureTenantScope.mockResolvedValueOnce(scope("viewer"));
     const viewerCaller = appRouter.createCaller(context(user));
@@ -90,5 +110,13 @@ describe("Elegex protected procedure authorization", () => {
 
     mocks.ensureTenantScope.mockResolvedValueOnce(scope("viewer"));
     await expect(viewerCaller.elegex.staging.readiness()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("passes the tenant-derived manager scope into the controlled invoice-link workflow", async () => {
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("manager"));
+    mocks.linkExternalInvoice.mockResolvedValueOnce(undefined);
+    const managerCaller = appRouter.createCaller(context(user));
+    await expect(managerCaller.elegex.fieldService.jobs.linkInvoice({ id: 12, invoiceNumber: "INV-9012" })).resolves.toBeUndefined();
+    expect(mocks.linkExternalInvoice).toHaveBeenCalledWith(7, 42, 12, "INV-9012");
   });
 });

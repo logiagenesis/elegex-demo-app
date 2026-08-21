@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import { lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import NotFound from "./pages/NotFound";
 
 const AdminPage = lazy(() => import("@/pages/ElegexPages").then(module => ({ default: module.AdminPage })));
 const DocumentsPage = lazy(() => import("@/pages/ElegexPages").then(module => ({ default: module.DocumentsPage })));
@@ -40,7 +41,7 @@ function Router() {
     <Route path="/notifications" component={NotificationsPage} />
     <Route path="/admin">{() => <AdminPage />}</Route>
     <Route path="/settings">{() => <AdminPage settingsOnly />}</Route>
-    <Route>{FieldCommandCentre}</Route>
+    <Route><NotFound /></Route>
   </Switch></Suspense></DashboardLayout>;
 }
 

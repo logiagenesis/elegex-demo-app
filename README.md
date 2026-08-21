@@ -35,7 +35,7 @@ flowchart LR
   Workflow --> Storage[Object storage]
 ```
 
-Read the detailed [architecture guide](ARCHITECTURE.md), [connector design](docs/database-connectors.md), and [protected contract map](docs/api-contracts.md).
+Read the detailed [architecture guide](ARCHITECTURE.md), [connector design](docs/database-connectors.md), [protected contract map](docs/api-contracts.md), [procedure catalogue](docs/procedure-catalogue.md), and [database integrity audit](docs/database-integrity-audit.md).
 
 ## Quick start
 

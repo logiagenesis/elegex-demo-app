@@ -1,5 +1,4 @@
-import { cn } from "@/lib/utils";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle, Home, RotateCcw } from "lucide-react";
 import { Component, ReactNode } from "react";
 
 interface Props {
@@ -9,49 +8,46 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  errorId: string | null;
 }
 
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, errorId: null };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error, errorId: null };
+  }
+
+  componentDidCatch(error: Error) {
+    const errorId = `ELX-${Date.now().toString(36).toUpperCase()}`;
+    console.error("[Elegex] Application recovery boundary", { errorId, message: error.message });
+    this.setState({ errorId });
+  }
+
+  reset = () => {
+    this.setState({ hasError: false, error: null, errorId: null });
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center min-h-screen p-8 bg-background">
-          <div className="flex flex-col items-center w-full max-w-2xl p-8">
-            <AlertTriangle
-              size={48}
-              className="text-destructive mb-6 flex-shrink-0"
-            />
-
-            <h2 className="text-xl mb-4">An unexpected error occurred.</h2>
-
-            <div className="p-4 w-full rounded bg-muted overflow-auto mb-6">
-              <pre className="text-sm text-muted-foreground whitespace-break-spaces">
-                {this.state.error?.stack}
-              </pre>
+        <main className="grid min-h-screen place-items-center bg-[#F5F7FB] p-6 text-[#14213D]">
+          <section className="w-full max-w-xl rounded-[1.75rem] border border-[#E4EAF4] bg-white p-8 text-center shadow-[0_20px_60px_rgba(24,54,108,0.10)] sm:p-10">
+            <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[#FFF0F2] text-[#C63550]"><AlertTriangle className="h-7 w-7" /></span>
+            <p className="mt-6 text-xs font-bold tracking-[0.16em] text-[#195FE6]">ELEGEX RECOVERY</p>
+            <h1 className="mt-3 text-2xl font-semibold tracking-[-0.04em]">This workspace view could not load.</h1>
+            <p className="mt-3 text-sm leading-6 text-[#667085]">Your data has not been changed. Retry the view first; if the issue persists, reload the application and quote the recovery identifier to the workspace administrator.</p>
+            <p className="mt-4 font-mono text-xs font-semibold text-[#50617F]">{this.state.errorId || "ELX-RECOVERING"}</p>
+            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+              <button onClick={this.reset} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#D6E2F6] bg-white px-4 py-2.5 text-sm font-semibold text-[#195FE6] transition hover:bg-[#F5F8FF]"><RotateCcw className="h-4 w-4" />Retry view</button>
+              <button onClick={() => window.location.assign("/")} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#195FE6] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#124FC3]"><Home className="h-4 w-4" />Return to workspace</button>
             </div>
-
-            <button
-              onClick={() => window.location.reload()}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg",
-                "bg-primary text-primary-foreground",
-                "hover:opacity-90 cursor-pointer"
-              )}
-            >
-              <RotateCcw size={16} />
-              Reload Page
-            </button>
-          </div>
-        </div>
+            <button onClick={() => window.location.reload()} className="mt-5 text-sm font-semibold text-[#667085] underline-offset-4 hover:text-[#195FE6] hover:underline">Reload application</button>
+          </section>
+        </main>
       );
     }
 

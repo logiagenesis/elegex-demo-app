@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import * as db from "../db";
 import { checkDatabaseHealth } from "../connectors/database";
@@ -76,12 +77,13 @@ export const elegexRouter = router({
       requireEdit(ctx.scope.role);
       const allowed = ["application/pdf", "text/plain", "text/csv", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/jpeg", "image/png"];
       if (!allowed.includes(input.mimeType)) throw new TRPCError({ code: "BAD_REQUEST", message: "This file type is not permitted." });
-      const base64 = input.dataUrl.split(",")[1];
-      if (!base64) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid upload payload." });
-      const bytes = Buffer.from(base64, "base64");
+      const match = input.dataUrl.match(/^data:([^;,]+);base64,([A-Za-z0-9+/]+={0,2})$/);
+      if (!match || match[1] !== input.mimeType) throw new TRPCError({ code: "BAD_REQUEST", message: "Upload metadata does not match its data payload." });
+      const bytes = Buffer.from(match[2], "base64");
       if (bytes.length > 5_000_000) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Files must be 5 MB or smaller." });
+      await db.validateDocumentTargets(ctx.scope.organizationId, input);
       const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const uploaded = await storagePut(`elegex/${ctx.scope.organizationId}/documents/${safeName}`, bytes, input.mimeType);
+      const uploaded = await storagePut(`elegex/${ctx.scope.organizationId}/documents/${randomUUID()}-${safeName}`, bytes, input.mimeType);
       return db.createDocumentRecord(ctx.scope.organizationId, ctx.user.id, { ...input, storageKey: uploaded.key, storageUrl: uploaded.url, sizeBytes: bytes.length });
     }),
   }),
@@ -95,7 +97,7 @@ export const elegexRouter = router({
     list: tenantProcedure.query(({ ctx }) => { requireAdmin(ctx.scope.role); return listIntegrationConnections(ctx.scope.organizationId); }),
     upsert: tenantProcedure.input(z.object({ provider: z.enum(["database", "webhook", "analytics", "storage"]), name: z.string().min(2).max(120), configuration: z.record(z.string(), z.unknown()), secretReference: z.string().max(180).optional(), status: z.enum(["active", "paused", "degraded", "disabled"]).optional() })).mutation(({ ctx, input }) => { requireAdmin(ctx.scope.role); return upsertIntegrationConnection({ ...input, organizationId: ctx.scope.organizationId, createdBy: ctx.user.id }); }),
     enqueue: tenantProcedure.input(z.object({ connectionId: z.number().int().positive(), eventType: z.string().min(2).max(120), payload: z.record(z.string(), z.unknown()), idempotencyKey: z.string().min(8).max(180) })).mutation(({ ctx, input }) => { requireAdmin(ctx.scope.role); return enqueueIntegrationEvent({ ...input, organizationId: ctx.scope.organizationId }); }),
-    dispatchable: tenantProcedure.input(z.object({ connectionId: z.number().int().positive(), limit: z.number().int().positive().max(100).optional() })).query(({ ctx, input }) => { requireAdmin(ctx.scope.role); return listDispatchableEvents(input.connectionId, input.limit); }),
+    dispatchable: tenantProcedure.input(z.object({ connectionId: z.number().int().positive(), limit: z.number().int().positive().max(100).optional() })).query(({ ctx, input }) => { requireAdmin(ctx.scope.role); return listDispatchableEvents(ctx.scope.organizationId, input.connectionId, input.limit); }),
   }),
   staging: router({
     readiness: tenantProcedure.query(({ ctx }) => { requireAdmin(ctx.scope.role); return db.getStagingReadiness(ctx.scope.organizationId); }),

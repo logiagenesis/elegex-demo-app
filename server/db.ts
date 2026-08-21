@@ -7,6 +7,7 @@ import {
   documents,
   environmentReleases,
   integrationConnections,
+  integrationEvents,
   invoiceLinks,
   jobEvidence,
   jobMaterials,
@@ -84,6 +85,32 @@ async function logActivity(
   summary: string,
 ) {
   await writeAuditEvent({ organizationId, actorId, action, entityType, entityId, summary });
+}
+
+async function assertScopedEntity(client: any, table: any, organizationId: number, id: number | undefined, label: string, softDeleted = false) {
+  if (!id) return;
+  const row = await client.select({ id: table.id }).from(table).where(and(eq(table.id, id), eq(table.organizationId, organizationId), softDeleted ? isNull(table.deletedAt) : undefined)).limit(1);
+  if (!row[0]) throw new Error(`${label} is not available in this workspace`);
+}
+
+async function assertActiveWorkspaceMember(client: any, organizationId: number, userId: number | undefined, label: string) {
+  if (!userId) return;
+  const row = await client.select({ id: organizationMembers.id }).from(organizationMembers).where(and(eq(organizationMembers.organizationId, organizationId), eq(organizationMembers.userId, userId), eq(organizationMembers.isActive, true))).limit(1);
+  if (!row[0]) throw new Error(`${label} must be an active member of this workspace`);
+}
+
+function assertSingleDocumentTarget(input: { projectId?: number; caseId?: number; contactId?: number }) {
+  const targets = [input.projectId, input.caseId, input.contactId].filter(Boolean);
+  if (targets.length > 1) throw new Error("A document can be attached to only one record at a time");
+}
+
+export async function validateDocumentTargets(organizationId: number, input: { projectId?: number; caseId?: number; contactId?: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  assertSingleDocumentTarget(input);
+  await assertScopedEntity(db, contacts, organizationId, input.contactId, "Contact", true);
+  await assertScopedEntity(db, projects, organizationId, input.projectId, "Project", true);
+  await assertScopedEntity(db, cases, organizationId, input.caseId, "Case", true);
 }
 
 async function seedDemoWorkspace(organizationId: number, ownerId: number) {
@@ -396,8 +423,13 @@ export async function updateContact(organizationId: number, userId: number, id: 
 }
 
 export async function createProject(organizationId: number, userId: number, input: { name: string; code: string; contactId?: number; description?: string; status?: "planning" | "active" | "on_hold" | "complete" | "archived"; priority?: "low" | "medium" | "high" | "urgent"; dueDate?: Date; budget?: number }) {
-  const db = await getDb(); if (!db) throw new Error("Database is not available");
-  const result = await db.insert(projects).values({ ...input, organizationId, createdBy: userId, updatedBy: userId }); const id = Number(result[0].insertId); await logActivity(organizationId, userId, "created", "project", id, `Created project ${input.name}`); return id;
+  return withTransaction(async tx => {
+    await assertScopedEntity(tx, contacts, organizationId, input.contactId, "Contact", true);
+    const result = await tx.insert(projects).values({ ...input, organizationId, createdBy: userId, updatedBy: userId });
+    const id = Number(result[0].insertId);
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "created", entityType: "project", entityId: id, summary: `Created project ${input.name}` });
+    return id;
+  });
 }
 
 export async function updateProject(organizationId: number, userId: number, id: number, input: { name?: string; description?: string; status?: "planning" | "active" | "on_hold" | "complete" | "archived"; priority?: "low" | "medium" | "high" | "urgent"; progress?: number; dueDate?: Date; budget?: number }) {
@@ -405,15 +437,30 @@ export async function updateProject(organizationId: number, userId: number, id: 
 }
 
 export async function createCase(organizationId: number, userId: number, input: { reference: string; title: string; summary?: string; contactId?: number; projectId?: number; severity?: "low" | "medium" | "high" | "critical"; ownerId?: number; dueDate?: Date }) {
-  const db = await getDb(); if (!db) throw new Error("Database is not available"); const result = await db.insert(cases).values({ ...input, organizationId, createdBy: userId, updatedBy: userId }); const id = Number(result[0].insertId); await logActivity(organizationId, userId, "created", "case", id, `Created case ${input.reference}`); return id;
+  return withTransaction(async tx => {
+    await assertScopedEntity(tx, contacts, organizationId, input.contactId, "Contact", true);
+    await assertScopedEntity(tx, projects, organizationId, input.projectId, "Project", true);
+    await assertActiveWorkspaceMember(tx, organizationId, input.ownerId, "Case owner");
+    const result = await tx.insert(cases).values({ ...input, organizationId, createdBy: userId, updatedBy: userId });
+    const id = Number(result[0].insertId);
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "created", entityType: "case", entityId: id, summary: `Created case ${input.reference}` });
+    return id;
+  });
 }
 
 export async function updateCase(organizationId: number, userId: number, id: number, input: { title?: string; summary?: string; status?: "open" | "investigating" | "pending" | "resolved" | "closed"; severity?: "low" | "medium" | "high" | "critical"; ownerId?: number; dueDate?: Date }) {
-  const db = await getDb(); if (!db) throw new Error("Database is not available"); await db.update(cases).set({ ...input, updatedBy: userId }).where(and(eq(cases.id, id), eq(cases.organizationId, organizationId), isNull(cases.deletedAt))); await logActivity(organizationId, userId, "updated", "case", id, "Updated a case record");
+  return withTransaction(async tx => {
+    await assertActiveWorkspaceMember(tx, organizationId, input.ownerId, "Case owner");
+    await tx.update(cases).set({ ...input, updatedBy: userId }).where(and(eq(cases.id, id), eq(cases.organizationId, organizationId), isNull(cases.deletedAt)));
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "updated", entityType: "case", entityId: id, summary: "Updated a case record" });
+  });
 }
 
 export async function createTask(organizationId: number, userId: number, input: { title: string; description?: string; projectId?: number; caseId?: number; priority?: "low" | "medium" | "high" | "urgent"; assigneeId?: number; dueDate?: Date }) {
   return withTransaction(async tx => {
+    await assertScopedEntity(tx, projects, organizationId, input.projectId, "Project", true);
+    await assertScopedEntity(tx, cases, organizationId, input.caseId, "Case", true);
+    await assertActiveWorkspaceMember(tx, organizationId, input.assigneeId, "Assignee");
     const result = await tx.insert(tasks).values({ ...input, organizationId, createdBy: userId, updatedBy: userId });
     const id = Number(result[0].insertId);
     if (input.assigneeId) await tx.insert(notifications).values({ organizationId, userId: input.assigneeId, type: "assignment", title: `Task assigned: ${input.title}`, description: "A task has been assigned to you.", href: "/tasks" });
@@ -423,7 +470,14 @@ export async function createTask(organizationId: number, userId: number, input: 
 }
 
 export async function updateTask(organizationId: number, userId: number, id: number, input: { title?: string; description?: string; projectId?: number; status?: "todo" | "in_progress" | "blocked" | "complete"; priority?: "low" | "medium" | "high" | "urgent"; assigneeId?: number; dueDate?: Date }) {
-  const db = await getDb(); if (!db) throw new Error("Database is not available"); const completedAt = input.status === "complete" ? new Date() : undefined; await db.update(tasks).set({ ...input, ...(completedAt ? { completedAt } : {}), updatedBy: userId }).where(and(eq(tasks.id, id), eq(tasks.organizationId, organizationId), isNull(tasks.deletedAt))); if (input.assigneeId) await db.insert(notifications).values({ organizationId, userId: input.assigneeId, type: "assignment", title: "A task was reassigned to you", description: input.title ?? "Review the updated task assignment.", href: "/tasks" }); await logActivity(organizationId, userId, "updated", "task", id, "Updated a task");
+  return withTransaction(async tx => {
+    await assertScopedEntity(tx, projects, organizationId, input.projectId, "Project", true);
+    await assertActiveWorkspaceMember(tx, organizationId, input.assigneeId, "Assignee");
+    const completedAt = input.status === "complete" ? new Date() : input.status ? null : undefined;
+    await tx.update(tasks).set({ ...input, ...(completedAt !== undefined ? { completedAt } : {}), updatedBy: userId }).where(and(eq(tasks.id, id), eq(tasks.organizationId, organizationId), isNull(tasks.deletedAt)));
+    if (input.assigneeId) await tx.insert(notifications).values({ organizationId, userId: input.assigneeId, type: "assignment", title: "A task was reassigned to you", description: input.title ?? "Review the updated task assignment.", href: "/tasks" });
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "updated", entityType: "task", entityId: id, summary: "Updated a task" });
+  });
 }
 
 export async function archiveRecord(organizationId: number, userId: number, resource: "contacts" | "projects" | "cases" | "tasks", id: number) {
@@ -540,6 +594,9 @@ export async function getStagingReadiness(organizationId: number) {
 
 export async function createJob(organizationId: number, userId: number, input: { jobNumber: string; title: string; description: string; contactId: number; serviceAddress: string; priority?: "routine" | "standard" | "urgent" | "critical"; foremanId?: number; scheduledStart?: Date; scheduledEnd?: Date }) {
   return withTransaction(async tx => {
+    await assertScopedEntity(tx, contacts, organizationId, input.contactId, "Contact", true);
+    await assertActiveWorkspaceMember(tx, organizationId, input.foremanId, "Assigned foreman");
+    if (input.scheduledStart && input.scheduledEnd && input.scheduledEnd <= input.scheduledStart) throw new Error("Scheduled end must be after scheduled start");
     const result = await tx.insert(jobs).values({ ...input, organizationId, stage: "scheduled", createdBy: userId, updatedBy: userId });
     const id = Number(result[0].insertId);
     if (input.foremanId && input.scheduledStart && input.scheduledEnd) await tx.insert(jobVisits).values({ organizationId, jobId: id, foremanId: input.foremanId, scheduledStart: input.scheduledStart, scheduledEnd: input.scheduledEnd, status: "scheduled", notes: "Created from office dispatch." });
@@ -551,19 +608,23 @@ export async function createJob(organizationId: number, userId: number, input: {
 const jobStageTransitions: Record<string, string[]> = { scheduled: ["in_progress", "on_hold", "cancelled"], in_progress: ["on_hold", "ready_for_invoicing", "cancelled"], on_hold: ["scheduled", "in_progress", "cancelled"], ready_for_invoicing: ["invoiced", "in_progress", "cancelled"], invoiced: [], cancelled: [] };
 
 export async function transitionJobStage(organizationId: number, userId: number, jobId: number, stage: "scheduled" | "in_progress" | "on_hold" | "ready_for_invoicing" | "invoiced" | "cancelled", reason?: string) {
-  const db = await getDb(); if (!db) throw new Error("Database is not available");
-  const rows = await db.select({ stage: jobs.stage }).from(jobs).where(and(eq(jobs.organizationId, organizationId), eq(jobs.id, jobId), isNull(jobs.deletedAt))).limit(1);
-  const from = rows[0]?.stage;
-  if (!from) throw new Error("Job not found in this workspace");
-  if (!jobStageTransitions[from].includes(stage)) throw new Error(`A job cannot move from ${from} to ${stage}`);
-  if (["on_hold", "cancelled"].includes(stage) && !reason?.trim()) throw new Error("A hold or cancellation reason is required");
-  const now = new Date();
-  await db.update(jobs).set({ stage, updatedBy: userId, ...(stage === "on_hold" ? { holdReason: reason } : {}), ...(stage === "cancelled" ? { cancelReason: reason } : {}), ...(stage === "ready_for_invoicing" ? { readyForInvoiceAt: now, completedAt: now } : {}) }).where(and(eq(jobs.organizationId, organizationId), eq(jobs.id, jobId)));
-  await logActivity(organizationId, userId, "stage_changed", "job", jobId, `Job stage changed from ${from.replace(/_/g, " ")} to ${stage.replace(/_/g, " ")}`);
+  return withTransaction(async tx => {
+    const rows = await tx.select({ stage: jobs.stage }).from(jobs).where(and(eq(jobs.organizationId, organizationId), eq(jobs.id, jobId), isNull(jobs.deletedAt))).limit(1);
+    const from = rows[0]?.stage;
+    if (!from) throw new Error("Job not found in this workspace");
+    if (!jobStageTransitions[from].includes(stage)) throw new Error(`A job cannot move from ${from} to ${stage}`);
+    if (["on_hold", "cancelled"].includes(stage) && !reason?.trim()) throw new Error("A hold or cancellation reason is required");
+    const now = new Date();
+    await tx.update(jobs).set({ stage, updatedBy: userId, ...(stage === "on_hold" ? { holdReason: reason } : {}), ...(stage === "cancelled" ? { cancelReason: reason } : {}), ...(stage === "ready_for_invoicing" ? { readyForInvoiceAt: now, completedAt: now } : {}) }).where(and(eq(jobs.organizationId, organizationId), eq(jobs.id, jobId)));
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "stage_changed", entityType: "job", entityId: jobId, summary: `Job stage changed from ${from.replace(/_/g, " ")} to ${stage.replace(/_/g, " ")}` });
+  });
 }
 
 export async function linkExternalInvoice(organizationId: number, userId: number, jobId: number, invoiceNumber: string) {
   return withTransaction(async tx => {
+    const job = await tx.select({ stage: jobs.stage }).from(jobs).where(and(eq(jobs.id, jobId), eq(jobs.organizationId, organizationId), isNull(jobs.deletedAt))).limit(1);
+    if (!job[0]) throw new Error("Job is not available in this workspace");
+    if (job[0].stage !== "ready_for_invoicing") throw new Error("Only invoice-ready jobs can be linked to an external invoice");
     await tx.insert(invoiceLinks).values({ organizationId, jobId, externalInvoiceNumber: invoiceNumber, linkedBy: userId, notes: "Linked from office workflow." });
     await tx.update(jobs).set({ stage: "invoiced", updatedBy: userId }).where(and(eq(jobs.organizationId, organizationId), eq(jobs.id, jobId)));
     await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "invoice_linked", entityType: "job", entityId: jobId, summary: `External invoice ${invoiceNumber} linked to job` });
@@ -571,7 +632,16 @@ export async function linkExternalInvoice(organizationId: number, userId: number
 }
 
 export async function createDocumentRecord(organizationId: number, userId: number, input: { projectId?: number; caseId?: number; contactId?: number; fileName: string; mimeType: string; sizeBytes: number; storageKey: string; storageUrl: string }) {
-  const db = await getDb(); if (!db) throw new Error("Database is not available"); const result = await db.insert(documents).values({ ...input, organizationId, uploadedBy: userId }); const id = Number(result[0].insertId); await logActivity(organizationId, userId, "uploaded", "document", id, `Uploaded ${input.fileName}`); return id;
+  return withTransaction(async tx => {
+    assertSingleDocumentTarget(input);
+    await assertScopedEntity(tx, contacts, organizationId, input.contactId, "Contact", true);
+    await assertScopedEntity(tx, projects, organizationId, input.projectId, "Project", true);
+    await assertScopedEntity(tx, cases, organizationId, input.caseId, "Case", true);
+    const result = await tx.insert(documents).values({ ...input, organizationId, uploadedBy: userId });
+    const id = Number(result[0].insertId);
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "uploaded", entityType: "document", entityId: id, summary: `Uploaded ${input.fileName}` });
+    return id;
+  });
 }
 
 export async function listDocuments(organizationId: number, resource?: "contact" | "project" | "case", recordId?: number) {
@@ -583,6 +653,8 @@ export async function listDocuments(organizationId: number, resource?: "contact"
 export async function resetDemoData(organizationId: number, userId: number) {
   const db = await getDb(); if (!db) throw new Error("Database is not available");
   const releases = await db.select({ id: environmentReleases.id }).from(environmentReleases).where(eq(environmentReleases.organizationId, organizationId));
+  const tenantQuotes = await db.select({ id: quotes.id }).from(quotes).where(eq(quotes.organizationId, organizationId));
   for (const release of releases) await db.delete(releaseChecks).where(eq(releaseChecks.releaseId, release.id));
-  await db.delete(environmentReleases).where(eq(environmentReleases.organizationId, organizationId)); await db.delete(invoiceLinks).where(eq(invoiceLinks.organizationId, organizationId)); await db.delete(jobEvidence).where(eq(jobEvidence.organizationId, organizationId)); await db.delete(jobMaterials).where(eq(jobMaterials.organizationId, organizationId)); await db.delete(jobVisits).where(eq(jobVisits.organizationId, organizationId)); await db.delete(quotes).where(eq(quotes.organizationId, organizationId)); await db.delete(monthlyOperationalSnapshots).where(eq(monthlyOperationalSnapshots.organizationId, organizationId)); await db.delete(jobs).where(eq(jobs.organizationId, organizationId)); await db.delete(documents).where(eq(documents.organizationId, organizationId)); await db.delete(notifications).where(eq(notifications.organizationId, organizationId)); await db.delete(savedViews).where(eq(savedViews.organizationId, organizationId)); await db.delete(activityLogs).where(eq(activityLogs.organizationId, organizationId)); await db.delete(tasks).where(eq(tasks.organizationId, organizationId)); await db.delete(cases).where(eq(cases.organizationId, organizationId)); await db.delete(projects).where(eq(projects.organizationId, organizationId)); await db.delete(contacts).where(eq(contacts.organizationId, organizationId)); await seedDemoWorkspace(organizationId, userId); await seedFieldServiceDemo(organizationId, userId);
+  for (const quote of tenantQuotes) await db.delete(quoteItems).where(eq(quoteItems.quoteId, quote.id));
+  await db.delete(integrationEvents).where(eq(integrationEvents.organizationId, organizationId)); await db.delete(integrationConnections).where(eq(integrationConnections.organizationId, organizationId)); await db.delete(environmentReleases).where(eq(environmentReleases.organizationId, organizationId)); await db.delete(invoiceLinks).where(eq(invoiceLinks.organizationId, organizationId)); await db.delete(jobEvidence).where(eq(jobEvidence.organizationId, organizationId)); await db.delete(jobMaterials).where(eq(jobMaterials.organizationId, organizationId)); await db.delete(jobVisits).where(eq(jobVisits.organizationId, organizationId)); await db.delete(quotes).where(eq(quotes.organizationId, organizationId)); await db.delete(monthlyOperationalSnapshots).where(eq(monthlyOperationalSnapshots.organizationId, organizationId)); await db.delete(jobs).where(eq(jobs.organizationId, organizationId)); await db.delete(documents).where(eq(documents.organizationId, organizationId)); await db.delete(notifications).where(eq(notifications.organizationId, organizationId)); await db.delete(savedViews).where(eq(savedViews.organizationId, organizationId)); await db.delete(activityLogs).where(eq(activityLogs.organizationId, organizationId)); await db.delete(tasks).where(eq(tasks.organizationId, organizationId)); await db.delete(cases).where(eq(cases.organizationId, organizationId)); await db.delete(projects).where(eq(projects.organizationId, organizationId)); await db.delete(contacts).where(eq(contacts.organizationId, organizationId)); await seedDemoWorkspace(organizationId, userId); await seedFieldServiceDemo(organizationId, userId);
 }

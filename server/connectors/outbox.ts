@@ -40,11 +40,16 @@ export async function enqueueIntegrationEvent(input: {
   availableAt?: Date;
 }) {
   const database = await getDatabase();
+  const connection = await database.select({ id: integrationConnections.id, status: integrationConnections.status }).from(integrationConnections).where(and(eq(integrationConnections.id, input.connectionId), eq(integrationConnections.organizationId, input.organizationId))).limit(1);
+  if (!connection[0]) throw new Error("Integration connection is not available in this workspace");
+  if (connection[0].status !== "active") throw new Error("Integration connection must be active before events can be queued");
   const result = await database.insert(integrationEvents).values({ ...input, availableAt: input.availableAt ?? new Date() }).onDuplicateKeyUpdate({ set: { availableAt: input.availableAt ?? new Date() } });
   return Number(result[0].insertId);
 }
 
-export async function listDispatchableEvents(connectionId: number, limit = 25) {
+export async function listDispatchableEvents(organizationId: number, connectionId: number, limit = 25) {
   const database = await getDatabase();
-  return database.select().from(integrationEvents).where(and(eq(integrationEvents.connectionId, connectionId), eq(integrationEvents.status, "pending"))).orderBy(asc(integrationEvents.availableAt)).limit(Math.min(limit, 100));
+  const connection = await database.select({ id: integrationConnections.id }).from(integrationConnections).where(and(eq(integrationConnections.id, connectionId), eq(integrationConnections.organizationId, organizationId))).limit(1);
+  if (!connection[0]) throw new Error("Integration connection is not available in this workspace");
+  return database.select().from(integrationEvents).where(and(eq(integrationEvents.organizationId, organizationId), eq(integrationEvents.connectionId, connectionId), eq(integrationEvents.status, "pending"))).orderBy(asc(integrationEvents.availableAt)).limit(Math.min(limit, 100));
 }

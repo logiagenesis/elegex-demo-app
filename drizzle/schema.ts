@@ -29,7 +29,7 @@ export const organizations = mysqlTable("organizations", {
   slug: varchar("slug", { length: 160 }).notNull().unique(),
   industry: varchar("industry", { length: 100 }),
   primaryColor: varchar("primaryColor", { length: 16 }).default("#2563EB").notNull(),
-  timezone: varchar("timezone", { length: 80 }).default("Africa/Johannesburg").notNull(),
+  timezone: varchar("timezone", { length: 80 }).default("UTC").notNull(),
   createdBy: int("createdBy").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -104,6 +104,7 @@ export const projects = mysqlTable("projects", {
 }, table => [
   index("project_organization_idx").on(table.organizationId),
   index("project_status_idx").on(table.organizationId, table.status),
+  uniqueIndex("project_organization_code_unique").on(table.organizationId, table.code),
 ]);
 
 export const cases = mysqlTable("cases", {
@@ -127,6 +128,7 @@ export const cases = mysqlTable("cases", {
 }, table => [
   index("case_organization_idx").on(table.organizationId),
   index("case_status_idx").on(table.organizationId, table.status),
+  uniqueIndex("case_organization_reference_unique").on(table.organizationId, table.reference),
 ]);
 
 export const tasks = mysqlTable("tasks", {
@@ -150,6 +152,8 @@ export const tasks = mysqlTable("tasks", {
   index("task_organization_idx").on(table.organizationId),
   index("task_assignee_idx").on(table.organizationId, table.assigneeId),
   index("task_status_idx").on(table.organizationId, table.status),
+  index("task_project_idx").on(table.organizationId, table.projectId),
+  index("task_case_idx").on(table.organizationId, table.caseId),
 ]);
 
 export const notes = mysqlTable("notes", {
@@ -177,7 +181,13 @@ export const documents = mysqlTable("documents", {
   storageUrl: varchar("storageUrl", { length: 600 }).notNull(),
   uploadedBy: int("uploadedBy").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, table => [index("document_organization_idx").on(table.organizationId)]);
+}, table => [
+  index("document_organization_idx").on(table.organizationId),
+  index("document_contact_idx").on(table.organizationId, table.contactId),
+  index("document_project_idx").on(table.organizationId, table.projectId),
+  index("document_case_idx").on(table.organizationId, table.caseId),
+  uniqueIndex("document_organization_storage_key_unique").on(table.organizationId, table.storageKey),
+]);
 
 export const notifications = mysqlTable("notifications", {
   id: int("id").autoincrement().primaryKey(),
@@ -382,7 +392,10 @@ export const invoiceLinks = mysqlTable("invoiceLinks", {
   linkedAt: timestamp("linkedAt").defaultNow().notNull(),
   linkedBy: int("linkedBy").notNull(),
   notes: varchar("notes", { length: 500 }),
-}, table => [index("invoice_link_job_idx").on(table.organizationId, table.jobId, table.status)]);
+}, table => [
+  index("invoice_link_job_idx").on(table.organizationId, table.jobId, table.status),
+  uniqueIndex("invoice_link_external_reference_unique").on(table.organizationId, table.externalSystem, table.externalInvoiceNumber),
+]);
 
 export const monthlyOperationalSnapshots = mysqlTable("monthlyOperationalSnapshots", {
   id: int("id").autoincrement().primaryKey(),
