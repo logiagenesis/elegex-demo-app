@@ -53,6 +53,48 @@ The route registry is matched by the exported `workspaceRoutePolicy` test fixtur
 
 After a confirmed Manus OAuth callback on the published domain, the owner workspace rendered the `/field` assignment list and its scheduled visit. Opening the job card exposed the live `READY TO SYNC` state, explicit typed-consent artifact instruction, `Before condition`, `After condition`, `Field note`, and `Job card` evidence modes, and the deliberately gated material, evidence, quote, and completion controls before check-in. No synthetic production data was changed during this confirmation pass.
 
-## Remaining validation
+## Unified published-domain verification record
 
-The release suite will still repeat the critical routes at a mobile viewport and perform public-domain, asset, client-console, and API-network checks after the final deployment checkpoint.
+The published domain was reconfirmed on 21 August 2026 using two independent paths. The committed public release smoke suite confirmed the unauthenticated entry, product title, public-recovery marker, expected product copy, loaded runtime assets, and zero captured runtime exceptions. The connected authenticated browser then rendered the owner command centre with six-month analytics, invoice control, live job pipeline, global navigation, and populated tenant-scoped data. The same authenticated production session had already rendered the protected job register and the foreman route after the observed OAuth callback.
+
+| Verification surface | Evidence source | Outcome | Inspection boundary |
+|---|---|---|---|
+| Public entry and client boot | `pnpm smoke:release` against the published domain | Title, public shell, expected content, and zero runtime exceptions | Browser-protocol runner uses a separate local browser profile. |
+| Published OAuth and protected workspace | Connected browser callback and subsequent owner session | OAuth returned to the deployed workspace; command centre and `/jobs` rendered tenant data | Session cookies are intentionally not copied into the smoke runner. |
+| Published foreman workflow | Connected browser view of `/field` | Assigned visit, typed-consent instruction, all four evidence modes, and sync surface rendered | No production mutation was issued in this confirmation pass. |
+| Responsive route behavior | Development-browser 375 × 812 route checks plus production owner-shell rendering | Mobile navigation, full-width actions, stacked document filters, and recovery route were legible | The published authenticated browser review was desktop-sized; mobile evidence remains a controlled development verification. |
+| API and console observability | Public smoke network listener, protected-route response evidence, and structured error boundary | Public runtime exceptions: zero. Protected APIs returned data after OAuth. | The connected browser does not expose DevTools protocol logs to the local smoke target; this boundary is documented rather than inferred. |
+
+This record closes the earlier blank-page remediation verification. It does not claim that every role was exercised on the published domain: published role coverage is represented by the owner session, while the exhaustive five-role matrix is enforced by the shared route-policy and protected-procedure regression suite.
+
+## Exhaustive route-behavior matrix
+
+The route matrix below is generated from the same `workspaceRoutePolicy` that powers the `PrivilegedRoute` guard. The automated regression iterates each row for anonymous, viewer, member, manager, administrator, and owner outcomes; no route is allowed to rely solely on hidden navigation. Representative published-domain evidence consists of the public recovery shell for unauthenticated paths and the owner’s successfully rendered command centre, job register, and foreman route after OAuth.
+
+| Declared route | Anonymous | Viewer | Member | Manager | Administrator | Owner | Evidence classification |
+|---|---|---|---|---|---|---|---|
+| `/` | Public shell | Allowed | Allowed | Allowed | Allowed | Allowed | **Published:** public shell and owner command centre. **Regression:** all role outcomes. |
+| `/jobs` | Public shell | Allowed | Allowed | Allowed | Allowed | Allowed | **Published:** public shell and owner register. **Regression:** all role outcomes. |
+| `/jobs/:id` | Public shell | Allowed | Allowed | Allowed | Allowed | Allowed | **Published:** public fallback. **Development:** owner detail layout. **Regression:** all role outcomes. |
+| `/field` | Public shell | Restricted | Allowed | Allowed | Allowed | Allowed | **Published:** public shell and owner foreman route. **Regression:** all role outcomes. |
+| `/dispatch` | Public shell | Allowed | Allowed | Allowed | Allowed | Allowed | **Published:** public fallback. **Regression:** all role outcomes. |
+| `/contacts` | Public shell | Allowed | Allowed | Allowed | Allowed | Allowed | **Published:** public fallback. **Regression:** all role outcomes. |
+| `/contacts/:id` | Public shell | Allowed | Allowed | Allowed | Allowed | Allowed | **Published:** public fallback. **Regression:** all role outcomes. |
+| `/projects` | Public shell | Allowed | Allowed | Allowed | Allowed | Allowed | **Published:** public fallback. **Regression:** all role outcomes. |
+| `/projects/:id` | Public shell | Allowed | Allowed | Allowed | Allowed | Allowed | **Published:** public fallback. **Regression:** all role outcomes. |
+| `/cases` | Public shell | Allowed | Allowed | Allowed | Allowed | Allowed | **Published:** public fallback. **Regression:** all role outcomes. |
+| `/cases/:id` | Public shell | Allowed | Allowed | Allowed | Allowed | Allowed | **Published:** public fallback. **Regression:** all role outcomes. |
+| `/tasks` | Public shell | Allowed | Allowed | Allowed | Allowed | Allowed | **Published:** public fallback. **Regression:** all role outcomes. |
+| `/documents` | Public shell | Allowed | Allowed | Allowed | Allowed | Allowed | **Published:** public fallback and managed-document URL. **Regression:** all role outcomes. |
+| `/reports` | Public shell | Allowed | Allowed | Allowed | Allowed | Allowed | **Published:** public fallback. **Regression:** all role outcomes. |
+| `/notifications` | Public shell | Allowed | Allowed | Allowed | Allowed | Allowed | **Published:** public fallback. **Regression:** all role outcomes. |
+| `/staging` | Public shell | Restricted | Restricted | Restricted | Allowed | Allowed | **Published:** public fallback. **Regression:** direct guard and all role outcomes. |
+| `/admin` | Public shell | Restricted | Restricted | Restricted | Allowed | Allowed | **Published:** public fallback. **Regression:** direct guard and all role outcomes. |
+| `/settings` | Public shell | Restricted | Restricted | Restricted | Allowed | Allowed | **Published:** public fallback. **Regression:** direct guard and all role outcomes. |
+| Unknown route | Visible 404 | Visible 404 | Visible 404 | Visible 404 | Visible 404 | Visible 404 | **Development:** responsive 404. **Regression:** unknown-path rejection for every role. |
+
+## Expanded public release-smoke result
+
+The committed `pnpm smoke:release` suite was expanded and executed against the published domain on 21 August 2026. It exercised `/`, `/jobs`, `/documents`, `/reports`, and `/field` without a session; each returned the intentional public recovery shell with the correct title, expected product copy, and no failed application asset response. The same run emulated a 375 × 812 mobile viewport, confirmed the public sign-in control remained visible, and detected no horizontal overflow. It also resolved the managed synthetic job-card document with HTTP `200` and captured zero browser runtime exceptions.
+
+Browser-profile blocking events (`net::ERR_BLOCKED_BY_CLIENT` for analytics/ping resources) were observed by the isolated smoke browser but did not prevent any app route, first-party asset, document link, or `auth.me` request from succeeding. They are recorded as profile-level blocking noise, not product failures. The smoke browser is intentionally unauthenticated; the connected browser’s published owner session provides the separate authenticated route evidence described above.

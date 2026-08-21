@@ -199,6 +199,75 @@ export const DEMO_DATA_EXPECTATIONS = {
 } as const;
 
 /**
+ * Canonical post-reset relationships for the synthetic tenant. Keeping this
+ * alongside the seed constants makes the admin reset contract reviewable and
+ * testable without relying on generated primary-key values.
+ */
+export const DEMO_RESET_RELATIONSHIPS = {
+  contacts: 4,
+  projects: 4,
+  cases: 3,
+  tasks: 5,
+  documents: 3,
+  notifications: 3,
+  savedViews: 1,
+  auditSeedRecords: 4,
+  jobVisitsPerJob: 1,
+  materialsPerJob: 2,
+  evidencePerJob: 2,
+  quoteItemsPerQuote: 2,
+  releaseChecksPerRelease: 5,
+} as const;
+
+export type DemoReseedSnapshot = {
+  organizationId: number;
+  contacts: number;
+  projects: number;
+  cases: number;
+  tasks: number;
+  documents: number;
+  notifications: number;
+  savedViews: number;
+  jobs: number;
+  visits: number;
+  materials: number;
+  evidence: number;
+  quotes: number;
+  invoices: number;
+  snapshots: number;
+  releaseRecords: number;
+  quoteItems: number;
+  releaseChecks: number;
+  tenantIds: number[];
+};
+
+/** Returns whether a post-reset audit snapshot exactly satisfies the seeded tenant contract. */
+export function hasDeterministicDemoReseed(snapshot: DemoReseedSnapshot) {
+  const expected = DEMO_DATA_EXPECTATIONS;
+  const relationships = DEMO_RESET_RELATIONSHIPS;
+  return snapshot.organizationId > 0
+    && snapshot.contacts === relationships.contacts
+    && snapshot.projects === relationships.projects
+    && snapshot.cases === relationships.cases
+    && snapshot.tasks === relationships.tasks
+    && snapshot.documents === relationships.documents
+    && snapshot.notifications === relationships.notifications
+    && snapshot.savedViews === relationships.savedViews
+    && snapshot.jobs === expected.jobs
+    && snapshot.visits === expected.visits
+    && snapshot.materials === expected.materials
+    && snapshot.evidence === expected.evidence
+    && snapshot.quotes === expected.quotes
+    && snapshot.invoices === expected.invoices
+    && snapshot.snapshots === expected.snapshots
+    && snapshot.releaseRecords === expected.releaseRecords
+    && snapshot.quoteItems === expected.quotes * relationships.quoteItemsPerQuote
+    && snapshot.releaseChecks === expected.releaseRecords * relationships.releaseChecksPerRelease
+    && snapshot.tenantIds.length > 0
+    && snapshot.tenantIds.every(tenantId => tenantId === snapshot.organizationId);
+}
+
+/**
  * Adds a clearly synthetic six-month field-service history to a tenant. This is
  * deliberately deterministic, repeatable demonstration content—not customer data.
  */

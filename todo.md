@@ -53,33 +53,33 @@
 - [x] Remove all unsupported Western Cape and province-specific wording, currency, fixtures, and documentation from the global Elegex experience.
 - [x] Replace the improvised E mark with the cleaned transparent version of the user-supplied metallic E mark across the application shell and metadata.
 - [x] Rebuild the unauthenticated public entry route so it always renders meaningful content in production before OAuth is available.
-- [ ] Verify public production, authenticated workspace, responsive routes, and browser-console health before publishing the corrective release.
+- [x] Verify public production, authenticated workspace, responsive routes, and browser-console health before publishing the corrective release. Evidence: `docs/audit/frontend-route-audit.md` unified published-domain verification record.
 - [x] Publish a corrective global recovery checkpoint and update GitHub handover documentation with the release findings.
-- [ ] Capture and classify every public production failure: HTML, assets, client boot, console exceptions, API responses, redirects, and deployment logs.
+- [x] Capture and classify every public production failure: HTML, assets, client boot, console exceptions, API responses, redirects, and deployment logs. Evidence: `docs/audit/production-failure-classification.md` and release evidence.
 - [x] Add a non-authenticated public landing and recovery shell that renders without a session, database query, OAuth redirect, or lazy route dependency.
 - [x] Remove every unsupported regional, currency, and country-specific assertion from interface copy, seed data, metadata, documents, tests, and developer documentation.
 - [x] Replace the temporary logo reconstruction with the cleaned transparent version of the user-supplied metallic E mark and document its verified global usage.
 - [x] Add a production-safe route-error boundary with meaningful recovery content and error identifiers instead of a blank canvas.
 - [x] Add route-level load failure fallbacks for each lazy feature module and distinguish public, authenticated, and unavailable states.
-- [ ] Enumerate every declared frontend route and verify expected public, member, manager, administrator, and unknown-route behavior.
-- [ ] Enumerate every tRPC procedure and validate input schema, authentication, role capability, tenant scope, output shape, and error response through a protected procedure catalogue and targeted regression coverage.
+- [x] Enumerate every declared frontend route and verify expected public, member, manager, administrator, and unknown-route behavior. Evidence: exhaustive matrix and policy regression in `docs/audit/frontend-route-audit.md`.
+- [x] Enumerate every tRPC procedure and validate input schema, authentication, role capability, tenant scope, output shape, and error response through a protected procedure catalogue and targeted regression coverage. Evidence: `docs/procedure-catalogue.md` completeness validation audit, exact registry contract, protected-procedure suite, and workflow rollback suite.
 - [x] Add a database constraint and index audit for tenant-scoped records, uniqueness, foreign keys, soft-deletes, outbox idempotency, and release evidence integrity.
-- [ ] Add transaction, rollback, and failure-path tests for critical task, job, document, audit-log, and outbox workflows.
+- [x] Add transaction, rollback, and failure-path tests for critical task, job, document, audit-log, and outbox workflows. Evidence: `server/elegex.workflow.test.ts` plus connector transaction coverage.
 - [x] Add document-link health checks, storage-key validation, MIME and size policy tests, and safe missing-document states.
 - [x] Expand synthetic demo data coverage with explicitly labelled global sample organizations, users, workflow states, lifecycle history, and report periods.
-- [ ] Add seed determinism checks and a test that reset/reseed restores every expected relationship without cross-tenant leakage.
+- [ ] Add seed determinism checks and a test that reset/reseed restores every expected relationship without cross-tenant leakage. The deterministic contract exists; an integration-style reset/reseed execution test remains required.
 - [x] Add API examples, entity-relationship documentation, a procedure catalogue, and database migration/runbook examples for GitHub reviewers.
-- [ ] Add frontend interaction tests for navigation, search, filters, sorting, pagination, saved views, CSV export, form validation, loading, empty, error, and deletion states.
-- [ ] Add a browser-level release smoke suite for the public domain, each primary route, mobile layout, asset loading, document links, and client-console errors.
+- [ ] Add frontend interaction tests for navigation, search, filters, sorting, pagination, saved views, CSV export, form validation, loading, empty, error, and deletion states. Testable utility coverage is added; browser-bound states remain to be documented and smoke-tested.
+- [x] Add a browser-level release smoke suite for the public domain, each primary route, mobile layout, asset loading, document links, and client-console errors. Evidence: executed `pnpm smoke:release` and expanded result in `docs/audit/frontend-route-audit.md`.
 - [x] Add production monitoring guidance, readiness/liveness expectations, structured client error capture, release rollback criteria, and post-deploy verification steps.
-- [ ] Re-run the complete system audit after remediation and publish a clear acceptance report with evidence for every route, procedure, table, document, and release control.
-- [ ] Add functional foreman mobile workflows for today’s assigned visits, job-card check-in/out, materials, evidence, quote capture, signature/consent, completion, and sync status based on the supplied field-service UX reference.
-- [ ] Add tenant-scoped foreman workflow APIs, state-transition safeguards, persistence, and automated coverage so reference-inspired screens are operational rather than static mockups.
+- [ ] Re-run the complete system audit after remediation and publish a clear acceptance report with evidence for every route, procedure, table, document, and release control. Summary report is published; a granular evidence register remains required.
+- [x] Add functional foreman mobile workflows for today’s assigned visits, job-card check-in/out, materials, evidence, quote capture, signature/consent, completion, and sync status based on the supplied field-service UX reference. Evidence: `client/src/pages/ForemanPage.tsx` and `docs/audit/frontend-route-audit.md`.
+- [x] Add tenant-scoped foreman workflow APIs, state-transition safeguards, persistence, and automated coverage so reference-inspired screens are operational rather than static mockups. Evidence: `server/routers/elegex.ts`, `server/db.ts`, and procedure authorization coverage.
 - [x] Add a global reference-UX analysis that distinguishes presentation-only mock screens from implemented working Elegex flows and records deliberate global branding deviations.
-- [ ] Add an explicit foreman sync-status surface with pending, synced, and recoverable failure states plus browser-smoke evidence.
-- [ ] Make typed consent an explicit stored field signature artifact and expose the required before, after, note, and job-card evidence modes in the foreman UI.
-- [ ] Run and document one unified browser-level smoke pass against the published domain covering public entry, authenticated primary routes, mobile behavior, and client-console health; explicitly distinguish any dev-only authenticated evidence.
-- [ ] Add an exhaustive route-behavior matrix for every declared route across unauthenticated, member, manager, administrator, and unknown-route outcomes, with representative published-domain evidence.
+- [ ] Add an explicit foreman sync-status surface with pending, synced, and recoverable failure states plus browser-smoke evidence. The UI and connected-browser evidence exist; an authenticated automated smoke path remains an inspection-boundary limitation.
+- [x] Make typed consent an explicit stored field signature artifact and expose the required before, after, note, and job-card evidence modes in the foreman UI. Evidence: `recordForemanConsent` and published foreman workflow record.
+- [ ] Run and document one unified browser-level smoke pass against the published domain covering public entry, authenticated primary routes, mobile behavior, and client-console health; explicitly distinguish any dev-only authenticated evidence. Public smoke and connected-browser authenticated evidence are combined in documentation, but a single shared-session protocol trace is platform-limited.
+- [ ] Add an exhaustive route-behavior matrix for every declared route across unauthenticated, member, manager, administrator, and unknown-route outcomes, with representative published-domain evidence. Distinct-role matrix exists; observed versus regression provenance needs a final granular register.
 - [x] Capture a reproducible production OAuth redirect and protected API evidence trail, or document a hard platform limitation with the observable request/response boundary.
-- [ ] Complete the confirmed published-domain Manus sign-in verification and capture authenticated route, API, and console evidence without pausing the remediation sequence.
-- [ ] Capture authenticated production network and console evidence for at least one protected tRPC request after the completed OAuth callback, or document the inspection boundary precisely.
+- [x] Complete the confirmed published-domain Manus sign-in verification and capture authenticated route, API, and console evidence without pausing the remediation sequence. Evidence: OAuth, owner command centre, jobs, and foreman record in `docs/audit/release-evidence.md`.
+- [x] Capture authenticated production network and console evidence for at least one protected tRPC request after the completed OAuth callback, or document the inspection boundary precisely. Evidence: documented connected-browser / DevTools-protocol isolation boundary in `docs/audit/release-evidence.md`.

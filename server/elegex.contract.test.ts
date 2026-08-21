@@ -57,4 +57,15 @@ describe("Elegex protected workflow contract", () => {
       "elegex.workspace.members",
     ]);
   });
+
+  it("keeps every declared Elegex procedure behind a composed tRPC contract boundary", () => {
+    expect(procedures).toHaveLength(49);
+    for (const name of procedures) {
+      const definition = (appRouter._def.procedures[name] as any)?._def;
+      expect(definition, `${name} must expose a tRPC procedure definition`).toBeTruthy();
+      expect(Array.isArray(definition.inputs), `${name} must retain a declared input-contract collection`).toBe(true);
+      expect(Array.isArray(definition.middlewares), `${name} must retain its authentication and scope middleware chain`).toBe(true);
+      expect(definition.middlewares.length, `${name} must not bypass its protected tenant contract`).toBeGreaterThan(0);
+    }
+  });
 });
