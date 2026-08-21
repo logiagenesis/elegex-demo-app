@@ -49,6 +49,10 @@ The managed database subsequently verified the complete synthetic lifecycle for 
 
 The route registry is matched by the exported `workspaceRoutePolicy` test fixture. Every declared destination is listed in the fixture; standard office routes require an authenticated viewer or stronger, `/field` requires a member or stronger, and `/staging`, `/admin`, and `/settings` require an administrator or owner. The direct privileged-route guard uses the same policy helper as the test. The regression suite iterates **every declared route** for anonymous, viewer, member, manager, admin, and owner outcomes, as well as the unknown-route rejection. This makes role expectations explicit and prevents future route additions from bypassing the recorded policy.
 
+## Published authenticated foreman evidence
+
+After a confirmed Manus OAuth callback on the published domain, the owner workspace rendered the `/field` assignment list and its scheduled visit. Opening the job card exposed the live `READY TO SYNC` state, explicit typed-consent artifact instruction, `Before condition`, `After condition`, `Field note`, and `Job card` evidence modes, and the deliberately gated material, evidence, quote, and completion controls before check-in. No synthetic production data was changed during this confirmation pass.
+
 ## Remaining validation
 
 The release suite will still repeat the critical routes at a mobile viewport and perform public-domain, asset, client-console, and API-network checks after the final deployment checkpoint.

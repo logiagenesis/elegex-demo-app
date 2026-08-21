@@ -80,4 +80,6 @@
 - [ ] Make typed consent an explicit stored field signature artifact and expose the required before, after, note, and job-card evidence modes in the foreman UI.
 - [ ] Run and document one unified browser-level smoke pass against the published domain covering public entry, authenticated primary routes, mobile behavior, and client-console health; explicitly distinguish any dev-only authenticated evidence.
 - [ ] Add an exhaustive route-behavior matrix for every declared route across unauthenticated, member, manager, administrator, and unknown-route outcomes, with representative published-domain evidence.
-- [ ] Capture a reproducible production OAuth redirect and protected API evidence trail, or document a hard platform limitation with the observable request/response boundary.
+- [x] Capture a reproducible production OAuth redirect and protected API evidence trail, or document a hard platform limitation with the observable request/response boundary.
+- [ ] Complete the confirmed published-domain Manus sign-in verification and capture authenticated route, API, and console evidence without pausing the remediation sequence.
+- [ ] Capture authenticated production network and console evidence for at least one protected tRPC request after the completed OAuth callback, or document the inspection boundary precisely.

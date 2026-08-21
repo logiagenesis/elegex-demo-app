@@ -1,4 +1,5 @@
 const releaseUrl = process.env.ELEGEX_RELEASE_URL || "https://elegexapp-jvc9dhln.manus.space/";
+const expectedText = process.env.ELEGEX_EXPECTED_TEXT || "Every job, visible from booking to invoice.";
 const targets = await fetch("http://127.0.0.1:9222/json/list").then(response => response.json());
 const target = targets.find(item => item.type === "page");
 if (!target?.webSocketDebuggerUrl) throw new Error("No debuggable browser page is available for release smoke testing");
@@ -21,11 +22,11 @@ socket.addEventListener("message", event => {
     message.error ? reject(new Error(message.error.message)) : resolve(message.result);
     return;
   }
-  if (["Runtime.exceptionThrown", "Log.entryAdded"].includes(message.method)) events.push(message);
+  if (["Runtime.exceptionThrown", "Log.entryAdded", "Network.responseReceived"].includes(message.method)) events.push(message);
 });
 
 await new Promise(resolve => socket.addEventListener("open", resolve, { once: true }));
-await Promise.all([call("Runtime.enable"), call("Page.enable"), call("Log.enable")]);
+await Promise.all([call("Runtime.enable"), call("Page.enable"), call("Log.enable"), call("Network.enable")]);
 await call("Page.navigate", { url: releaseUrl });
 await new Promise(resolve => setTimeout(resolve, 7_000));
 const state = await call("Runtime.evaluate", {
@@ -35,7 +36,8 @@ const state = await call("Runtime.evaluate", {
 
 const page = JSON.parse(state.result.value);
 const exceptions = events.filter(event => event.method === "Runtime.exceptionThrown");
-const passed = page.title === "Elegex — Business Operations Platform" && page.rootText.includes("Every job, visible from booking to invoice.") && exceptions.length === 0;
-console.log(JSON.stringify({ releaseUrl, passed, page, exceptionCount: exceptions.length, exceptions }, null, 2));
+const apiResponses = events.filter(event => event.method === "Network.responseReceived" && event.params.response.url.includes("/api/trpc")).map(event => ({ url: event.params.response.url, status: event.params.response.status }));
+const passed = page.title === "Elegex — Business Operations Platform" && page.rootText.includes(expectedText) && exceptions.length === 0;
+console.log(JSON.stringify({ releaseUrl, expectedText, passed, page, exceptionCount: exceptions.length, exceptions, apiResponses }, null, 2));
 socket.close();
 if (!passed) process.exitCode = 1;
