@@ -8,6 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { apiNotFoundHandler } from "./apiFallback";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -44,6 +45,10 @@ async function startServer() {
       createContext,
     })
   );
+  // Keep API faults JSON-shaped. Without this guard an unmatched `/api/*`
+  // request would reach Vite's SPA fallback and cause client JSON parsers to
+  // receive `<!doctype html>`.
+  app.use("/api", apiNotFoundHandler);
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
