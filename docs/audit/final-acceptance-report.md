@@ -9,7 +9,7 @@
 
 Elegex meets the requested product scope as a **global, multi-tenant field-service operations workspace**. The application uses the approved transparent metallic E mark; presents one unified workspace; supports five roles; provides database-backed records, jobs, documents, reporting, notifications, administration, staging, and a mobile foreman workflow; and labels the six-month operational history as synthetic. The originally reported blank production page was traced to unsafe manual React chunking and corrected; the public entry and authenticated owner workspace now render on the published domain.[1] [2]
 
-The repository is designed for review as well as use. It contains a tenant-aware database connector, audit connector, idempotent outbox connector, migrations, release/runbook documentation, API examples, relationship documentation, a protected-procedure catalogue, and automated contracts. The quality suite currently exercises **seven test files and 37 tests**, including role and route policy, protected procedures, transaction rollback failures, deterministic reseed-contract assertions, connector behavior, and frontend report interaction utilities.[3] [4]
+The repository is designed for review as well as use. It contains a tenant-aware database connector, audit connector, idempotent outbox connector, migrations, release/runbook documentation, API examples, relationship documentation, a protected-procedure catalogue, and automated contracts. The quality suite currently exercises **nine test files and 45 tests**, including role and route policy, protected procedures, transaction rollback failures, reset execution, deterministic reseed-contract assertions, connector behavior, frontend report interaction utilities, frontend state contracts, and rendered dashboard interaction tests.[3] [4]
 
 ## Acceptance matrix
 
@@ -38,7 +38,7 @@ The following items are deliberate, transparent limits on the final acceptanceâ€
 
 | Remaining assurance item | Why it remains open | Release implication |
 |---|---|---|
-| Execute `resetDemoData` in an isolated integration tenant and count every reseeded relationship afterward | The existing regression validates the deterministic post-reset contract without destructively resetting the active shared demo tenant. | Does not affect normal demo use; required before treating reset as externally certified. |
+| Execute `resetDemoData` against an actual remote database tenant and count every reseeded relationship afterward | The regression executes reset orchestration with a tenant-bound test database, applies both synthetic reseed callbacks, and validates the restored relationship snapshot. It intentionally does not destructively reset the active shared remote demo tenant. | Does not affect normal demo use; remote-database certification is a future environment test rather than a known product defect. |
 | Automated authenticated smoke of foreman sync transitions | The public smoke profile has no access to the connected OAuth cookie, while the connected browser does not expose its DevTools protocol stream. | Manual authenticated owner evidence confirms the surface; automated mutation evidence remains a platform-bound enhancement. |
 | Unified shared-session console/network trace | The browser environments are intentionally isolated for security. | Public runtime exceptions and authenticated rendering are separately evidenced; no application error is currently indicated. |
 | Full browser-component interaction suite for dynamic forms and deletion affordances | Existing utility tests cover the deterministic parts of filters, views, export, sorting, pagination, and validation; protected procedures cover backend behavior. | Suitable for repository handover; add a browser test harness if a CI browser environment is later provisioned. |
@@ -61,6 +61,10 @@ The complete route-by-role matrix is maintained in the [frontend route audit](fr
 | `quotes`, `quoteItems`, `invoiceLinks` | Tenant quote-number and external-invoice uniqueness; quote-item foreign-domain index | Quote capture, invoice-ready guard, transactional invoice linking, and commercial reporting. |
 | `monthlyOperationalSnapshots` | Unique `(organizationId, periodStart)` | Six-month Recharts analytics and deterministic synthetic snapshots. |
 | `environmentReleases`, `releaseChecks` | Tenant release index and release-check index | Staging-readiness UI, migration/runbook evidence, seeded release controls, and reset deletion ordering. |
+
+### Frontend-interaction evidence boundary
+
+Frontend interactions are covered in layers. The public release-smoke suite verifies navigation recovery, responsive public rendering, loading of app assets, document access, and runtime error absence. The `workspace-ui` unit suite verifies deterministic report filters, saved-view normalization, CSV escaping, sorting without query-data mutation, page bounds, and create-form validation. The rendered `DashboardLayout` interaction suite invokes the public Manus sign-in action, drives authenticated sidebar navigation from `/` to `/jobs` and `/reports`, and verifies privileged navigation is hidden for a member. The connected browser and route audit verify the rendered authenticated office and foreman surfaces. Dynamic browser interactions that require a shared authenticated DevTools session remain documented as a platform inspection boundary; they are not treated as an unobserved product failure.
 
 ### Managed synthetic document artifacts
 

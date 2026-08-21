@@ -6,7 +6,7 @@ import { startLogin } from "@/const";
 import { canAccessWorkspaceAdministration } from "@/lib/access";
 import { trpc } from "@/lib/trpc";
 import { Bell, BriefcaseBusiness, ChartNoAxesCombined, ClipboardCheck, FileText, FolderKanban, LayoutDashboard, LogOut, MapPinned, Menu, Settings2, ShieldCheck, UsersRound, CheckSquare, Wrench } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
 
 const primaryNavigation = [

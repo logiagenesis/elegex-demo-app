@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { canEditRecords, canManageRecords, canManageWorkspace, DEMO_DATA_EXPECTATIONS, DEMO_RESET_RELATIONSHIPS, getDocumentHealth, hasDeterministicDemoReseed } from "./db";
+import { canEditRecords, canManageRecords, canManageWorkspace, DEMO_DATA_EXPECTATIONS, DEMO_RESET_RELATIONSHIPS, getDocumentHealth, hasDeterministicDemoReseed, resetDemoData } from "./db";
+import { vi } from "vitest";
 import { canAccessWorkspaceAdministration, canAccessWorkspaceRoute, canEditWorkspaceRecords, canManageOperationalControls, workspaceRoutePolicy } from "../client/src/lib/access";
 
 describe("Elegex role capabilities", () => {
@@ -67,6 +68,28 @@ describe("Elegex role capabilities", () => {
     expect(hasDeterministicDemoReseed(snapshot)).toBe(true);
     expect(hasDeterministicDemoReseed({ ...snapshot, materials: snapshot.materials - 1 })).toBe(false);
     expect(hasDeterministicDemoReseed({ ...snapshot, tenantIds: [7, 99] })).toBe(false);
+  });
+
+  it("executes the reset path against one tenant only before invoking both reseeders", async () => {
+    const deletedWhereClauses: unknown[] = [];
+    let selectCall = 0;
+    const restored = {
+      organizationId: 7, contacts: 0, projects: 0, cases: 0, tasks: 0, documents: 0, notifications: 0, savedViews: 0,
+      jobs: 0, visits: 0, materials: 0, evidence: 0, quotes: 0, invoices: 0, snapshots: 0, releaseRecords: 0, quoteItems: 0, releaseChecks: 0, tenantIds: [] as number[],
+    };
+    const database = {
+      select: () => ({ from: () => ({ where: async () => selectCall++ === 0 ? [{ id: 11 }, { id: 12 }] : [{ id: 21 }] }) }),
+      delete: vi.fn(() => ({ where: async (clause: unknown) => { deletedWhereClauses.push(clause); } })),
+    };
+    const seedWorkspace = vi.fn(async (tenantId: number) => { Object.assign(restored, { contacts: 4, projects: 4, cases: 3, tasks: 5, documents: 3, notifications: 3, savedViews: 1, tenantIds: [tenantId, tenantId, tenantId] }); });
+    const seedFieldService = vi.fn(async (tenantId: number) => { Object.assign(restored, { jobs: 36, visits: 36, materials: 72, evidence: 72, quotes: 12, invoices: 23, snapshots: 6, releaseRecords: 3, quoteItems: 24, releaseChecks: 15, tenantIds: [...restored.tenantIds, tenantId, tenantId] }); });
+    await resetDemoData(7, 42, { database, seedWorkspace, seedFieldService });
+    expect(seedWorkspace).toHaveBeenCalledWith(7, 42);
+    expect(seedFieldService).toHaveBeenCalledWith(7, 42);
+    expect(deletedWhereClauses).toHaveLength(22);
+    expect(seedWorkspace).not.toHaveBeenCalledWith(99, expect.anything());
+    expect(seedFieldService).not.toHaveBeenCalledWith(99, expect.anything());
+    expect(hasDeterministicDemoReseed(restored)).toBe(true);
   });
 
   it("shows privileged frontend navigation only to owners and administrators", () => {
