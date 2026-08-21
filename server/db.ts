@@ -22,6 +22,7 @@ import {
   quotes,
   releaseChecks,
   savedViews,
+  syncLogs,
   tasks,
   type InsertUser,
   type OrganizationRole,
@@ -589,8 +590,8 @@ export async function updateMemberRole(organizationId: number, actorId: number, 
   const db = await getDb(); if (!db) throw new Error("Database is not available"); await db.update(organizationMembers).set({ role }).where(and(eq(organizationMembers.id, membershipId), eq(organizationMembers.organizationId, organizationId))); await logActivity(organizationId, actorId, "updated", "member", membershipId, `Updated a member role to ${role}`);
 }
 
-export async function updateSettings(organizationId: number, userId: number, input: { name?: string; primaryColor?: string; timezone?: string; allowMemberInvites?: boolean; notificationDigest?: boolean }) {
-  const db = await getDb(); if (!db) throw new Error("Database is not available"); const { name, primaryColor, timezone, ...settingFields } = input; if (name || primaryColor || timezone) await db.update(organizations).set({ ...(name ? { name } : {}), ...(primaryColor ? { primaryColor } : {}), ...(timezone ? { timezone } : {}) }).where(eq(organizations.id, organizationId)); if (Object.keys(settingFields).length) await db.update(appSettings).set({ ...settingFields, updatedBy: userId }).where(eq(appSettings.organizationId, organizationId)); await logActivity(organizationId, userId, "updated", "settings", organizationId, "Updated workspace settings");
+export async function updateSettings(organizationId: number, userId: number, input: { name?: string; primaryColor?: string; timezone?: string; locale?: string; currency?: string; allowMemberInvites?: boolean; notificationDigest?: boolean }) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available"); const { name, primaryColor, ...settingFields } = input; if (name || primaryColor) await db.update(organizations).set({ ...(name ? { name } : {}), ...(primaryColor ? { primaryColor } : {}) }).where(eq(organizations.id, organizationId)); if (Object.keys(settingFields).length) await db.update(appSettings).set({ ...settingFields, updatedBy: userId }).where(eq(appSettings.organizationId, organizationId)); await logActivity(organizationId, userId, "updated", "settings", organizationId, "Updated workspace settings");
 }
 
 export async function getSavedViews(organizationId: number, userId: number) {
@@ -738,8 +739,21 @@ export async function recordForemanConsent(organizationId: number, userId: numbe
   });
 }
 
-export async function foremanCheckIn(organizationId: number, userId: number, jobId: number) {
+async function checkIdempotency(tx: any, organizationId: number, idempotencyKey: string | undefined, mutationType: string) {
+  if (!idempotencyKey) return false;
+
+  // A single INSERT IGNORE is the concurrency-safe claim operation. The unique
+  // (organizationId, idempotencyKey) index ensures that only one transaction can
+  // execute the associated business mutation, even if a mobile queue is replayed.
+  const result = await tx.insert(syncLogs)
+    .values({ organizationId, idempotencyKey, mutationType })
+    .onDuplicateKeyUpdate({ set: { idempotencyKey: sql`${syncLogs.idempotencyKey}` } });
+  return Number(result[0].affectedRows) === 0;
+}
+
+export async function foremanCheckIn(organizationId: number, userId: number, jobId: number, idempotencyKey?: string) {
   return withTransaction(async tx => {
+    if (await checkIdempotency(tx, organizationId, idempotencyKey, "checkIn")) return;
     const job = await assertAssignedForeman(tx, organizationId, userId, jobId);
     if (!["scheduled", "on_hold", "in_progress"].includes(job.stage)) throw new Error("This job cannot be checked in from its current stage");
     const now = new Date();
@@ -749,8 +763,9 @@ export async function foremanCheckIn(organizationId: number, userId: number, job
   });
 }
 
-export async function addForemanMaterial(organizationId: number, userId: number, input: { jobId: number; description: string; quantity: number; unit: string }) {
+export async function addForemanMaterial(organizationId: number, userId: number, input: { jobId: number; description: string; quantity: number; unit: string; idempotencyKey?: string }) {
   return withTransaction(async tx => {
+    if (await checkIdempotency(tx, organizationId, input.idempotencyKey, "material")) return 0;
     const job = await assertAssignedForeman(tx, organizationId, userId, input.jobId);
     if (job.stage !== "in_progress") throw new Error("Materials can only be recorded during an active field visit");
     const result = await tx.insert(jobMaterials).values({ organizationId, jobId: input.jobId, description: input.description, quantity: input.quantity, unit: input.unit, source: "free_text", unitPrice: 0 });
@@ -759,8 +774,9 @@ export async function addForemanMaterial(organizationId: number, userId: number,
   });
 }
 
-export async function captureForemanEvidence(organizationId: number, userId: number, input: { jobId: number; evidenceType: "before_photo" | "after_photo" | "note" | "job_card"; title: string; note?: string }) {
+export async function captureForemanEvidence(organizationId: number, userId: number, input: { jobId: number; evidenceType: "before_photo" | "after_photo" | "note" | "job_card" | "signature"; title: string; note?: string; idempotencyKey?: string }) {
   return withTransaction(async tx => {
+    if (await checkIdempotency(tx, organizationId, input.idempotencyKey, "evidence")) return 0;
     const job = await assertAssignedForeman(tx, organizationId, userId, input.jobId);
     if (job.stage !== "in_progress") throw new Error("Evidence can only be recorded during an active field visit");
     const result = await tx.insert(jobEvidence).values({ organizationId, jobId: input.jobId, evidenceType: input.evidenceType, title: input.title, capturedBy: userId, syncStatus: "synced", metadata: { workflow: "foreman_capture", note: input.note || null } });
@@ -769,8 +785,9 @@ export async function captureForemanEvidence(organizationId: number, userId: num
   });
 }
 
-export async function captureForemanQuote(organizationId: number, userId: number, input: { jobId: number; quoteNumber: string; total: number }) {
+export async function captureForemanQuote(organizationId: number, userId: number, input: { jobId: number; quoteNumber: string; total: number; idempotencyKey?: string }) {
   return withTransaction(async tx => {
+    if (await checkIdempotency(tx, organizationId, input.idempotencyKey, "quote")) return 0;
     const job = await assertAssignedForeman(tx, organizationId, userId, input.jobId);
     if (job.stage !== "in_progress") throw new Error("Quotes can only be captured during an active field visit");
     const result = await tx.insert(quotes).values({ organizationId, jobId: input.jobId, quoteNumber: input.quoteNumber, status: "draft", assessedAt: new Date(), total: input.total, createdBy: userId });
@@ -781,8 +798,9 @@ export async function captureForemanQuote(organizationId: number, userId: number
   });
 }
 
-export async function foremanCompleteJob(organizationId: number, userId: number, jobId: number) {
+export async function foremanCompleteJob(organizationId: number, userId: number, jobId: number, idempotencyKey?: string) {
   return withTransaction(async tx => {
+    if (await checkIdempotency(tx, organizationId, idempotencyKey, "completeJob")) return;
     const job = await assertAssignedForeman(tx, organizationId, userId, jobId);
     if (job.stage !== "in_progress") throw new Error("Only an in-progress job can be completed from the foreman workflow");
     const now = new Date();

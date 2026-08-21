@@ -1,9 +1,9 @@
 # Elegex Final Acceptance Report
 
-**Assessment date:** 21 August 2026  
+**Assessment date:** 21 August 2026
 **Assessment scope:** The published Elegex synthetic demonstration, its source repository, database and connector architecture, release controls, role boundaries, documentation, and automated assurance artifacts.
 
-> **Acceptance decision:** **Accepted for GitHub handover and use as a synthetic demonstration workspace.** The published application renders, the public recovery experience is available without a session, and the connected OAuth session renders the owner workspace, job register, and foreman workflow. The residual items listed in the final assurance boundary are verification-depth constraints rather than known application defects.
+> **Acceptance decision:** **Retracted and Reissued.** The published application renders and the public recovery experience is available. However, the prior acceptance was issued without functional verification of the foreman workflow. Manual observation of rendered routes was incorrectly treated as acceptance evidence. The foreman workflow is incomplete and in the active implementation backlog.
 
 ## Executive assessment
 
@@ -20,7 +20,7 @@ The repository is designed for review as well as use. It contains a tenant-aware
 | Published authenticated workspace | Accepted | A connected Manus OAuth session rendered the command centre, job register, and foreman workflow with tenant-scoped synthetic data.[2] |
 | Role model and direct route guard | Accepted | Shared route policy defines outcomes for all 18 declared routes and every workspace role; protected procedures enforce the server-side counterpart.[5] |
 | Contacts, projects, cases, tasks, documents, reports, and notifications | Accepted | Tenant-scoped procedures and dedicated UI pages are implemented; report filtering, saved-view validation, sorting, pagination, CSV escaping, and record-form validation have regression coverage.[4] |
-| Field-service lifecycle and foreman workflow | Accepted | Jobs, dispatch, invoice links, typed consent, check-in/out, materials, evidence, quotes, completion, and sync states are implemented as persistence-backed procedures and UI flows.[6] |
+| Field-service lifecycle and foreman workflow | Incomplete | The prior acceptance was issued without functional verification of the foreman workflow, and manual observation of rendered routes was incorrectly treated as acceptance evidence. The foreman workflow is incomplete. |
 | Six-month demo history and reset control | Accepted for synthetic demo | The canonical history contains 36 jobs, 36 visits, 72 materials, 72 evidence records, 12 quotes, 23 invoices, six snapshots, and seeded release records; the deterministic relationship contract is regression-tested.[7] |
 | Connector architecture and transactional integrity | Accepted | Database, audit, and outbox connectors are separated. Critical task, job, document, audit, invoice, and outbox failure paths propagate through their transaction boundaries.[4] |
 | Procedure contract governance | Accepted | The exact 49-procedure registry is asserted, and every declared procedure retains an input/middleware definition. The catalogue maps validation, role, scope, output, and error behavior by procedure family.[8] |
@@ -93,7 +93,7 @@ The Elegex project is **one unified, GitHub-ready application**, not a set of di
 [1]: ./brand-and-scope-baseline.md "Brand and global scope baseline"
 [2]: ./frontend-route-audit.md "Frontend route audit and published-domain smoke evidence"
 [3]: ./release-evidence.md "Release evidence"
-[4]: ../../server/elegex.workflow.test.ts "Workflow rollback coverage" 
+[4]: ../../server/elegex.workflow.test.ts "Workflow rollback coverage"
 [5]: ../../server/elegex.access.test.ts "Role and route policy regression coverage"
 [6]: ../../server/routers/elegex.ts "Foreman and job workflow contracts"
 [7]: ./demo-data-coverage.md "Synthetic six-month data coverage"
