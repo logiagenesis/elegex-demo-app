@@ -42,8 +42,10 @@
 - [x] Record the resulting final checkpoint version in the release-evidence document.
 - [x] Remove the checkerboard background from the user-provided Elegex logo while preserving the metallic black E mark.
 - [x] Replace the temporary app icon with the user-provided approved logo across favicon, metadata, sign-in, and dashboard branding.
-- [ ] Verify the approved-logo integration and save the refreshed GitHub-export checkpoint.
+- [x] Verify the approved-logo integration and save the refreshed GitHub-export checkpoint.
 - [x] Create and reject the flat PNG reconstruction after alpha verification found residual background opacity.
 - [x] Replace the rejected PNG with a source-controlled transparent SVG reconstruction of the approved E mark and revalidate the application.
 - [x] Verify the final in-use SVG has no painted background and record its transparency evidence.
-- [ ] Save the refreshed GitHub-export checkpoint after the verified SVG logo replacement.
+- [x] Save the refreshed GitHub-export checkpoint after the verified SVG logo replacement.
+- [x] Verify the final transparent SVG mark across the dashboard, sign-in shell, favicon, Apple touch icon, and social metadata asset references.
+- [x] Document that the shipped mark is the user-authorized transparent SVG reconstruction and record the verified brand surfaces.
