@@ -27,9 +27,11 @@ import {
   type OrganizationRole,
   users,
 } from "../drizzle/schema";
+import { randomUUID } from "node:crypto";
 import { ENV } from "./_core/env";
 import { writeAuditEvent } from "./connectors/audit";
 import { getDatabase, withTransaction } from "./connectors/database";
+import { storagePut } from "./storage";
 
 export async function getDb() {
   return getDatabase();
@@ -184,6 +186,18 @@ async function seedDemoWorkspace(organizationId: number, ownerId: number) {
   ]);
 }
 
+export const DEMO_DATA_EXPECTATIONS = {
+  months: 6,
+  jobs: 36,
+  visits: 36,
+  materials: 72,
+  evidence: 72,
+  quotes: 12,
+  invoices: 23,
+  snapshots: 6,
+  releaseRecords: 3,
+} as const;
+
 /**
  * Adds a clearly synthetic six-month field-service history to a tenant. This is
  * deliberately deterministic, repeatable demonstration content—not customer data.
@@ -210,7 +224,7 @@ async function seedFieldServiceDemo(organizationId: number, ownerId: number) {
   ] as const;
   const materials = ["Circuit breaker 20A", "Cable 2.5 mm", "Geyser element 3 kW", "Weatherproof isolator", "LED emergency fitting", "Extraction fan capacitor"];
   const now = new Date();
-  const monthStarts = Array.from({ length: 6 }, (_, index) => {
+  const monthStarts = Array.from({ length: DEMO_DATA_EXPECTATIONS.months }, (_, index) => {
     const month = new Date(now.getFullYear(), now.getMonth() - 5 + index, 1, 9, 0, 0);
     return month;
   });
@@ -631,6 +645,84 @@ export async function linkExternalInvoice(organizationId: number, userId: number
   });
 }
 
+async function assertAssignedForeman(tx: any, organizationId: number, userId: number, jobId: number) {
+  const row = await tx.select({ id: jobs.id, stage: jobs.stage, foremanId: jobs.foremanId }).from(jobs).where(and(eq(jobs.id, jobId), eq(jobs.organizationId, organizationId), isNull(jobs.deletedAt))).limit(1);
+  if (!row[0]) throw new Error("Job is not available in this workspace");
+  if (row[0].foremanId !== userId) throw new Error("This job is not assigned to the current foreman");
+  return row[0];
+}
+
+export async function getForemanToday(organizationId: number, userId: number) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const rows = await db.select({ job: jobs, contact: contacts, visit: jobVisits }).from(jobs).innerJoin(contacts, eq(jobs.contactId, contacts.id)).leftJoin(jobVisits, and(eq(jobVisits.jobId, jobs.id), eq(jobVisits.organizationId, organizationId), eq(jobVisits.foremanId, userId))).where(and(eq(jobs.organizationId, organizationId), eq(jobs.foremanId, userId), isNull(jobs.deletedAt), or(eq(jobs.stage, "scheduled"), eq(jobs.stage, "in_progress"), eq(jobs.stage, "on_hold")))).orderBy(asc(jobs.scheduledStart));
+  return rows;
+}
+
+export async function recordForemanConsent(organizationId: number, userId: number, jobId: number, signerName: string) {
+  const capturedAt = new Date();
+  const artifact = await storagePut(`elegex/${organizationId}/foreman-consent/${jobId}-${randomUUID()}.txt`, `ELEGEX FIELD CONSENT\n\nJob ID: ${jobId}\nOrganization ID: ${organizationId}\nTyped signature: ${signerName}\nCaptured at (UTC): ${capturedAt.toISOString()}\n\nThis immutable synthetic demo artifact records a typed consent acknowledgement.`, "text/plain");
+  return withTransaction(async tx => {
+    await assertAssignedForeman(tx, organizationId, userId, jobId);
+    const result = await tx.insert(jobEvidence).values({ organizationId, jobId, evidenceType: "signature", title: `Typed consent signature: ${signerName}`, storageUrl: artifact.url, capturedBy: userId, capturedAt, syncStatus: "synced", metadata: { workflow: "foreman_consent", signatureMethod: "typed_name", signerName, capturedAt: capturedAt.toISOString(), storageKey: artifact.key } });
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "consent_recorded", entityType: "job", entityId: jobId, summary: `Consent recorded for field visit by ${signerName}` });
+    return Number(result[0].insertId);
+  });
+}
+
+export async function foremanCheckIn(organizationId: number, userId: number, jobId: number) {
+  return withTransaction(async tx => {
+    const job = await assertAssignedForeman(tx, organizationId, userId, jobId);
+    if (!["scheduled", "on_hold", "in_progress"].includes(job.stage)) throw new Error("This job cannot be checked in from its current stage");
+    const now = new Date();
+    await tx.update(jobs).set({ stage: "in_progress", checkInAt: now, geoStatus: "manual_override", updatedBy: userId }).where(and(eq(jobs.id, jobId), eq(jobs.organizationId, organizationId)));
+    await tx.update(jobVisits).set({ status: "on_site", geoStatus: "manual_override" }).where(and(eq(jobVisits.organizationId, organizationId), eq(jobVisits.jobId, jobId), eq(jobVisits.foremanId, userId)));
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "checked_in", entityType: "job", entityId: jobId, summary: "Foreman checked in on site" });
+  });
+}
+
+export async function addForemanMaterial(organizationId: number, userId: number, input: { jobId: number; description: string; quantity: number; unit: string }) {
+  return withTransaction(async tx => {
+    const job = await assertAssignedForeman(tx, organizationId, userId, input.jobId);
+    if (job.stage !== "in_progress") throw new Error("Materials can only be recorded during an active field visit");
+    const result = await tx.insert(jobMaterials).values({ organizationId, jobId: input.jobId, description: input.description, quantity: input.quantity, unit: input.unit, source: "free_text", unitPrice: 0 });
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "material_recorded", entityType: "job", entityId: input.jobId, summary: `Field material recorded: ${input.description}` });
+    return Number(result[0].insertId);
+  });
+}
+
+export async function captureForemanEvidence(organizationId: number, userId: number, input: { jobId: number; evidenceType: "before_photo" | "after_photo" | "note" | "job_card"; title: string; note?: string }) {
+  return withTransaction(async tx => {
+    const job = await assertAssignedForeman(tx, organizationId, userId, input.jobId);
+    if (job.stage !== "in_progress") throw new Error("Evidence can only be recorded during an active field visit");
+    const result = await tx.insert(jobEvidence).values({ organizationId, jobId: input.jobId, evidenceType: input.evidenceType, title: input.title, capturedBy: userId, syncStatus: "synced", metadata: { workflow: "foreman_capture", note: input.note || null } });
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "evidence_captured", entityType: "job", entityId: input.jobId, summary: `Field evidence captured: ${input.title}` });
+    return Number(result[0].insertId);
+  });
+}
+
+export async function captureForemanQuote(organizationId: number, userId: number, input: { jobId: number; quoteNumber: string; total: number }) {
+  return withTransaction(async tx => {
+    const job = await assertAssignedForeman(tx, organizationId, userId, input.jobId);
+    if (job.stage !== "in_progress") throw new Error("Quotes can only be captured during an active field visit");
+    const result = await tx.insert(quotes).values({ organizationId, jobId: input.jobId, quoteNumber: input.quoteNumber, status: "draft", assessedAt: new Date(), total: input.total, createdBy: userId });
+    const quoteId = Number(result[0].insertId);
+    await tx.insert(quoteItems).values({ quoteId, description: "Field assessment estimate", quantity: 1, unitPrice: input.total, total: input.total, source: "free_text" });
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "quote_captured", entityType: "job", entityId: input.jobId, summary: `Field quote ${input.quoteNumber} captured as draft` });
+    return quoteId;
+  });
+}
+
+export async function foremanCompleteJob(organizationId: number, userId: number, jobId: number) {
+  return withTransaction(async tx => {
+    const job = await assertAssignedForeman(tx, organizationId, userId, jobId);
+    if (job.stage !== "in_progress") throw new Error("Only an in-progress job can be completed from the foreman workflow");
+    const now = new Date();
+    await tx.update(jobs).set({ stage: "ready_for_invoicing", checkOutAt: now, completedAt: now, readyForInvoiceAt: now, updatedBy: userId }).where(and(eq(jobs.id, jobId), eq(jobs.organizationId, organizationId)));
+    await tx.update(jobVisits).set({ status: "complete" }).where(and(eq(jobVisits.organizationId, organizationId), eq(jobVisits.jobId, jobId), eq(jobVisits.foremanId, userId)));
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "foreman_completed", entityType: "job", entityId: jobId, summary: "Foreman completed job and submitted it for invoicing review" });
+  });
+}
+
 export async function createDocumentRecord(organizationId: number, userId: number, input: { projectId?: number; caseId?: number; contactId?: number; fileName: string; mimeType: string; sizeBytes: number; storageKey: string; storageUrl: string }) {
   return withTransaction(async tx => {
     assertSingleDocumentTarget(input);
@@ -644,10 +736,15 @@ export async function createDocumentRecord(organizationId: number, userId: numbe
   });
 }
 
+export function getDocumentHealth(document: { storageKey?: string | null; storageUrl?: string | null }) {
+  return document.storageKey && document.storageUrl?.startsWith("/manus-storage/") ? "available" as const : "unavailable" as const;
+}
+
 export async function listDocuments(organizationId: number, resource?: "contact" | "project" | "case", recordId?: number) {
   const db = await getDb(); if (!db) throw new Error("Database is not available");
   const relation = resource === "contact" ? eq(documents.contactId, recordId!) : resource === "project" ? eq(documents.projectId, recordId!) : resource === "case" ? eq(documents.caseId, recordId!) : undefined;
-  return db.select().from(documents).where(and(eq(documents.organizationId, organizationId), relation)).orderBy(desc(documents.createdAt));
+  const rows = await db.select().from(documents).where(and(eq(documents.organizationId, organizationId), relation)).orderBy(desc(documents.createdAt));
+  return rows.map(document => ({ ...document, health: getDocumentHealth(document) }));
 }
 
 export async function resetDemoData(organizationId: number, userId: number) {
@@ -656,5 +753,5 @@ export async function resetDemoData(organizationId: number, userId: number) {
   const tenantQuotes = await db.select({ id: quotes.id }).from(quotes).where(eq(quotes.organizationId, organizationId));
   for (const release of releases) await db.delete(releaseChecks).where(eq(releaseChecks.releaseId, release.id));
   for (const quote of tenantQuotes) await db.delete(quoteItems).where(eq(quoteItems.quoteId, quote.id));
-  await db.delete(integrationEvents).where(eq(integrationEvents.organizationId, organizationId)); await db.delete(integrationConnections).where(eq(integrationConnections.organizationId, organizationId)); await db.delete(environmentReleases).where(eq(environmentReleases.organizationId, organizationId)); await db.delete(invoiceLinks).where(eq(invoiceLinks.organizationId, organizationId)); await db.delete(jobEvidence).where(eq(jobEvidence.organizationId, organizationId)); await db.delete(jobMaterials).where(eq(jobMaterials.organizationId, organizationId)); await db.delete(jobVisits).where(eq(jobVisits.organizationId, organizationId)); await db.delete(quotes).where(eq(quotes.organizationId, organizationId)); await db.delete(monthlyOperationalSnapshots).where(eq(monthlyOperationalSnapshots.organizationId, organizationId)); await db.delete(jobs).where(eq(jobs.organizationId, organizationId)); await db.delete(documents).where(eq(documents.organizationId, organizationId)); await db.delete(notifications).where(eq(notifications.organizationId, organizationId)); await db.delete(savedViews).where(eq(savedViews.organizationId, organizationId)); await db.delete(activityLogs).where(eq(activityLogs.organizationId, organizationId)); await db.delete(tasks).where(eq(tasks.organizationId, organizationId)); await db.delete(cases).where(eq(cases.organizationId, organizationId)); await db.delete(projects).where(eq(projects.organizationId, organizationId)); await db.delete(contacts).where(eq(contacts.organizationId, organizationId)); await seedDemoWorkspace(organizationId, userId); await seedFieldServiceDemo(organizationId, userId);
+  await db.delete(integrationEvents).where(eq(integrationEvents.organizationId, organizationId)); await db.delete(integrationConnections).where(eq(integrationConnections.organizationId, organizationId)); await db.delete(environmentReleases).where(eq(environmentReleases.organizationId, organizationId)); await db.delete(invoiceLinks).where(eq(invoiceLinks.organizationId, organizationId)); await db.delete(jobEvidence).where(eq(jobEvidence.organizationId, organizationId)); await db.delete(jobMaterials).where(eq(jobMaterials.organizationId, organizationId)); await db.delete(jobVisits).where(eq(jobVisits.organizationId, organizationId)); await db.delete(quotes).where(eq(quotes.organizationId, organizationId)); await db.delete(monthlyOperationalSnapshots).where(eq(monthlyOperationalSnapshots.organizationId, organizationId)); await db.delete(jobs).where(eq(jobs.organizationId, organizationId)); await db.delete(documents).where(eq(documents.organizationId, organizationId)); await db.delete(notifications).where(eq(notifications.organizationId, organizationId)); await db.delete(savedViews).where(eq(savedViews.organizationId, organizationId)); await db.delete(activityLogs).where(eq(activityLogs.organizationId, organizationId)); await db.delete(tasks).where(eq(tasks.organizationId, organizationId)); await db.delete(cases).where(eq(cases.organizationId, organizationId)); await db.delete(projects).where(eq(projects.organizationId, organizationId)); await db.delete(contacts).where(eq(contacts.organizationId, organizationId)); await db.delete(appSettings).where(eq(appSettings.organizationId, organizationId)); await seedDemoWorkspace(organizationId, userId); await seedFieldServiceDemo(organizationId, userId);
 }

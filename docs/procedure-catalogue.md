@@ -36,6 +36,13 @@
 | `notifications` | `list` | Query | Viewer | Reads only notifications addressed to the caller in the current organization. |
 | `notifications` | `markRead` | Mutation | Viewer | Marks only the caller’s own tenant-scoped notification. |
 | `fieldService` | `dashboard` | Query | Viewer | Live job pipeline, snapshots, quote state, invoice queue, and activity scoped to the active tenant. |
+| `fieldService.foreman` | `today` | Query | Member | Returns only the current caller’s assigned scheduled, in-progress, or held jobs inside the active tenant. |
+| `fieldService.foreman` | `consent` | Mutation | Member | Requires caller assignment to the target job; records a signed consent evidence event and audit activity. |
+| `fieldService.foreman` | `checkIn` | Mutation | Member | Requires caller assignment; moves an eligible job to in-progress, records check-in, and updates the matching visit transactionally. |
+| `fieldService.foreman` | `material` | Mutation | Member | Requires caller assignment and an in-progress job; adds a field material and audit event transactionally. |
+| `fieldService.foreman` | `evidence` | Mutation | Member | Requires caller assignment and an in-progress job; captures validated field evidence and an audit event transactionally. |
+| `fieldService.foreman` | `quote` | Mutation | Member | Requires caller assignment and an in-progress job; creates a draft quote, line item, and audit event transactionally. |
+| `fieldService.foreman` | `complete` | Mutation | Member | Requires caller assignment and an in-progress job; records check-out, completes the visit, moves the job to invoice-ready, and logs the handoff. |
 | `fieldService.jobs` | `list` | Query | Viewer | Paginated job register with enum-bounded stage and foreman filters. |
 | `fieldService.jobs` | `detail` | Query | Viewer | Returns one tenant-owned live job with visits, materials, evidence, quotes, invoices, and activity. |
 | `fieldService.jobs` | `create` | Mutation | Member | Transaction validates the contact and foreman membership, ordering of scheduled times, job-number uniqueness, dispatch visit, and audit event. |

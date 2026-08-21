@@ -38,7 +38,7 @@ Contacts, projects, cases, tasks, and jobs are logically removed with `deletedAt
 
 ## Reset and reseed integrity
 
-The privileged reset flow deletes child rows before their parents: release checks before releases, quote items before quotes, integration events before integration connections, then operational job children before jobs, and finally workspace records. Managed document keys become unreachable when their metadata is removed; the storage adapter intentionally does not expose a direct deletion endpoint. The reset then reseeds one labelled synthetic workspace without crossing organization boundaries.
+The privileged reset flow deletes child rows before their parents: release checks before releases, quote items before quotes, integration events before integration connections, then operational job children before jobs, and finally workspace records. Tenant application settings are deleted before the tenant seed runs, so the reset is idempotent against the settings unique key. Managed document keys become unreachable when their metadata is removed; the storage adapter intentionally does not expose a direct deletion endpoint. The reset then reseeds one labelled synthetic workspace without crossing organization boundaries.
 
 ## Release evidence integrity
 
@@ -46,4 +46,4 @@ Release records are organization-scoped. Release checks reference a single relea
 
 ## Verification record
 
-The audit’s migration changes are recorded in `drizzle/0006_remarkable_lester.sql` and `drizzle/0007_flippant_thunderball.sql`. Before the uniqueness migration was applied, duplicate checks for project codes, case references, external invoice references, and document storage keys returned no conflicts. The continuous test suite covers protected procedure authorization, document preflight behavior, invoice workflow routing, connector transaction behavior, and production builds.
+The audit’s migration changes are recorded in `drizzle/0006_remarkable_lester.sql` and `drizzle/0007_flippant_thunderball.sql`. Before the uniqueness migration was applied, duplicate checks for project codes, case references, external invoice references, and document storage keys returned no conflicts. A post-migration `information_schema.statistics` check confirmed the tenant uniqueness and lookup indexes, including case reference, document storage key, connector provider/name, dispatch queue, and release lookup indexes. The reset path was then exercised against the synthetic tenant, restored the documented 36 jobs, 36 visits, 72 materials, 72 evidence records, 12 quotes, and 6 monthly snapshots, and exposed/fixed the prior settings-row idempotency defect. The continuous test suite covers protected procedure authorization, document preflight behavior, invoice workflow routing, connector transaction behavior, and production builds.

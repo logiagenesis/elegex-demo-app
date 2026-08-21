@@ -16,8 +16,9 @@
 | Reporting | The command centre and commercial report use Recharts against live database records; CSV export is available from commercial reporting. | Passed |
 | Connectors | The repository contains database, audit, and outbox connector modules plus two seeded connector configurations. | Passed |
 | Staging | Three synthetic environment releases and five staging verification checks back a privileged staging-readiness screen and repository runbook. | Passed |
-| Responsive UI | Desktop views were inspected for overview, jobs, dispatch, reports, documents, staging, and administration. Mobile views were inspected for overview, jobs, and staging; the job list uses dedicated readable mobile cards. | Passed |
-| Build quality | `pnpm verify` passed: TypeScript, five Vitest files with 16 tests, and the production bundle all completed successfully. The unsafe manual React chunk split was removed after it caused a public blank-page failure; the production bundle now mounts successfully. | Passed |
+| Responsive UI | Desktop views were inspected for overview, jobs, dispatch, records, documents, reports, staging, and administration. Mobile views were inspected for overview, jobs, documents, and the unknown-route recovery card. | Passed |
+| Public recovery | On 21 August 2026, the published `elegexapp-jvc9dhln.manus.space` entry rendered the brand mark, global job-management content, sign-in card, and synthetic-workspace explanation rather than the prior blank page. A follow-up connected-browser view timed out after the rendered response, which is classified as browser-extension transport noise rather than an application failure. | Passed |
+| Build quality | The latest `pnpm verify` passed: TypeScript, five Vitest files with 20 tests, and the production bundle all completed successfully. The unsafe manual React chunk split was removed after it caused a public blank-page failure; the production bundle now mounts successfully. | Passed |
 
 ## Important interpretation boundary
 
@@ -25,4 +26,4 @@
 
 ## Production handoff boundary
 
-The repository is ready to export as one application. The audited GitHub-export checkpoint is **`fb55c3ec`**, saved after the branding, field-service, six-month data, staging, documentation, responsiveness, and bundle-quality pass. Before an external production launch, replace synthetic seed data, configure real OAuth and storage settings, provision database backups, set least-privilege credentials, populate a user-supplied original logo asset if one is supplied, and execute the staging runbook with actual environment evidence.
+The repository is ready to export as one application. The latest published audit-hardening checkpoint is **`461bd2ac`**; subsequent route, document-health, seed-evidence, and release-audit work remains in progress for the final checkpoint. Before an external production launch, replace synthetic seed data, configure real OAuth and storage settings, provision database backups, set least-privilege credentials, retain the user-supplied transparent logo asset, and execute the staging runbook with actual environment evidence.

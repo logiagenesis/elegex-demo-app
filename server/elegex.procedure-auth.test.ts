@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   validateDocumentTargets: vi.fn(),
   storagePut: vi.fn(),
   linkExternalInvoice: vi.fn(),
+  getForemanToday: vi.fn(),
+  captureForemanEvidence: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -19,6 +21,8 @@ vi.mock("./db", () => ({
   createSavedView: mocks.createSavedView,
   validateDocumentTargets: mocks.validateDocumentTargets,
   linkExternalInvoice: mocks.linkExternalInvoice,
+  getForemanToday: mocks.getForemanToday,
+  captureForemanEvidence: mocks.captureForemanEvidence,
   canEditRecords: (role: string) => role !== "viewer",
   canManageRecords: (role: string) => ["owner", "admin", "manager"].includes(role),
   canManageWorkspace: (role: string) => ["owner", "admin"].includes(role),
@@ -94,6 +98,20 @@ describe("Elegex protected procedure authorization", () => {
     expect(mocks.storagePut).not.toHaveBeenCalled();
   });
 
+  it("rejects unsupported document MIME types and payloads beyond the decoded 5 MB policy", async () => {
+    mocks.validateDocumentTargets.mockClear();
+    mocks.storagePut.mockClear();
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("member"));
+    const memberCaller = appRouter.createCaller(context(user));
+    await expect(memberCaller.elegex.documents.upload({ fileName: "payload.json", mimeType: "application/json", dataUrl: "data:application/json;base64,e30=" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("member"));
+    const oversizeBase64 = "A".repeat(6_666_668);
+    await expect(memberCaller.elegex.documents.upload({ fileName: "oversize.pdf", mimeType: "application/pdf", dataUrl: `data:application/pdf;base64,${oversizeBase64}` })).rejects.toMatchObject({ code: "PAYLOAD_TOO_LARGE" });
+    expect(mocks.validateDocumentTargets).not.toHaveBeenCalled();
+    expect(mocks.storagePut).not.toHaveBeenCalled();
+  });
+
   it("blocks viewers from database connector health and configuration procedures", async () => {
     mocks.ensureTenantScope.mockResolvedValueOnce(scope("viewer"));
     const viewerCaller = appRouter.createCaller(context(user));
@@ -112,11 +130,35 @@ describe("Elegex protected procedure authorization", () => {
     await expect(viewerCaller.elegex.staging.readiness()).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("protects foreman execution endpoints and forwards a member’s derived tenant scope", async () => {
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("viewer"));
+    const viewerCaller = appRouter.createCaller(context(user));
+    await expect(viewerCaller.elegex.fieldService.foreman.today()).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("member"));
+    mocks.captureForemanEvidence.mockResolvedValueOnce(88);
+    const memberCaller = appRouter.createCaller(context(user));
+    await expect(memberCaller.elegex.fieldService.foreman.evidence({ jobId: 9, evidenceType: "note", title: "Access panel secured", note: "Control panel tested." })).resolves.toBe(88);
+    expect(mocks.captureForemanEvidence).toHaveBeenCalledWith(7, 42, { jobId: 9, evidenceType: "note", title: "Access panel secured", note: "Control panel tested." });
+  });
+
   it("passes the tenant-derived manager scope into the controlled invoice-link workflow", async () => {
     mocks.ensureTenantScope.mockResolvedValueOnce(scope("manager"));
     mocks.linkExternalInvoice.mockResolvedValueOnce(undefined);
     const managerCaller = appRouter.createCaller(context(user));
     await expect(managerCaller.elegex.fieldService.jobs.linkInvoice({ id: 12, invoiceNumber: "INV-9012" })).resolves.toBeUndefined();
     expect(mocks.linkExternalInvoice).toHaveBeenCalledWith(7, 42, 12, "INV-9012");
+  });
+
+  it("rejects malformed contract inputs at the procedure boundary", async () => {
+    mocks.ensureTenantScope.mockResolvedValue(scope("owner"));
+    const ownerCaller = appRouter.createCaller(context(user));
+    await expect(ownerCaller.elegex.contacts.create({ name: "x" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(ownerCaller.elegex.projects.create({ name: "Valid project" } as any)).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(ownerCaller.elegex.cases.create({ reference: "C", title: "x" } as any)).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(ownerCaller.elegex.fieldService.jobs.create({ jobNumber: "not-a-number", title: "Job", description: "Too short", contactId: 3, serviceAddress: "1 Main Road" } as any)).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(ownerCaller.elegex.integrations.enqueue({ connectionId: 2, eventType: "sync", payload: {}, idempotencyKey: "short" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(ownerCaller.elegex.admin.updateMemberRole({ membershipId: 3, role: "owner" as any })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(ownerCaller.elegex.fieldService.foreman.quote({ jobId: 3, quoteNumber: "Q", total: -1 })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });
