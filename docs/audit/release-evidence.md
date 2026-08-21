@@ -6,7 +6,7 @@
 
 | Audit area | Verified evidence | Result |
 |---|---|---|
-| Brand | The circular placeholder has been replaced in the sign-in and dashboard shell with the uppercase **ELEGEX** reference-style wordmark and a Western Cape field-service identity. | Passed |
+| Brand | The application uses the uppercase **ELEGEX** wordmark and the cleaned transparent version of the user-supplied metallic E mark within a global field-service identity. | Passed |
 | Unified product | Office overview, job register, dispatch, clients, programmes, exceptions, tasks, documents, commercial reporting, staging, and administration live under one workspace navigation shell. | Passed |
 | Multi-tenancy | All feature procedures resolve server-side organization membership before accessing a business table; client inputs never provide the organization identifier. | Passed |
 | RBAC | Owner, admin, manager, member, and viewer capabilities are tested. Administration, integration, staging, and managed job controls reject unauthorized users. | Passed |
@@ -17,7 +17,7 @@
 | Connectors | The repository contains database, audit, and outbox connector modules plus two seeded connector configurations. | Passed |
 | Staging | Three synthetic environment releases and five staging verification checks back a privileged staging-readiness screen and repository runbook. | Passed |
 | Responsive UI | Desktop views were inspected for overview, jobs, dispatch, reports, documents, staging, and administration. Mobile views were inspected for overview, jobs, and staging; the job list uses dedicated readable mobile cards. | Passed |
-| Build quality | `pnpm verify` passed: TypeScript, five Vitest files with 16 tests, and the production bundle all completed successfully. Route and vendor code splitting removed the prior bundle-size warning. | Passed |
+| Build quality | `pnpm verify` passed: TypeScript, five Vitest files with 16 tests, and the production bundle all completed successfully. The unsafe manual React chunk split was removed after it caused a public blank-page failure; the production bundle now mounts successfully. | Passed |
 
 ## Important interpretation boundary
 

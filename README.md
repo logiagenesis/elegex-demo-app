@@ -4,7 +4,7 @@
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white) ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=111827) ![tRPC](https://img.shields.io/badge/tRPC-11-398CCB) ![Drizzle](https://img.shields.io/badge/Drizzle-ORM-C5F74F?logo=drizzle&logoColor=111827) ![License](https://img.shields.io/badge/license-MIT-0EA5E9)
 
-Elegex is a full-stack **Western Cape job-management and field-service operations platform**. It brings office booking, dispatch, field evidence, quote status, external invoice links, documents, reporting, and workspace administration into one tenant-scoped workspace. It is designed as an engineering showcase: every protected operation is role-gated and backed by a typed API contract.
+Elegex is a full-stack **global job-management and field-service operations platform**. It brings office booking, dispatch, field evidence, quote status, external invoice links, documents, reporting, and workspace administration into one tenant-scoped workspace. It is designed as an engineering showcase: every protected operation is role-gated and backed by a typed API contract.
 
 ## Why this repository stands out
 

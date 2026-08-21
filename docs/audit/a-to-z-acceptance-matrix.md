@@ -4,7 +4,7 @@ This matrix is the release-control record for the unified Elegex demo. **Demo da
 
 | Area | Reference or requested expectation | Audit status before remediation | Required release evidence |
 |---|---|---|---|
-| Brand | Uppercase ELEGEX wordmark; Western Cape job-management context | Corrected: generic circular mark removed | Wordmark applied in sign-in and dashboard shell; field-service identity is explicit |
+| Brand | Uppercase ELEGEX wordmark; global job-management context | Corrected: regional identity removed | User-supplied metallic E mark and global field-service identity applied across the application shell |
 | Product model | Office job management plus foreman field-service operations | Expanded | Jobs, dispatch visits, job stages, materials, quotes, invoice links, field evidence |
 | Job lifecycle | Scheduled → in progress → ready for invoicing → invoiced; hold/cancel with reasons | Implemented | Durable stage model, reason fields, lifecycle event history, role-gated transitions |
 | Scheduling | Foreman schedule, client location, travel/check-in context | Implemented | Job visit records, assignment, scheduled windows, geo/check-in status |

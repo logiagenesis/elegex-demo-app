@@ -49,3 +49,27 @@
 - [x] Save the refreshed GitHub-export checkpoint after the verified SVG logo replacement.
 - [x] Verify the final transparent SVG mark across the dashboard, sign-in shell, favicon, Apple touch icon, and social metadata asset references.
 - [x] Document that the shipped mark is the user-authorized transparent SVG reconstruction and record the verified brand surfaces.
+- [x] Diagnose the blank production deployment and record the exact public-release root cause: an unsafe Vite manual chunk split created incompatible React runtime chunks before mount.
+- [x] Remove all unsupported Western Cape and province-specific wording, currency, fixtures, and documentation from the global Elegex experience.
+- [x] Replace the improvised E mark with the cleaned transparent version of the user-supplied metallic E mark across the application shell and metadata.
+- [ ] Rebuild the unauthenticated public entry route so it always renders meaningful content in production before OAuth is available.
+- [ ] Verify public production, authenticated workspace, responsive routes, and browser-console health before publishing the corrective release.
+- [ ] Publish a corrective global recovery checkpoint and update GitHub handover documentation with the release findings.
+- [ ] Capture and classify every public production failure: HTML, assets, client boot, console exceptions, API responses, redirects, and deployment logs.
+- [ ] Add a non-authenticated public landing and recovery shell that renders without a session, database query, OAuth redirect, or lazy route dependency.
+- [ ] Remove every unsupported regional, currency, and country-specific assertion from interface copy, seed data, metadata, documents, tests, and developer documentation.
+- [ ] Replace the temporary logo reconstruction with a neutral global Elegex brand system and document the exact future original-logo replacement procedure.
+- [ ] Add a production-safe route-error boundary with meaningful recovery content and error identifiers instead of a blank canvas.
+- [ ] Add route-level load failure fallbacks for each lazy feature module and distinguish public, authenticated, and unavailable states.
+- [ ] Enumerate every declared frontend route and verify expected public, member, manager, administrator, and unknown-route behavior.
+- [ ] Enumerate every tRPC procedure and validate input schema, authentication, role capability, tenant scope, output shape, and error response.
+- [ ] Add a database constraint and index audit for tenant-scoped records, uniqueness, foreign keys, soft-deletes, outbox idempotency, and release evidence integrity.
+- [ ] Add transaction, rollback, and failure-path tests for critical task, job, document, audit-log, and outbox workflows.
+- [ ] Add document-link health checks, storage-key validation, MIME and size policy tests, and safe missing-document states.
+- [ ] Expand synthetic demo data coverage with explicitly labelled global sample organizations, users, workflow states, lifecycle history, and report periods.
+- [ ] Add seed determinism checks and a test that reset/reseed restores every expected relationship without cross-tenant leakage.
+- [ ] Add API examples, entity-relationship documentation, a procedure catalogue, and database migration/runbook examples for GitHub reviewers.
+- [ ] Add frontend interaction tests for navigation, search, filters, sorting, pagination, saved views, CSV export, form validation, loading, empty, error, and deletion states.
+- [ ] Add a browser-level release smoke suite for the public domain, each primary route, mobile layout, asset loading, document links, and client-console errors.
+- [ ] Add production monitoring guidance, readiness/liveness expectations, structured client error capture, release rollback criteria, and post-deploy verification steps.
+- [ ] Re-run the complete system audit after remediation and publish a clear acceptance report with evidence for every route, procedure, table, document, and release control.

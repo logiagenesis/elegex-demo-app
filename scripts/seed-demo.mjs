@@ -20,7 +20,7 @@ try {
     organizationId = existingOrganizations[0].id;
   } else {
     const [result] = await connection.execute(
-      "INSERT INTO organizations (name, slug, industry, primaryColor, timezone, createdBy) VALUES ('Elegex Operations', 'elegex-demo', 'Professional services', '#195FE6', 'Africa/Johannesburg', ?)",
+      "INSERT INTO organizations (name, slug, industry, primaryColor, timezone, createdBy) VALUES ('Elegex Operations', 'elegex-demo', 'Professional services', '#195FE6', 'UTC', ?)",
       [owner.id],
     );
     organizationId = result.insertId;
@@ -43,10 +43,10 @@ try {
   const [[existingContacts]] = await connection.execute("SELECT COUNT(*) AS total FROM contacts WHERE organizationId = ?", [organizationId]);
   if (!existingContacts.total) {
     const contactRows = [
-      ["Aisha Naidoo", "Northstar Properties", "aisha@northstarproperties.co.za", "+27 21 555 0193", "Cape Town", "active", "Primary portfolio contact. Prefers concise Friday updates."],
-      ["Lucas Mthembu", "Cedar Health Group", "lucas@cedarhealth.co.za", "+27 31 880 1224", "Durban", "active", "Stakeholder for the digital intake programme."],
-      ["Elena Meyer", "Helio Retail", "elena@helioretail.co.za", "+27 11 322 8900", "Johannesburg", "lead", "Exploring a phased service rollout in Q4."],
-      ["Tendai Ncube", "Arbor Logistics", "tendai@arborlogistics.co.za", "+27 21 742 4371", "Cape Town", "active", "Monthly steering review on the first Wednesday."],
+      ["Aisha Naidoo", "Northstar Properties", "aisha@northstar.demo", "+1 555 014 0193", "North District", "active", "Primary portfolio contact. Prefers concise Friday updates."],
+      ["Lucas Mthembu", "Cedar Health Group", "lucas@cedarhealth.demo", "+1 555 014 1224", "South District", "active", "Stakeholder for the digital intake programme."],
+      ["Elena Meyer", "Helio Retail", "elena@helioretail.demo", "+1 555 014 8900", "Central Quarter", "lead", "Exploring a phased service rollout in Q4."],
+      ["Tendai Ncube", "Arbor Logistics", "tendai@arborlogistics.demo", "+1 555 014 4371", "East District", "active", "Monthly steering review on the first Wednesday."],
     ];
     for (const row of contactRows) await connection.execute("INSERT INTO contacts (organizationId, name, company, email, phone, location, status, notes, createdBy, updatedBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [organizationId, ...row, owner.id, owner.id]);
     const [contacts] = await connection.execute("SELECT id FROM contacts WHERE organizationId = ? ORDER BY id", [organizationId]);
@@ -78,12 +78,12 @@ try {
     const [contacts] = await connection.execute("SELECT id FROM contacts WHERE organizationId = ? ORDER BY id", [organizationId]);
     const [members] = await connection.execute("SELECT userId FROM organizationMembers WHERE organizationId = ? AND isActive = true ORDER BY id", [organizationId]);
     const templates = [
-      ["DB board trip after storm", "Diagnose intermittent breaker trip and restore safe power to affected circuits.", "14 Protea Rd, Bellville"],
-      ["Geyser thermostat replacement", "Assess heating fault, replace approved component, and capture safety evidence.", "3 Beach Rd, Milnerton"],
-      ["Kitchen plug-point fault", "Trace failed kitchen outlets and test circuit protection before handover.", "18 Kloof Street, Gardens"],
-      ["Pool pump isolation fault", "Investigate recurring pool pump trip and document recovery plan.", "42 Oak Avenue, Durbanville"],
-      ["Emergency lighting compliance visit", "Complete scheduled emergency-lighting inspection and submit job-card evidence.", "9 Harbour Way, Cape Town"],
-      ["Extraction fan assessment", "Assess extraction fan replacement scope and capture pricing inputs.", "11 Main Road, Sea Point"],
+      ["DB board trip after storm", "Diagnose intermittent breaker trip and restore safe power to affected circuits.", "14 Summit Avenue, North District"],
+      ["Geyser thermostat replacement", "Assess heating fault, replace approved component, and capture safety evidence.", "3 Shoreline Road, Bayview"],
+      ["Kitchen plug-point fault", "Trace failed kitchen outlets and test circuit protection before handover.", "18 Market Street, Central Quarter"],
+      ["Pool pump isolation fault", "Investigate recurring pool pump trip and document recovery plan.", "42 Oak Avenue, Eastside"],
+      ["Emergency lighting compliance visit", "Complete scheduled emergency-lighting inspection and submit job-card evidence.", "9 Harbour Way, Waterfront"],
+      ["Extraction fan assessment", "Assess extraction fan replacement scope and capture pricing inputs.", "11 Main Road, West End"],
     ];
     const now = new Date();
     for (let monthIndex = 0; monthIndex < 6; monthIndex += 1) {
@@ -98,7 +98,7 @@ try {
         const [result] = await connection.execute("INSERT INTO jobs (organizationId, contactId, jobNumber, title, description, serviceAddress, stage, priority, foremanId, scheduledStart, scheduledEnd, checkInAt, checkOutAt, geoStatus, holdReason, cancelReason, completedAt, readyForInvoiceAt, createdBy, updatedBy, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [organizationId, contact.id, jobNumber, template[0], `${template[1]} Synthetic demonstration history for the Elegex field-service workspace.`, template[2], stage, sequence === 2 ? "urgent" : sequence === 3 ? "critical" : sequence === 0 ? "routine" : "standard", foreman.userId || owner.id, start, end, completed ? new Date(start.getTime() + 4 * 60_000) : null, completed ? new Date(end.getTime() - 3 * 60_000) : null, sequence === 3 && currentMonth ? "flagged" : completed ? "verified" : "pending", stage === "on_hold" ? "Awaiting specialist part approval" : null, stage === "cancelled" ? "Duplicate request confirmed by office" : null, completed ? new Date(end.getTime() - 3 * 60_000) : null, ["ready_for_invoicing", "invoiced"].includes(stage) ? new Date(end.getTime() + 12 * 60_000) : null, owner.id, owner.id, new Date(start.getTime() - 3 * 86_400_000)]);
         const jobId = result.insertId; const foremanId = foreman.userId || owner.id;
         await connection.execute("INSERT INTO jobVisits (organizationId, jobId, foremanId, scheduledStart, scheduledEnd, status, travelMinutes, geoStatus, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [organizationId, jobId, foremanId, start, end, stage === "scheduled" ? "scheduled" : stage === "in_progress" ? "on_site" : stage === "cancelled" ? "cancelled" : "complete", 25 + (sequence % 3) * 10, completed ? "verified" : "pending", "Synthetic demonstration dispatch record."]);
-        await connection.execute("INSERT INTO jobMaterials (organizationId, jobId, description, quantity, unit, source, unitPrice) VALUES (?, ?, ?, ?, 'each', 'catalog', ?), (?, ?, 'Cape Town call-out', 1, 'visit', 'catalog', 650)", [organizationId, jobId, `Service component ${sequence + 1}`, 1 + (sequence % 3), 95 + sequence * 55, organizationId, jobId]);
+        await connection.execute("INSERT INTO jobMaterials (organizationId, jobId, description, quantity, unit, source, unitPrice) VALUES (?, ?, ?, ?, 'each', 'catalog', ?), (?, ?, 'Standard call-out', 1, 'visit', 'catalog', 650)", [organizationId, jobId, `Service component ${sequence + 1}`, 1 + (sequence % 3), 95 + sequence * 55, organizationId, jobId]);
         await connection.execute("INSERT INTO jobEvidence (organizationId, jobId, evidenceType, title, capturedBy, capturedAt, syncStatus, metadata) VALUES (?, ?, 'before_photo', ?, ?, ?, 'synced', JSON_OBJECT('demo', true, 'label', 'Synthetic evidence metadata')), (?, ?, ?, ?, ?, ?, ?, JSON_OBJECT('demo', true, 'stage', ?))", [organizationId, jobId, `Before condition · ${jobNumber}`, foremanId, start, organizationId, jobId, completed ? "signature" : "note", completed ? `Client sign-off · ${jobNumber}` : `Office note · ${jobNumber}`, foremanId, end, stage === "in_progress" ? "pending_upload" : "synced", stage]);
         if (sequence === 1 || sequence === 5) { const quoteStatus = sequence === 5 ? "needs_pricing" : monthIndex < 4 ? "accepted" : "sent"; const [quote] = await connection.execute("INSERT INTO quotes (organizationId, jobId, quoteNumber, status, assessedAt, sentAt, respondedAt, validUntil, total, createdBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [organizationId, jobId, `QT-${2601 + monthIndex * 6 + sequence}`, quoteStatus, end, sequence === 1 ? new Date(end.getTime() + 86_400_000) : null, monthIndex < 4 && sequence === 1 ? new Date(end.getTime() + 3 * 86_400_000) : null, new Date(end.getTime() + 14 * 86_400_000), 1280 + monthIndex * 110 + sequence * 70, owner.id]); await connection.execute("INSERT INTO quoteItems (quoteId, description, quantity, unitPrice, total, source) VALUES (?, 'Assessment and installation labour', 1, 850, 850, 'catalog'), (?, 'Service component', 1, 430, 430, 'free_text')", [quote.insertId, quote.insertId]); }
         if (stage === "invoiced") await connection.execute("INSERT INTO invoiceLinks (organizationId, jobId, externalInvoiceNumber, linkedBy, linkedAt, notes) VALUES (?, ?, ?, ?, ?, ?)", [organizationId, jobId, `INV-${8701 + monthIndex * 6 + sequence}`, owner.id, new Date(end.getTime() + 2 * 86_400_000), "Synthetic accounting link used for demonstration."]);

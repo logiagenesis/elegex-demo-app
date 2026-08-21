@@ -112,10 +112,10 @@ async function seedDemoWorkspace(organizationId: number, ownerId: number) {
 
   await db.insert(appSettings).values({ organizationId, updatedBy: ownerId });
   const contactValues = [
-    { name: "Aisha Naidoo", company: "Northstar Properties", email: "aisha@northstarproperties.co.za", phone: "+27 21 555 0193", location: "Cape Town", status: "active" as const, notes: "Primary portfolio contact. Prefers concise Friday updates." },
-    { name: "Lucas Mthembu", company: "Cedar Health Group", email: "lucas@cedarhealth.co.za", phone: "+27 31 880 1224", location: "Durban", status: "active" as const, notes: "Stakeholder for the digital intake programme." },
-    { name: "Elena Meyer", company: "Helio Retail", email: "elena@helioretail.co.za", phone: "+27 11 322 8900", location: "Johannesburg", status: "lead" as const, notes: "Exploring a phased service rollout in Q4." },
-    { name: "Tendai Ncube", company: "Arbor Logistics", email: "tendai@arborlogistics.co.za", phone: "+27 21 742 4371", location: "Cape Town", status: "active" as const, notes: "Monthly steering review on the first Wednesday." },
+    { name: "Aisha Naidoo", company: "Northstar Properties", email: "aisha@northstar.demo", phone: "+1 555 014 0193", location: "North District", status: "active" as const, notes: "Primary portfolio contact. Prefers concise Friday updates." },
+    { name: "Lucas Mthembu", company: "Cedar Health Group", email: "lucas@cedarhealth.demo", phone: "+1 555 014 1224", location: "South District", status: "active" as const, notes: "Stakeholder for the digital intake programme." },
+    { name: "Elena Meyer", company: "Helio Retail", email: "elena@helioretail.demo", phone: "+1 555 014 8900", location: "Central Quarter", status: "lead" as const, notes: "Exploring a phased service rollout in Q4." },
+    { name: "Tendai Ncube", company: "Arbor Logistics", email: "tendai@arborlogistics.demo", phone: "+1 555 014 4371", location: "East District", status: "active" as const, notes: "Monthly steering review on the first Wednesday." },
   ];
   await db.insert(contacts).values(contactValues.map(contact => ({ ...contact, organizationId, createdBy: ownerId, updatedBy: ownerId })));
   const seededContacts = await db.select().from(contacts).where(eq(contacts.organizationId, organizationId)).orderBy(asc(contacts.id));
@@ -174,12 +174,12 @@ async function seedFieldServiceDemo(organizationId: number, ownerId: number) {
   if (!contactRows.length) return;
 
   const serviceTemplates = [
-    ["DB board trip after storm", "Diagnose intermittent breaker trip and restore safe power to affected circuits.", "14 Protea Rd, Bellville"],
-    ["Geyser thermostat replacement", "Assess heating fault, replace approved component, and capture safety evidence.", "3 Beach Rd, Milnerton"],
-    ["Kitchen plug-point fault", "Trace failed kitchen outlets and test circuit protection before handover.", "18 Kloof Street, Gardens"],
-    ["Pool pump isolation fault", "Investigate recurring pool pump trip and document recovery plan.", "42 Oak Avenue, Durbanville"],
-    ["Emergency lighting compliance visit", "Complete scheduled emergency-lighting inspection and submit job-card evidence.", "9 Harbour Way, Cape Town"],
-    ["Extraction fan assessment", "Assess extraction fan replacement scope and capture pricing inputs.", "11 Main Road, Sea Point"],
+    ["DB board trip after storm", "Diagnose intermittent breaker trip and restore safe power to affected circuits.", "14 Summit Avenue, North District"],
+    ["Geyser thermostat replacement", "Assess heating fault, replace approved component, and capture safety evidence.", "3 Shoreline Road, Bayview"],
+    ["Kitchen plug-point fault", "Trace failed kitchen outlets and test circuit protection before handover.", "18 Market Street, Central Quarter"],
+    ["Pool pump isolation fault", "Investigate recurring pool pump trip and document recovery plan.", "42 Oak Avenue, Eastside"],
+    ["Emergency lighting compliance visit", "Complete scheduled emergency-lighting inspection and submit job-card evidence.", "9 Harbour Way, Waterfront"],
+    ["Extraction fan assessment", "Assess extraction fan replacement scope and capture pricing inputs.", "11 Main Road, West End"],
   ] as const;
   const materials = ["Circuit breaker 20A", "Cable 2.5 mm", "Geyser element 3 kW", "Weatherproof isolator", "LED emergency fitting", "Extraction fan capacitor"];
   const now = new Date();
@@ -232,7 +232,7 @@ async function seedFieldServiceDemo(organizationId: number, ownerId: number) {
       await db.insert(jobVisits).values({ organizationId, jobId, foremanId, scheduledStart, scheduledEnd, status: stage === "scheduled" ? "scheduled" : stage === "in_progress" ? "on_site" : stage === "cancelled" ? "cancelled" : "complete", travelMinutes: 25 + (sequence % 3) * 10, geoStatus: sequence === 3 && currentMonth ? "flagged" : isCompleted ? "verified" : "pending", notes: "Synthetic demonstration dispatch record." });
       await db.insert(jobMaterials).values([
         { organizationId, jobId, description: materials[(sequence + monthIndex) % materials.length]!, quantity: 1 + (sequence % 3), unit: "each", source: sequence % 2 ? "catalog" : "free_text", unitPrice: 95 + sequence * 55 },
-        { organizationId, jobId, description: "Cape Town call-out", quantity: 1, unit: "visit", source: "catalog", unitPrice: 650 },
+        { organizationId, jobId, description: "Standard call-out", quantity: 1, unit: "visit", source: "catalog", unitPrice: 650 },
       ]);
       await db.insert(jobEvidence).values([
         { organizationId, jobId, evidenceType: "before_photo", title: `Before condition · ${jobNumber}`, capturedBy: foremanId, capturedAt: scheduledStart, syncStatus: "synced", metadata: { demo: true, device: "Foreman mobile", label: "Synthetic evidence metadata" } },
