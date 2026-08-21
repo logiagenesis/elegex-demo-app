@@ -1,5 +1,27 @@
 {
   "version": "7",
   "dialect": "mysql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1787274207596,
+      "tag": "0000_gifted_forge",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1787274430296,
+      "tag": "0001_puzzling_micromax",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1787274810168,
+      "tag": "0002_lovely_jetstream",
+      "breakpoints": true
+    }
+  ]
 }

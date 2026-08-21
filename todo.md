@@ -1,0 +1,24 @@
+# Project TODO
+
+- [x] Review the supplied Elegex experience and translate its visual patterns into an original application design.
+- [x] Define a multi-tenant schema covering organizations, memberships, records, tasks, documents, notifications, activity logs, saved views, and settings.
+- [x] Implement organization-scoped server procedures and role-based access control for owner, admin, manager, member, and viewer roles.
+- [x] Add realistic database seed data and a safe administrator demo-data reset flow.
+- [x] Build protected authentication, workspace onboarding, and role-aware navigation with documented demo access guidance.
+- [x] Build database-driven dashboard metrics, activity feed, status views, and Recharts analytics.
+- [x] Implement contacts, projects, and cases with CRUD, detail pages, archive actions, search, filters, sorting, and pagination.
+- [x] Implement project-linked tasks with assignment, status, due dates, and notification events.
+- [x] Implement organization-scoped document metadata and file upload flows using managed storage.
+- [x] Build the notification center, reports with saved filters and CSV export, and privileged administration views.
+- [x] Apply a polished responsive visual system with accessible interactions across desktop, tablet, and mobile.
+- [x] Add Vitest coverage, validate the application interface, and write README setup and demo-use documentation.
+- [x] Add a first-time workspace onboarding panel that makes automatic provisioning visible and actionable.
+- [x] Add dedicated detail routes for contacts, projects, and cases, while retaining the quick-view drawers.
+- [x] Add full task edit controls, including due-date management and archive actions.
+- [x] Allow document uploads and lists to be scoped to a selected contact, project, or case.
+- [x] Add user-created saved report views backed by persisted filters.
+- [x] Expand automated coverage and validate major authenticated interface journeys where access is available.
+- [x] Complete task editing for title, description, priority, assignee, project, status, and due date.
+- [x] Add interactive report filters and persist the active user-selected filter state in saved views.
+- [x] Add higher-level automated contract and authorization coverage for the protected business workflows.
+- [x] Add procedure-level tests covering unauthenticated, viewer, manager, member, and owner authorization outcomes.
