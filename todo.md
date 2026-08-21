@@ -29,3 +29,14 @@
 - [x] Add developer-facing API documentation, environment templates, operational scripts, and GitHub workflow guidance.
 - [x] Expand automated coverage for connector behavior and repository-level quality gates.
 - [x] Add a GitHub-safe, non-secret environment template artifact for external deployers.
+- [x] Audit every implemented interface, workflow, permission boundary, database table, seed path, document flow, and repository artifact against the requested scope.
+- [x] Verify the authoritative Elegex brand source and correct the application logo and visual identity everywhere it appears.
+- [x] Expand the live demo into a coherent six-month history with realistic operations, activity, reporting, and document metadata.
+- [x] Add a richer staging-readiness model, deployment guide, operational checks, and release evidence.
+- [x] Expand product capabilities and administrator tooling where audit findings reveal a limited or missing workflow.
+- [x] Reconcile the completed application against a written A–Z acceptance matrix, run full validation, and produce one final GitHub-export checkpoint.
+- [x] Split feature routes into lazy-loaded chunks to remove the production-bundle size warning identified during release verification.
+- [x] Apply the verified ELEGEX wordmark identity across metadata, favicon, and all remaining application brand surfaces.
+- [x] Save the audited unified application as one final GitHub-export checkpoint and record that version in release evidence.
+- [ ] Save the final audited GitHub-export checkpoint after all audit and branding edits.
+- [ ] Record the resulting final checkpoint version in the release-evidence document.

@@ -58,6 +58,18 @@ export const elegexRouter = router({
     list: tenantProcedure.query(({ ctx }) => db.getNotifications(ctx.scope.organizationId, ctx.user.id)),
     markRead: tenantProcedure.input(z.object({ id: z.number().int().positive() })).mutation(({ ctx, input }) => db.markNotificationRead(ctx.scope.organizationId, ctx.user.id, input.id)),
   }),
+  fieldService: router({
+    dashboard: tenantProcedure.query(({ ctx }) => db.getFieldServiceDashboard(ctx.scope.organizationId)),
+    jobs: router({
+      list: tenantProcedure.input(z.object({ query: z.string().max(120).optional(), stage: z.enum(["scheduled", "in_progress", "on_hold", "ready_for_invoicing", "invoiced", "cancelled"]).optional(), foremanId: z.number().int().positive().optional(), page: z.number().int().positive().optional(), pageSize: z.number().int().positive().max(50).optional() })).query(({ ctx, input }) => db.listJobs({ ...input, organizationId: ctx.scope.organizationId })),
+      detail: tenantProcedure.input(z.object({ id: z.number().int().positive() })).query(({ ctx, input }) => db.getJobDetail(ctx.scope.organizationId, input.id)),
+      create: tenantProcedure.input(z.object({ jobNumber: z.string().regex(/^#?\d{4,8}$/), title: z.string().min(3).max(180), description: z.string().min(5).max(5000), contactId: z.number().int().positive(), serviceAddress: z.string().min(5).max(360), priority: z.enum(["routine", "standard", "urgent", "critical"]).optional(), foremanId: z.number().int().positive().optional(), scheduledStart: z.date().optional(), scheduledEnd: z.date().optional() })).mutation(({ ctx, input }) => { requireEdit(ctx.scope.role); return db.createJob(ctx.scope.organizationId, ctx.user.id, input); }),
+      transition: tenantProcedure.input(z.object({ id: z.number().int().positive(), stage: z.enum(["scheduled", "in_progress", "on_hold", "ready_for_invoicing", "invoiced", "cancelled"]), reason: z.string().max(500).optional() })).mutation(({ ctx, input }) => { requireManage(ctx.scope.role); return db.transitionJobStage(ctx.scope.organizationId, ctx.user.id, input.id, input.stage, input.reason); }),
+      linkInvoice: tenantProcedure.input(z.object({ id: z.number().int().positive(), invoiceNumber: z.string().min(3).max(80) })).mutation(({ ctx, input }) => { requireManage(ctx.scope.role); return db.linkExternalInvoice(ctx.scope.organizationId, ctx.user.id, input.id, input.invoiceNumber); }),
+    }),
+    dispatch: tenantProcedure.input(z.object({ start: z.date().optional(), end: z.date().optional() }).optional()).query(({ ctx, input }) => db.listDispatchVisits(ctx.scope.organizationId, input?.start, input?.end)),
+    reports: tenantProcedure.query(({ ctx }) => db.getFieldServiceReports(ctx.scope.organizationId)),
+  }),
   documents: router({
     list: tenantProcedure.input(z.object({ resource: z.enum(["contact", "project", "case"]).optional(), recordId: z.number().int().positive().optional() }).optional()).query(({ ctx, input }) => db.listDocuments(ctx.scope.organizationId, input?.resource, input?.recordId)),
     upload: tenantProcedure.input(z.object({ fileName: z.string().min(1).max(255), mimeType: z.string().min(1).max(120), dataUrl: z.string().max(7_000_000), projectId: z.number().int().positive().optional(), caseId: z.number().int().positive().optional(), contactId: z.number().int().positive().optional() })).mutation(async ({ ctx, input }) => {
@@ -84,6 +96,9 @@ export const elegexRouter = router({
     upsert: tenantProcedure.input(z.object({ provider: z.enum(["database", "webhook", "analytics", "storage"]), name: z.string().min(2).max(120), configuration: z.record(z.string(), z.unknown()), secretReference: z.string().max(180).optional(), status: z.enum(["active", "paused", "degraded", "disabled"]).optional() })).mutation(({ ctx, input }) => { requireAdmin(ctx.scope.role); return upsertIntegrationConnection({ ...input, organizationId: ctx.scope.organizationId, createdBy: ctx.user.id }); }),
     enqueue: tenantProcedure.input(z.object({ connectionId: z.number().int().positive(), eventType: z.string().min(2).max(120), payload: z.record(z.string(), z.unknown()), idempotencyKey: z.string().min(8).max(180) })).mutation(({ ctx, input }) => { requireAdmin(ctx.scope.role); return enqueueIntegrationEvent({ ...input, organizationId: ctx.scope.organizationId }); }),
     dispatchable: tenantProcedure.input(z.object({ connectionId: z.number().int().positive(), limit: z.number().int().positive().max(100).optional() })).query(({ ctx, input }) => { requireAdmin(ctx.scope.role); return listDispatchableEvents(input.connectionId, input.limit); }),
+  }),
+  staging: router({
+    readiness: tenantProcedure.query(({ ctx }) => { requireAdmin(ctx.scope.role); return db.getStagingReadiness(ctx.scope.organizationId); }),
   }),
   admin: router({
     data: tenantProcedure.query(({ ctx }) => { requireAdmin(ctx.scope.role); return db.getAdminData(ctx.scope.organizationId); }),

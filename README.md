@@ -4,7 +4,7 @@
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white) ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=111827) ![tRPC](https://img.shields.io/badge/tRPC-11-398CCB) ![Drizzle](https://img.shields.io/badge/Drizzle-ORM-C5F74F?logo=drizzle&logoColor=111827) ![License](https://img.shields.io/badge/license-MIT-0EA5E9)
 
-Elegex is a full-stack business management platform for contacts, projects, cases, tasks, documents, notifications, reporting, and workspace administration. It was designed as an engineering showcase: every protected operation is tenant-scoped, role-gated, and backed by a typed API contract.
+Elegex is a full-stack **Western Cape job-management and field-service operations platform**. It brings office booking, dispatch, field evidence, quote status, external invoice links, documents, reporting, and workspace administration into one tenant-scoped workspace. It is designed as an engineering showcase: every protected operation is role-gated and backed by a typed API contract.
 
 ## Why this repository stands out
 
@@ -19,7 +19,7 @@ Elegex is a full-stack business management platform for contacts, projects, case
 
 ## Product surface
 
-The application includes a live Recharts dashboard, record lifecycles for contacts/projects/cases, project-linked tasks with assignments and due dates, scoped file uploads, notifications, filterable/exportable reports, saved views, dedicated detail pages, and protected administration.
+The application includes a Recharts office command centre, controlled job stages, dispatch visits, geo-status signals, job materials, field evidence metadata, quote and invoice-link records, six-month commercial reporting with CSV export, contacts/programmes/exceptions/tasks, scoped document uploads, notifications, saved views, detail pages, and protected administration. Staging readiness is available as a privileged, evidence-led control surface.
 
 ## Architecture at a glance
 
@@ -55,13 +55,17 @@ pnpm db:generate
 pnpm db:migrate
 ```
 
-Seed a standalone demo workspace with realistic operational data:
+Seed a standalone demo workspace with a deterministic **six-month synthetic field-service history**:
 
 ```bash
 SEED_OPEN_ID=local-demo-owner pnpm seed:demo
 ```
 
-In the managed demo, the first successful OAuth sign-in creates an isolated owner workspace and rich seed data automatically. The owner can restore original demo data from **Administration → Reset demo data**.
+The seed includes 36 jobs, 36 dispatch visits, 72 materials, 72 evidence items, 12 quotes, linked synthetic invoices, six monthly operating snapshots, release evidence, and named synthetic documents. In the managed demo, the first successful OAuth sign-in creates an isolated owner workspace automatically. The owner can restore original demo data from **Administration → Reset demo data**.
+
+## Staging and release controls
+
+The application includes a privileged **Staging readiness** page showing environment releases, rollback references, and verification evidence. The data in that page is synthetic demonstration evidence; the repository controls that underpin it are real code, migrations, tests, and CI configuration. Read the [staging runbook](docs/staging-runbook.md), [demo-data catalogue](docs/demo-data-catalog.md), and [A–Z release audit matrix](docs/audit/a-to-z-acceptance-matrix.md) before deploying externally.
 
 ## Quality checks
 
@@ -84,7 +88,7 @@ GitHub Actions runs the same verification suite on pull requests and pushes to `
 | `server/storage.ts` | Managed object-storage adapter for scoped documents. |
 | `drizzle/` | Drizzle schema, migration history, and snapshots. |
 | `scripts/seed-demo.mjs` | Repeatable realistic demo workspace seed. |
-| `docs/` | Architecture, database connector, and API-contract documentation. |
+| `docs/` | Architecture, connector, API-contract, staging, demo-data, and audit documentation. |
 | `.github/` | Pull-request template and CI quality workflow. |
 
 ## Security principles
@@ -94,3 +98,7 @@ GitHub Actions runs the same verification suite on pull requests and pushes to `
 Every protected procedure resolves the requester’s membership before it queries or mutates data. Viewers are read-only; managers cannot access workspace administration; owners and administrators govern members, settings, reset operations, and integration connectors. Documents are stored outside the relational database, while connector secrets are referenced—not persisted—by application metadata.
 
 Review [SECURITY.md](SECURITY.md) for vulnerability reporting and handling guidance, and [CONTRIBUTING.md](CONTRIBUTING.md) for the collaboration workflow.
+
+## Demonstration-data boundary
+
+> All seeded clients, staff names, job histories, commercial values, field evidence, documents, invoice references, and release records are **synthetic demonstration data**. They exist to exercise the product surface and must not be presented as real operating performance or customer records.

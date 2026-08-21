@@ -82,4 +82,13 @@ describe("Elegex protected procedure authorization", () => {
     mocks.ensureTenantScope.mockResolvedValueOnce(scope("viewer"));
     await expect(viewerCaller.elegex.integrations.upsert({ provider: "webhook", name: "Outbound events", configuration: { url: "https://example.invalid" } })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
+
+  it("blocks viewers from job-stage controls and staging-release evidence", async () => {
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("viewer"));
+    const viewerCaller = appRouter.createCaller(context(user));
+    await expect(viewerCaller.elegex.fieldService.jobs.transition({ id: 9, stage: "in_progress" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("viewer"));
+    await expect(viewerCaller.elegex.staging.readiness()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
 });

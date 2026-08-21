@@ -5,10 +5,21 @@ import {
   cases,
   contacts,
   documents,
+  environmentReleases,
+  integrationConnections,
+  invoiceLinks,
+  jobEvidence,
+  jobMaterials,
+  jobVisits,
+  jobs,
+  monthlyOperationalSnapshots,
   notifications,
   organizationMembers,
   organizations,
   projects,
+  quoteItems,
+  quotes,
+  releaseChecks,
   savedViews,
   tasks,
   type InsertUser,
@@ -146,6 +157,129 @@ async function seedDemoWorkspace(organizationId: number, ownerId: number) {
   ]);
 }
 
+/**
+ * Adds a clearly synthetic six-month field-service history to a tenant. This is
+ * deliberately deterministic, repeatable demonstration content—not customer data.
+ */
+async function seedFieldServiceDemo(organizationId: number, ownerId: number) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db.select({ total: count() }).from(jobs).where(eq(jobs.organizationId, organizationId));
+  if ((existing[0]?.total ?? 0) > 0) return;
+
+  const tenantContacts = await db.select().from(contacts).where(eq(contacts.organizationId, organizationId)).orderBy(asc(contacts.id));
+  const tenantMembers = await listWorkspaceMembers(organizationId);
+  const foremanIds = tenantMembers.filter(member => ["owner", "admin", "manager", "member"].includes(member.role)).map(member => member.id);
+  const contactRows = tenantContacts.length ? tenantContacts : [];
+  if (!contactRows.length) return;
+
+  const serviceTemplates = [
+    ["DB board trip after storm", "Diagnose intermittent breaker trip and restore safe power to affected circuits.", "14 Protea Rd, Bellville"],
+    ["Geyser thermostat replacement", "Assess heating fault, replace approved component, and capture safety evidence.", "3 Beach Rd, Milnerton"],
+    ["Kitchen plug-point fault", "Trace failed kitchen outlets and test circuit protection before handover.", "18 Kloof Street, Gardens"],
+    ["Pool pump isolation fault", "Investigate recurring pool pump trip and document recovery plan.", "42 Oak Avenue, Durbanville"],
+    ["Emergency lighting compliance visit", "Complete scheduled emergency-lighting inspection and submit job-card evidence.", "9 Harbour Way, Cape Town"],
+    ["Extraction fan assessment", "Assess extraction fan replacement scope and capture pricing inputs.", "11 Main Road, Sea Point"],
+  ] as const;
+  const materials = ["Circuit breaker 20A", "Cable 2.5 mm", "Geyser element 3 kW", "Weatherproof isolator", "LED emergency fitting", "Extraction fan capacitor"];
+  const now = new Date();
+  const monthStarts = Array.from({ length: 6 }, (_, index) => {
+    const month = new Date(now.getFullYear(), now.getMonth() - 5 + index, 1, 9, 0, 0);
+    return month;
+  });
+
+  for (let monthIndex = 0; monthIndex < monthStarts.length; monthIndex += 1) {
+    const periodStart = monthStarts[monthIndex]!;
+    const currentMonth = monthIndex === monthStarts.length - 1;
+    const previousMonth = monthIndex === monthStarts.length - 2;
+    for (let sequence = 0; sequence < 6; sequence += 1) {
+      const template = serviceTemplates[(monthIndex * 2 + sequence) % serviceTemplates.length];
+      const contact = contactRows[(monthIndex + sequence) % contactRows.length]!;
+      const foremanId = foremanIds[(monthIndex + sequence) % Math.max(foremanIds.length, 1)] ?? ownerId;
+      const scheduledStart = new Date(periodStart.getFullYear(), periodStart.getMonth(), 3 + sequence * 4, 8 + (sequence % 3) * 2, 0, 0);
+      const scheduledEnd = new Date(scheduledStart.getTime() + (90 + (sequence % 3) * 30) * 60_000);
+      const stage = currentMonth
+        ? (["scheduled", "scheduled", "in_progress", "on_hold", "ready_for_invoicing", "cancelled"] as const)[sequence]
+        : previousMonth
+          ? (["invoiced", "invoiced", "ready_for_invoicing", "invoiced", "on_hold", "cancelled"] as const)[sequence]
+          : (["invoiced", "invoiced", "invoiced", "invoiced", "invoiced", "cancelled"] as const)[sequence];
+      const jobNumber = `#${2011 + monthIndex * 6 + sequence}`;
+      const isCompleted = ["ready_for_invoicing", "invoiced"].includes(stage);
+      const insert = await db.insert(jobs).values({
+        organizationId,
+        contactId: contact.id,
+        jobNumber,
+        title: template[0],
+        description: `${template[1]} Synthetic demonstration history for the Elegex field-service workspace.`,
+        serviceAddress: template[2],
+        stage,
+        priority: sequence === 2 ? "urgent" : sequence === 3 ? "critical" : sequence === 0 ? "routine" : "standard",
+        foremanId,
+        scheduledStart,
+        scheduledEnd,
+        checkInAt: isCompleted ? new Date(scheduledStart.getTime() + 4 * 60_000) : null,
+        checkOutAt: isCompleted ? new Date(scheduledEnd.getTime() - 3 * 60_000) : null,
+        geoStatus: sequence === 3 && currentMonth ? "flagged" : isCompleted ? "verified" : "pending",
+        holdReason: stage === "on_hold" ? "Awaiting specialist part approval" : null,
+        cancelReason: stage === "cancelled" ? "Duplicate request confirmed by office" : null,
+        completedAt: isCompleted ? new Date(scheduledEnd.getTime() - 3 * 60_000) : null,
+        readyForInvoiceAt: ["ready_for_invoicing", "invoiced"].includes(stage) ? new Date(scheduledEnd.getTime() + 12 * 60_000) : null,
+        createdBy: ownerId,
+        updatedBy: ownerId,
+        createdAt: new Date(scheduledStart.getTime() - 3 * 86_400_000),
+      });
+      const jobId = Number(insert[0].insertId);
+      await db.insert(jobVisits).values({ organizationId, jobId, foremanId, scheduledStart, scheduledEnd, status: stage === "scheduled" ? "scheduled" : stage === "in_progress" ? "on_site" : stage === "cancelled" ? "cancelled" : "complete", travelMinutes: 25 + (sequence % 3) * 10, geoStatus: sequence === 3 && currentMonth ? "flagged" : isCompleted ? "verified" : "pending", notes: "Synthetic demonstration dispatch record." });
+      await db.insert(jobMaterials).values([
+        { organizationId, jobId, description: materials[(sequence + monthIndex) % materials.length]!, quantity: 1 + (sequence % 3), unit: "each", source: sequence % 2 ? "catalog" : "free_text", unitPrice: 95 + sequence * 55 },
+        { organizationId, jobId, description: "Cape Town call-out", quantity: 1, unit: "visit", source: "catalog", unitPrice: 650 },
+      ]);
+      await db.insert(jobEvidence).values([
+        { organizationId, jobId, evidenceType: "before_photo", title: `Before condition · ${jobNumber}`, capturedBy: foremanId, capturedAt: scheduledStart, syncStatus: "synced", metadata: { demo: true, device: "Foreman mobile", label: "Synthetic evidence metadata" } },
+        { organizationId, jobId, evidenceType: isCompleted ? "signature" : "note", title: isCompleted ? `Client sign-off · ${jobNumber}` : `Office note · ${jobNumber}`, capturedBy: foremanId, capturedAt: scheduledEnd, syncStatus: stage === "in_progress" ? "pending_upload" : "synced", metadata: { demo: true, status: stage } },
+      ]);
+      if (sequence === 1 || sequence === 5) {
+        const quoteInsert = await db.insert(quotes).values({ organizationId, jobId, quoteNumber: `QT-${2601 + monthIndex * 6 + sequence}`, status: sequence === 5 ? "needs_pricing" : monthIndex < 4 ? "accepted" : "sent", assessedAt: scheduledEnd, sentAt: sequence === 1 ? new Date(scheduledEnd.getTime() + 86_400_000) : null, respondedAt: monthIndex < 4 && sequence === 1 ? new Date(scheduledEnd.getTime() + 3 * 86_400_000) : null, validUntil: new Date(scheduledEnd.getTime() + 14 * 86_400_000), total: 1280 + monthIndex * 110 + sequence * 70, createdBy: ownerId });
+        const quoteId = Number(quoteInsert[0].insertId);
+        await db.insert(quoteItems).values([{ quoteId, description: "Assessment and installation labour", quantity: 1, unitPrice: 850, total: 850, source: "catalog" }, { quoteId, description: materials[(sequence + 1) % materials.length]!, quantity: 1, unitPrice: 430, total: 430, source: "free_text" }]);
+      }
+      if (stage === "invoiced") await db.insert(invoiceLinks).values({ organizationId, jobId, externalInvoiceNumber: `INV-${8701 + monthIndex * 6 + sequence}`, linkedBy: ownerId, linkedAt: new Date(scheduledEnd.getTime() + 2 * 86_400_000), notes: "Synthetic QuickBooks link used for demonstration." });
+      await db.insert(activityLogs).values([
+        { organizationId, actorId: ownerId, action: "scheduled", entityType: "job", entityId: jobId, summary: `${jobNumber} scheduled with assigned foreman` , createdAt: new Date(scheduledStart.getTime() - 2 * 86_400_000) },
+        { organizationId, actorId: foremanId, action: isCompleted ? "completed" : "updated", entityType: "job", entityId: jobId, summary: isCompleted ? `${jobNumber} completed with field evidence recorded` : `${jobNumber} remains ${stage.replace(/_/g, " ")}`, createdAt: scheduledEnd },
+      ]);
+    }
+    await db.insert(monthlyOperationalSnapshots).values({ organizationId, periodStart, jobsCompleted: 19 + monthIndex * 2, jobsInProgress: currentMonth ? 6 : 3, jobsOnHold: 1 + (monthIndex % 3), quotesSent: 9 + monthIndex, quotesAccepted: 5 + monthIndex, invoicesLinked: 16 + monthIndex * 2, invoicedValue: 128000 + monthIndex * 18500, firstVisitResolutionRate: 82 + (monthIndex % 4), customerSatisfactionIndex: 88 + (monthIndex % 5) }).onDuplicateKeyUpdate({ set: { jobsCompleted: 19 + monthIndex * 2, jobsInProgress: currentMonth ? 6 : 3, jobsOnHold: 1 + (monthIndex % 3), quotesSent: 9 + monthIndex, quotesAccepted: 5 + monthIndex, invoicesLinked: 16 + monthIndex * 2, invoicedValue: 128000 + monthIndex * 18500, firstVisitResolutionRate: 82 + (monthIndex % 4), customerSatisfactionIndex: 88 + (monthIndex % 5) } });
+  }
+  await db.insert(integrationConnections).values([
+    { organizationId, provider: "database", name: "Primary operations database", status: "active", configuration: { dialect: "mysql", environment: "demo" }, secretReference: "DATABASE_URL", createdBy: ownerId, lastValidatedAt: new Date() },
+    { organizationId, provider: "webhook", name: "Accounting invoice handoff", status: "active", configuration: { eventTypes: ["invoice.linked", "job.ready_for_invoicing"], mode: "outbox" }, secretReference: "ACCOUNTING_WEBHOOK_URL", createdBy: ownerId, lastValidatedAt: new Date() },
+  ]).onDuplicateKeyUpdate({ set: { status: "active", lastValidatedAt: new Date(), lastError: null } });
+  const documentJobs = await db.select({ contactId: jobs.contactId, jobNumber: jobs.jobNumber }).from(jobs).where(and(eq(jobs.organizationId, organizationId), or(eq(jobs.jobNumber, "#2045"), eq(jobs.jobNumber, "#2037"))));
+  const job2045 = documentJobs.find(job => job.jobNumber === "#2045"); const job2037 = documentJobs.find(job => job.jobNumber === "#2037");
+  await db.insert(documents).values([
+    ...(job2045 ? [{ organizationId, contactId: job2045.contactId, fileName: "Synthetic Job Card #2045.txt", mimeType: "text/plain", sizeBytes: 679, storageKey: "elegex-demo-job-card-2045_7797837f.txt", storageUrl: "/manus-storage/elegex-demo-job-card-2045_7797837f.txt", uploadedBy: ownerId }] : []),
+    ...(job2037 ? [{ organizationId, contactId: job2037.contactId, fileName: "Synthetic Quote QT-2601.txt", mimeType: "text/plain", sizeBytes: 566, storageKey: "elegex-demo-quote-2601_c8829b18.txt", storageUrl: "/manus-storage/elegex-demo-quote-2601_c8829b18.txt", uploadedBy: ownerId }, { organizationId, contactId: job2037.contactId, fileName: "Synthetic Safety Checklist #2037.txt", mimeType: "text/plain", sizeBytes: 419, storageKey: "elegex-demo-safety-checklist_2a07066b.txt", storageUrl: "/manus-storage/elegex-demo-safety-checklist_2a07066b.txt", uploadedBy: ownerId }] : []),
+  ]);
+  const releaseRows = [
+    ["development", "v2.8.0-dev.14", "a12d5f7", "v2.8.0-dev.13", "Synthetic development release record for demo validation."],
+    ["staging", "v2.8.0-rc.3", "c8f3a10", "v2.8.0-rc.2", "Synthetic staging candidate with field-service migration and release evidence."],
+    ["production", "v2.7.4", "9db41e2", "v2.7.3", "Synthetic production baseline retained for release comparison."],
+  ] as const;
+  for (const release of releaseRows) {
+    const inserted = await db.insert(environmentReleases).values({ organizationId, environment: release[0], version: release[1], commitSha: release[2], status: "healthy", rollbackVersion: release[3], notes: release[4], deployedBy: ownerId });
+    const releaseId = Number(inserted[0].insertId);
+    await db.insert(releaseChecks).values([
+      { releaseId, category: "database", checkName: "Migration history reviewed", status: "passed", evidence: "Additive tenant-scoped migrations inspected before application." },
+      { releaseId, category: "api", checkName: "Protected contract suite", status: "passed", evidence: "Role and contract verification recorded in the demo release workflow." },
+      { releaseId, category: "ui", checkName: "Desktop and mobile smoke path", status: "passed", evidence: "Office dashboard, job register, dispatch, and reporting reviewed." },
+      { releaseId, category: "security", checkName: "Tenant scope and RBAC gate", status: "passed", evidence: "Server resolves membership scope before protected operations." },
+      { releaseId, category: "observability", checkName: "Database connector health", status: "passed", evidence: "Readiness connector completed synthetic release probe." },
+    ]);
+  }
+  await db.insert(activityLogs).values({ organizationId, actorId: ownerId, action: "seeded", entityType: "field_service_demo", entityId: null, summary: "Synthetic six-month Elegex field-service demonstration history seeded" });
+}
+
 export async function ensureTenantScope(userId: number): Promise<TenantScope> {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
@@ -167,6 +301,7 @@ export async function ensureTenantScope(userId: number): Promise<TenantScope> {
       .where(and(eq(organizationMembers.userId, userId), eq(organizationMembers.isActive, true)))
       .limit(1);
   }
+  await seedFieldServiceDemo(membership[0]!.organizationId, userId);
   return membership[0] as TenantScope;
 }
 
@@ -337,6 +472,104 @@ export async function getReportRows(organizationId: number) {
   const db = await getDb(); if (!db) throw new Error("Database is not available"); return db.select({ code: projects.code, project: projects.name, status: projects.status, priority: projects.priority, progress: projects.progress, dueDate: projects.dueDate, budget: projects.budget, contact: contacts.name }).from(projects).leftJoin(contacts, eq(projects.contactId, contacts.id)).where(and(eq(projects.organizationId, organizationId), isNull(projects.deletedAt))).orderBy(desc(projects.updatedAt));
 }
 
+export async function getFieldServiceDashboard(organizationId: number) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const scoped = and(eq(jobs.organizationId, organizationId), isNull(jobs.deletedAt));
+  const [stageRows, currentJobs, snapshotRows, quoteRows, invoiceReadyRows, recentActivity] = await Promise.all([
+    db.select({ stage: jobs.stage, total: count() }).from(jobs).where(scoped).groupBy(jobs.stage),
+    db.select({ job: jobs, contact: contacts }).from(jobs).innerJoin(contacts, eq(jobs.contactId, contacts.id)).where(scoped).orderBy(desc(jobs.scheduledStart)).limit(8),
+    db.select().from(monthlyOperationalSnapshots).where(eq(monthlyOperationalSnapshots.organizationId, organizationId)).orderBy(asc(monthlyOperationalSnapshots.periodStart)).limit(6),
+    db.select({ status: quotes.status, total: count() }).from(quotes).where(eq(quotes.organizationId, organizationId)).groupBy(quotes.status),
+    db.select({ job: jobs, contact: contacts }).from(jobs).innerJoin(contacts, eq(jobs.contactId, contacts.id)).where(and(scoped, eq(jobs.stage, "ready_for_invoicing"))).orderBy(asc(jobs.readyForInvoiceAt)).limit(8),
+    db.select().from(activityLogs).where(eq(activityLogs.organizationId, organizationId)).orderBy(desc(activityLogs.createdAt)).limit(12),
+  ]);
+  return { stageRows, currentJobs, snapshots: snapshotRows, quoteRows, invoiceReadyRows, recentActivity };
+}
+
+export async function listJobs(input: { organizationId: number; query?: string; stage?: string; foremanId?: number; page?: number; pageSize?: number }) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const keyword = input.query ? `%${input.query}%` : undefined;
+  const where = and(eq(jobs.organizationId, input.organizationId), isNull(jobs.deletedAt), input.stage ? eq(jobs.stage, input.stage as any) : undefined, input.foremanId ? eq(jobs.foremanId, input.foremanId) : undefined, keyword ? or(like(jobs.jobNumber, keyword), like(jobs.title, keyword), like(jobs.serviceAddress, keyword)) : undefined);
+  const { limit, offset } = paging({ organizationId: input.organizationId, page: input.page, pageSize: input.pageSize });
+  const [rows, total] = await Promise.all([
+    db.select({ job: jobs, contact: contacts, foreman: users }).from(jobs).innerJoin(contacts, eq(jobs.contactId, contacts.id)).leftJoin(users, eq(jobs.foremanId, users.id)).where(where).orderBy(desc(jobs.scheduledStart)).limit(limit).offset(offset),
+    db.select({ total: count() }).from(jobs).where(where),
+  ]);
+  return { rows, total: total[0]?.total ?? 0 };
+}
+
+export async function getJobDetail(organizationId: number, jobId: number) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const row = await db.select({ job: jobs, contact: contacts, foreman: users }).from(jobs).innerJoin(contacts, eq(jobs.contactId, contacts.id)).leftJoin(users, eq(jobs.foremanId, users.id)).where(and(eq(jobs.organizationId, organizationId), eq(jobs.id, jobId), isNull(jobs.deletedAt))).limit(1);
+  if (!row[0]) return undefined;
+  const [visits, materials, evidence, quoteRows, invoices, activity] = await Promise.all([
+    db.select().from(jobVisits).where(and(eq(jobVisits.organizationId, organizationId), eq(jobVisits.jobId, jobId))).orderBy(desc(jobVisits.scheduledStart)),
+    db.select().from(jobMaterials).where(and(eq(jobMaterials.organizationId, organizationId), eq(jobMaterials.jobId, jobId))),
+    db.select().from(jobEvidence).where(and(eq(jobEvidence.organizationId, organizationId), eq(jobEvidence.jobId, jobId))).orderBy(desc(jobEvidence.capturedAt)),
+    db.select().from(quotes).where(and(eq(quotes.organizationId, organizationId), eq(quotes.jobId, jobId))).orderBy(desc(quotes.createdAt)),
+    db.select().from(invoiceLinks).where(and(eq(invoiceLinks.organizationId, organizationId), eq(invoiceLinks.jobId, jobId))).orderBy(desc(invoiceLinks.linkedAt)),
+    db.select().from(activityLogs).where(and(eq(activityLogs.organizationId, organizationId), eq(activityLogs.entityType, "job"), eq(activityLogs.entityId, jobId))).orderBy(desc(activityLogs.createdAt)),
+  ]);
+  return { ...row[0], visits, materials, evidence, quotes: quoteRows, invoices, activity };
+}
+
+export async function listDispatchVisits(organizationId: number, start?: Date, end?: Date) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const where = and(eq(jobVisits.organizationId, organizationId), start ? sql`${jobVisits.scheduledStart} >= ${start}` : undefined, end ? sql`${jobVisits.scheduledStart} <= ${end}` : undefined);
+  return db.select({ visit: jobVisits, job: jobs, contact: contacts, foreman: users }).from(jobVisits).innerJoin(jobs, eq(jobVisits.jobId, jobs.id)).innerJoin(contacts, eq(jobs.contactId, contacts.id)).leftJoin(users, eq(jobVisits.foremanId, users.id)).where(where).orderBy(asc(jobVisits.scheduledStart));
+}
+
+export async function getFieldServiceReports(organizationId: number) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const [snapshots, stageRows, quoteRows, readyForInvoice, invoiceRows] = await Promise.all([
+    db.select().from(monthlyOperationalSnapshots).where(eq(monthlyOperationalSnapshots.organizationId, organizationId)).orderBy(asc(monthlyOperationalSnapshots.periodStart)),
+    db.select({ stage: jobs.stage, total: count() }).from(jobs).where(and(eq(jobs.organizationId, organizationId), isNull(jobs.deletedAt))).groupBy(jobs.stage),
+    db.select({ status: quotes.status, total: count(), value: sql<number>`COALESCE(SUM(${quotes.total}), 0)` }).from(quotes).where(eq(quotes.organizationId, organizationId)).groupBy(quotes.status),
+    db.select({ job: jobs, contact: contacts }).from(jobs).innerJoin(contacts, eq(jobs.contactId, contacts.id)).where(and(eq(jobs.organizationId, organizationId), eq(jobs.stage, "ready_for_invoicing"))).orderBy(asc(jobs.readyForInvoiceAt)),
+    db.select({ total: count(), value: sql<number>`COALESCE(SUM(${quotes.total}), 0)` }).from(invoiceLinks).leftJoin(jobs, eq(invoiceLinks.jobId, jobs.id)).leftJoin(quotes, eq(quotes.jobId, jobs.id)).where(and(eq(invoiceLinks.organizationId, organizationId), eq(invoiceLinks.status, "linked"))),
+  ]);
+  return { snapshots, stageRows, quoteRows, readyForInvoice, invoiceRows: invoiceRows[0] };
+}
+
+export async function getStagingReadiness(organizationId: number) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const releases = await db.select().from(environmentReleases).where(eq(environmentReleases.organizationId, organizationId)).orderBy(desc(environmentReleases.deployedAt));
+  const checks = releases.length ? await db.select().from(releaseChecks).where(eq(releaseChecks.releaseId, releases[0]!.id)).orderBy(asc(releaseChecks.category)) : [];
+  return { releases, checks };
+}
+
+export async function createJob(organizationId: number, userId: number, input: { jobNumber: string; title: string; description: string; contactId: number; serviceAddress: string; priority?: "routine" | "standard" | "urgent" | "critical"; foremanId?: number; scheduledStart?: Date; scheduledEnd?: Date }) {
+  return withTransaction(async tx => {
+    const result = await tx.insert(jobs).values({ ...input, organizationId, stage: "scheduled", createdBy: userId, updatedBy: userId });
+    const id = Number(result[0].insertId);
+    if (input.foremanId && input.scheduledStart && input.scheduledEnd) await tx.insert(jobVisits).values({ organizationId, jobId: id, foremanId: input.foremanId, scheduledStart: input.scheduledStart, scheduledEnd: input.scheduledEnd, status: "scheduled", notes: "Created from office dispatch." });
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "created", entityType: "job", entityId: id, summary: `${input.jobNumber} created and added to dispatch` });
+    return id;
+  });
+}
+
+const jobStageTransitions: Record<string, string[]> = { scheduled: ["in_progress", "on_hold", "cancelled"], in_progress: ["on_hold", "ready_for_invoicing", "cancelled"], on_hold: ["scheduled", "in_progress", "cancelled"], ready_for_invoicing: ["invoiced", "in_progress", "cancelled"], invoiced: [], cancelled: [] };
+
+export async function transitionJobStage(organizationId: number, userId: number, jobId: number, stage: "scheduled" | "in_progress" | "on_hold" | "ready_for_invoicing" | "invoiced" | "cancelled", reason?: string) {
+  const db = await getDb(); if (!db) throw new Error("Database is not available");
+  const rows = await db.select({ stage: jobs.stage }).from(jobs).where(and(eq(jobs.organizationId, organizationId), eq(jobs.id, jobId), isNull(jobs.deletedAt))).limit(1);
+  const from = rows[0]?.stage;
+  if (!from) throw new Error("Job not found in this workspace");
+  if (!jobStageTransitions[from].includes(stage)) throw new Error(`A job cannot move from ${from} to ${stage}`);
+  if (["on_hold", "cancelled"].includes(stage) && !reason?.trim()) throw new Error("A hold or cancellation reason is required");
+  const now = new Date();
+  await db.update(jobs).set({ stage, updatedBy: userId, ...(stage === "on_hold" ? { holdReason: reason } : {}), ...(stage === "cancelled" ? { cancelReason: reason } : {}), ...(stage === "ready_for_invoicing" ? { readyForInvoiceAt: now, completedAt: now } : {}) }).where(and(eq(jobs.organizationId, organizationId), eq(jobs.id, jobId)));
+  await logActivity(organizationId, userId, "stage_changed", "job", jobId, `Job stage changed from ${from.replace(/_/g, " ")} to ${stage.replace(/_/g, " ")}`);
+}
+
+export async function linkExternalInvoice(organizationId: number, userId: number, jobId: number, invoiceNumber: string) {
+  return withTransaction(async tx => {
+    await tx.insert(invoiceLinks).values({ organizationId, jobId, externalInvoiceNumber: invoiceNumber, linkedBy: userId, notes: "Linked from office workflow." });
+    await tx.update(jobs).set({ stage: "invoiced", updatedBy: userId }).where(and(eq(jobs.organizationId, organizationId), eq(jobs.id, jobId)));
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "invoice_linked", entityType: "job", entityId: jobId, summary: `External invoice ${invoiceNumber} linked to job` });
+  });
+}
+
 export async function createDocumentRecord(organizationId: number, userId: number, input: { projectId?: number; caseId?: number; contactId?: number; fileName: string; mimeType: string; sizeBytes: number; storageKey: string; storageUrl: string }) {
   const db = await getDb(); if (!db) throw new Error("Database is not available"); const result = await db.insert(documents).values({ ...input, organizationId, uploadedBy: userId }); const id = Number(result[0].insertId); await logActivity(organizationId, userId, "uploaded", "document", id, `Uploaded ${input.fileName}`); return id;
 }
@@ -349,5 +582,7 @@ export async function listDocuments(organizationId: number, resource?: "contact"
 
 export async function resetDemoData(organizationId: number, userId: number) {
   const db = await getDb(); if (!db) throw new Error("Database is not available");
-  await db.delete(documents).where(eq(documents.organizationId, organizationId)); await db.delete(notifications).where(eq(notifications.organizationId, organizationId)); await db.delete(savedViews).where(eq(savedViews.organizationId, organizationId)); await db.delete(activityLogs).where(eq(activityLogs.organizationId, organizationId)); await db.delete(tasks).where(eq(tasks.organizationId, organizationId)); await db.delete(cases).where(eq(cases.organizationId, organizationId)); await db.delete(projects).where(eq(projects.organizationId, organizationId)); await db.delete(contacts).where(eq(contacts.organizationId, organizationId)); await seedDemoWorkspace(organizationId, userId);
+  const releases = await db.select({ id: environmentReleases.id }).from(environmentReleases).where(eq(environmentReleases.organizationId, organizationId));
+  for (const release of releases) await db.delete(releaseChecks).where(eq(releaseChecks.releaseId, release.id));
+  await db.delete(environmentReleases).where(eq(environmentReleases.organizationId, organizationId)); await db.delete(invoiceLinks).where(eq(invoiceLinks.organizationId, organizationId)); await db.delete(jobEvidence).where(eq(jobEvidence.organizationId, organizationId)); await db.delete(jobMaterials).where(eq(jobMaterials.organizationId, organizationId)); await db.delete(jobVisits).where(eq(jobVisits.organizationId, organizationId)); await db.delete(quotes).where(eq(quotes.organizationId, organizationId)); await db.delete(monthlyOperationalSnapshots).where(eq(monthlyOperationalSnapshots.organizationId, organizationId)); await db.delete(jobs).where(eq(jobs.organizationId, organizationId)); await db.delete(documents).where(eq(documents.organizationId, organizationId)); await db.delete(notifications).where(eq(notifications.organizationId, organizationId)); await db.delete(savedViews).where(eq(savedViews.organizationId, organizationId)); await db.delete(activityLogs).where(eq(activityLogs.organizationId, organizationId)); await db.delete(tasks).where(eq(tasks.organizationId, organizationId)); await db.delete(cases).where(eq(cases.organizationId, organizationId)); await db.delete(projects).where(eq(projects.organizationId, organizationId)); await db.delete(contacts).where(eq(contacts.organizationId, organizationId)); await seedDemoWorkspace(organizationId, userId); await seedFieldServiceDemo(organizationId, userId);
 }

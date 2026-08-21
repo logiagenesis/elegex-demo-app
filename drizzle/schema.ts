@@ -267,7 +267,167 @@ export const integrationEvents = mysqlTable("integrationEvents", {
   uniqueIndex("integration_event_idempotency_unique").on(table.connectionId, table.idempotencyKey),
 ]);
 
+export const jobs = mysqlTable("jobs", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(),
+  contactId: int("contactId").notNull(),
+  projectId: int("projectId"),
+  jobNumber: varchar("jobNumber", { length: 32 }).notNull(),
+  title: varchar("title", { length: 180 }).notNull(),
+  description: text("description").notNull(),
+  serviceAddress: varchar("serviceAddress", { length: 360 }).notNull(),
+  stage: mysqlEnum("stage", ["scheduled", "in_progress", "on_hold", "ready_for_invoicing", "invoiced", "cancelled"]).default("scheduled").notNull(),
+  priority: mysqlEnum("priority", ["routine", "standard", "urgent", "critical"]).default("standard").notNull(),
+  foremanId: int("foremanId"),
+  scheduledStart: timestamp("scheduledStart"),
+  scheduledEnd: timestamp("scheduledEnd"),
+  checkInAt: timestamp("checkInAt"),
+  checkOutAt: timestamp("checkOutAt"),
+  geoStatus: mysqlEnum("geoStatus", ["pending", "verified", "flagged", "manual_override"]).default("pending").notNull(),
+  holdReason: varchar("holdReason", { length: 500 }),
+  cancelReason: varchar("cancelReason", { length: 500 }),
+  completedAt: timestamp("completedAt"),
+  readyForInvoiceAt: timestamp("readyForInvoiceAt"),
+  createdBy: int("createdBy").notNull(),
+  updatedBy: int("updatedBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  deletedAt: timestamp("deletedAt"),
+}, table => [
+  uniqueIndex("job_organization_number_unique").on(table.organizationId, table.jobNumber),
+  index("job_organization_stage_idx").on(table.organizationId, table.stage, table.scheduledStart),
+  index("job_foreman_schedule_idx").on(table.organizationId, table.foremanId, table.scheduledStart),
+]);
+
+export const jobVisits = mysqlTable("jobVisits", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(),
+  jobId: int("jobId").notNull(),
+  foremanId: int("foremanId").notNull(),
+  scheduledStart: timestamp("scheduledStart").notNull(),
+  scheduledEnd: timestamp("scheduledEnd").notNull(),
+  status: mysqlEnum("status", ["scheduled", "en_route", "on_site", "complete", "missed", "cancelled"]).default("scheduled").notNull(),
+  travelMinutes: int("travelMinutes").default(0).notNull(),
+  geoStatus: mysqlEnum("geoStatus", ["pending", "verified", "flagged", "manual_override"]).default("pending").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("job_visit_dispatch_idx").on(table.organizationId, table.foremanId, table.scheduledStart),
+  index("job_visit_job_idx").on(table.organizationId, table.jobId),
+]);
+
+export const jobMaterials = mysqlTable("jobMaterials", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(),
+  jobId: int("jobId").notNull(),
+  description: varchar("description", { length: 240 }).notNull(),
+  quantity: int("quantity").default(1).notNull(),
+  unit: varchar("unit", { length: 40 }).default("each").notNull(),
+  source: mysqlEnum("source", ["catalog", "free_text", "client_supplied"]).default("catalog").notNull(),
+  unitPrice: int("unitPrice").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [index("job_material_job_idx").on(table.organizationId, table.jobId)]);
+
+export const jobEvidence = mysqlTable("jobEvidence", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(),
+  jobId: int("jobId").notNull(),
+  evidenceType: mysqlEnum("evidenceType", ["before_photo", "after_photo", "video", "signature", "job_card", "safety_document", "note"]).notNull(),
+  title: varchar("title", { length: 240 }).notNull(),
+  storageUrl: varchar("storageUrl", { length: 600 }),
+  capturedBy: int("capturedBy"),
+  capturedAt: timestamp("capturedAt").defaultNow().notNull(),
+  syncStatus: mysqlEnum("syncStatus", ["synced", "pending_upload", "needs_review"]).default("synced").notNull(),
+  metadata: json("metadata"),
+}, table => [index("job_evidence_job_idx").on(table.organizationId, table.jobId, table.evidenceType)]);
+
+export const quotes = mysqlTable("quotes", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(),
+  jobId: int("jobId").notNull(),
+  quoteNumber: varchar("quoteNumber", { length: 40 }).notNull(),
+  status: mysqlEnum("status", ["needs_pricing", "draft", "sent", "accepted", "declined", "expired"]).default("needs_pricing").notNull(),
+  assessedAt: timestamp("assessedAt"),
+  sentAt: timestamp("sentAt"),
+  respondedAt: timestamp("respondedAt"),
+  validUntil: timestamp("validUntil"),
+  total: int("total").default(0).notNull(),
+  declineReason: varchar("declineReason", { length: 500 }),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  uniqueIndex("quote_organization_number_unique").on(table.organizationId, table.quoteNumber),
+  index("quote_organization_status_idx").on(table.organizationId, table.status, table.updatedAt),
+]);
+
+export const quoteItems = mysqlTable("quoteItems", {
+  id: int("id").autoincrement().primaryKey(),
+  quoteId: int("quoteId").notNull(),
+  description: varchar("description", { length: 240 }).notNull(),
+  quantity: int("quantity").default(1).notNull(),
+  unitPrice: int("unitPrice").default(0).notNull(),
+  total: int("total").default(0).notNull(),
+  source: mysqlEnum("source", ["catalog", "free_text"]).default("catalog").notNull(),
+}, table => [index("quote_item_quote_idx").on(table.quoteId)]);
+
+export const invoiceLinks = mysqlTable("invoiceLinks", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(),
+  jobId: int("jobId").notNull(),
+  externalSystem: varchar("externalSystem", { length: 80 }).default("QuickBooks Online").notNull(),
+  externalInvoiceNumber: varchar("externalInvoiceNumber", { length: 80 }).notNull(),
+  status: mysqlEnum("status", ["linked", "credited", "superseded"]).default("linked").notNull(),
+  linkedAt: timestamp("linkedAt").defaultNow().notNull(),
+  linkedBy: int("linkedBy").notNull(),
+  notes: varchar("notes", { length: 500 }),
+}, table => [index("invoice_link_job_idx").on(table.organizationId, table.jobId, table.status)]);
+
+export const monthlyOperationalSnapshots = mysqlTable("monthlyOperationalSnapshots", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(),
+  periodStart: timestamp("periodStart").notNull(),
+  jobsCompleted: int("jobsCompleted").default(0).notNull(),
+  jobsInProgress: int("jobsInProgress").default(0).notNull(),
+  jobsOnHold: int("jobsOnHold").default(0).notNull(),
+  quotesSent: int("quotesSent").default(0).notNull(),
+  quotesAccepted: int("quotesAccepted").default(0).notNull(),
+  invoicesLinked: int("invoicesLinked").default(0).notNull(),
+  invoicedValue: int("invoicedValue").default(0).notNull(),
+  firstVisitResolutionRate: int("firstVisitResolutionRate").default(0).notNull(),
+  customerSatisfactionIndex: int("customerSatisfactionIndex").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [uniqueIndex("monthly_snapshot_organization_period_unique").on(table.organizationId, table.periodStart)]);
+
+export const environmentReleases = mysqlTable("environmentReleases", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(),
+  environment: mysqlEnum("environment", ["development", "staging", "production"]).notNull(),
+  version: varchar("version", { length: 80 }).notNull(),
+  commitSha: varchar("commitSha", { length: 80 }),
+  status: mysqlEnum("status", ["planned", "deploying", "healthy", "degraded", "rolled_back"]).default("planned").notNull(),
+  deployedBy: int("deployedBy").notNull(),
+  deployedAt: timestamp("deployedAt").defaultNow().notNull(),
+  rollbackVersion: varchar("rollbackVersion", { length: 80 }),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [index("environment_release_organization_idx").on(table.organizationId, table.environment, table.deployedAt)]);
+
+export const releaseChecks = mysqlTable("releaseChecks", {
+  id: int("id").autoincrement().primaryKey(),
+  releaseId: int("releaseId").notNull(),
+  category: mysqlEnum("category", ["database", "api", "ui", "security", "performance", "observability"]).notNull(),
+  checkName: varchar("checkName", { length: 180 }).notNull(),
+  status: mysqlEnum("status", ["passed", "warning", "failed", "not_run"]).notNull(),
+  evidence: varchar("evidence", { length: 600 }),
+  checkedAt: timestamp("checkedAt").defaultNow().notNull(),
+  checkedBy: varchar("checkedBy", { length: 120 }).default("release workflow").notNull(),
+}, table => [index("release_check_release_idx").on(table.releaseId, table.category, table.status)]);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type OrganizationMember = typeof organizationMembers.$inferSelect;
 export type OrganizationRole = OrganizationMember["role"];
+export type Job = typeof jobs.$inferSelect;
+export type JobStage = Job["stage"];
