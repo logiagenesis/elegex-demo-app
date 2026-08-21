@@ -25,4 +25,4 @@
 
 ## Production handoff boundary
 
-The repository is ready to export as one application. Before an external production launch, replace synthetic seed data, configure real OAuth and storage settings, provision database backups, set least-privilege credentials, populate the real logo asset if one is supplied, and execute the staging runbook with actual environment evidence.
+The repository is ready to export as one application. The audited GitHub-export checkpoint is **`fb55c3ec`**, saved after the branding, field-service, six-month data, staging, documentation, responsiveness, and bundle-quality pass. Before an external production launch, replace synthetic seed data, configure real OAuth and storage settings, provision database backups, set least-privilege credentials, populate a user-supplied original logo asset if one is supplied, and execute the staging runbook with actual environment evidence.

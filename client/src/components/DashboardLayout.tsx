@@ -24,7 +24,7 @@ const secondaryNavigation = [
 ];
 
 function ElegexWordmark({ inverted = false, compact = false }: { inverted?: boolean; compact?: boolean }) {
-  return <span className={`inline-flex items-center gap-2 ${inverted ? "text-white" : "text-[#101827]"}`}><img src="/manus-storage/elegex-app-icon_759d20e0.png" alt="" className={`h-5 w-5 rounded-md object-cover ${inverted ? "brightness-0 invert" : ""}`} /><span className="font-black tracking-[0.13em]">ELEGEX</span>{!compact ? <span className={`text-[9px] font-bold tracking-[0.18em] ${inverted ? "text-[#A8C8FF]" : "text-[#667085]"}`}>WESTERN CAPE</span> : null}</span>;
+  return <span className={`inline-flex items-center gap-2 ${inverted ? "text-white" : "text-[#101827]"}`}><img src="/manus-storage/elegex-e-mark_3db1dd1f.svg" alt="Elegex logo" className={`h-5 w-5 object-contain ${inverted ? "brightness-0 invert" : ""}`} /><span className="font-black tracking-[0.13em]">ELEGEX</span>{!compact ? <span className={`text-[9px] font-bold tracking-[0.18em] ${inverted ? "text-[#A8C8FF]" : "text-[#667085]"}`}>WESTERN CAPE</span> : null}</span>;
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

@@ -38,5 +38,12 @@
 - [x] Split feature routes into lazy-loaded chunks to remove the production-bundle size warning identified during release verification.
 - [x] Apply the verified ELEGEX wordmark identity across metadata, favicon, and all remaining application brand surfaces.
 - [x] Save the audited unified application as one final GitHub-export checkpoint and record that version in release evidence.
-- [ ] Save the final audited GitHub-export checkpoint after all audit and branding edits.
-- [ ] Record the resulting final checkpoint version in the release-evidence document.
+- [x] Save the final audited GitHub-export checkpoint after all audit and branding edits.
+- [x] Record the resulting final checkpoint version in the release-evidence document.
+- [x] Remove the checkerboard background from the user-provided Elegex logo while preserving the metallic black E mark.
+- [x] Replace the temporary app icon with the user-provided approved logo across favicon, metadata, sign-in, and dashboard branding.
+- [ ] Verify the approved-logo integration and save the refreshed GitHub-export checkpoint.
+- [x] Create and reject the flat PNG reconstruction after alpha verification found residual background opacity.
+- [x] Replace the rejected PNG with a source-controlled transparent SVG reconstruction of the approved E mark and revalidate the application.
+- [x] Verify the final in-use SVG has no painted background and record its transparency evidence.
+- [ ] Save the refreshed GitHub-export checkpoint after the verified SVG logo replacement.
