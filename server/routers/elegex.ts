@@ -1,6 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "../db";
+import { checkDatabaseHealth } from "../connectors/database";
+import { enqueueIntegrationEvent, listDispatchableEvents, listIntegrationConnections, upsertIntegrationConnection } from "../connectors/outbox";
 import { storagePut } from "../storage";
 import { protectedProcedure, router } from "../_core/trpc";
 
@@ -75,6 +77,13 @@ export const elegexRouter = router({
     rows: tenantProcedure.query(({ ctx }) => db.getReportRows(ctx.scope.organizationId)),
     savedViews: tenantProcedure.query(({ ctx }) => db.getSavedViews(ctx.scope.organizationId, ctx.user.id)),
     saveView: tenantProcedure.input(z.object({ name: z.string().min(2).max(120), filters: z.record(z.string(), z.unknown()), isShared: z.boolean().optional() })).mutation(({ ctx, input }) => db.createSavedView(ctx.scope.organizationId, ctx.user.id, { ...input, resource: "reports" })),
+  }),
+  integrations: router({
+    databaseHealth: tenantProcedure.query(async ({ ctx }) => { requireAdmin(ctx.scope.role); return checkDatabaseHealth(); }),
+    list: tenantProcedure.query(({ ctx }) => { requireAdmin(ctx.scope.role); return listIntegrationConnections(ctx.scope.organizationId); }),
+    upsert: tenantProcedure.input(z.object({ provider: z.enum(["database", "webhook", "analytics", "storage"]), name: z.string().min(2).max(120), configuration: z.record(z.string(), z.unknown()), secretReference: z.string().max(180).optional(), status: z.enum(["active", "paused", "degraded", "disabled"]).optional() })).mutation(({ ctx, input }) => { requireAdmin(ctx.scope.role); return upsertIntegrationConnection({ ...input, organizationId: ctx.scope.organizationId, createdBy: ctx.user.id }); }),
+    enqueue: tenantProcedure.input(z.object({ connectionId: z.number().int().positive(), eventType: z.string().min(2).max(120), payload: z.record(z.string(), z.unknown()), idempotencyKey: z.string().min(8).max(180) })).mutation(({ ctx, input }) => { requireAdmin(ctx.scope.role); return enqueueIntegrationEvent({ ...input, organizationId: ctx.scope.organizationId }); }),
+    dispatchable: tenantProcedure.input(z.object({ connectionId: z.number().int().positive(), limit: z.number().int().positive().max(100).optional() })).query(({ ctx, input }) => { requireAdmin(ctx.scope.role); return listDispatchableEvents(input.connectionId, input.limit); }),
   }),
   admin: router({
     data: tenantProcedure.query(({ ctx }) => { requireAdmin(ctx.scope.role); return db.getAdminData(ctx.scope.organizationId); }),

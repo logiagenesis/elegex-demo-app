@@ -18,6 +18,9 @@ describe("Elegex protected workflow contract", () => {
       "elegex.documents.upload",
       "elegex.reports.rows",
       "elegex.reports.saveView",
+      "elegex.integrations.databaseHealth",
+      "elegex.integrations.upsert",
+      "elegex.integrations.enqueue",
       "elegex.admin.data",
       "elegex.admin.resetDemo",
     ]));

@@ -231,6 +231,42 @@ export const appSettings = mysqlTable("appSettings", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const integrationConnections = mysqlTable("integrationConnections", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(),
+  provider: mysqlEnum("provider", ["database", "webhook", "analytics", "storage"]).notNull(),
+  name: varchar("name", { length: 120 }).notNull(),
+  status: mysqlEnum("status", ["active", "paused", "degraded", "disabled"]).default("active").notNull(),
+  configuration: json("configuration").notNull(),
+  secretReference: varchar("secretReference", { length: 180 }),
+  lastValidatedAt: timestamp("lastValidatedAt"),
+  lastError: text("lastError"),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("integration_connection_organization_idx").on(table.organizationId, table.status),
+  uniqueIndex("integration_connection_unique").on(table.organizationId, table.provider, table.name),
+]);
+
+export const integrationEvents = mysqlTable("integrationEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(),
+  connectionId: int("connectionId").notNull(),
+  eventType: varchar("eventType", { length: 120 }).notNull(),
+  payload: json("payload").notNull(),
+  idempotencyKey: varchar("idempotencyKey", { length: 180 }).notNull(),
+  status: mysqlEnum("status", ["pending", "processing", "delivered", "failed", "discarded"]).default("pending").notNull(),
+  attempts: int("attempts").default(0).notNull(),
+  availableAt: timestamp("availableAt").defaultNow().notNull(),
+  processedAt: timestamp("processedAt"),
+  lastError: text("lastError"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [
+  index("integration_event_dispatch_idx").on(table.connectionId, table.status, table.availableAt),
+  uniqueIndex("integration_event_idempotency_unique").on(table.connectionId, table.idempotencyKey),
+]);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type OrganizationMember = typeof organizationMembers.$inferSelect;

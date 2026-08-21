@@ -22,3 +22,10 @@
 - [x] Add interactive report filters and persist the active user-selected filter state in saved views.
 - [x] Add higher-level automated contract and authorization coverage for the protected business workflows.
 - [x] Add procedure-level tests covering unauthenticated, viewer, manager, member, and owner authorization outcomes.
+- [x] Confirm the completed Elegex workspace is the authoritative export source.
+- [x] Prepare and validate a single consolidated checkpoint for GitHub export.
+- [x] Audit the repository and establish the showcase-level database connector architecture.
+- [x] Add reusable tenant-aware data connector modules, transaction utilities, and persistence contracts.
+- [x] Add developer-facing API documentation, environment templates, operational scripts, and GitHub workflow guidance.
+- [x] Expand automated coverage for connector behavior and repository-level quality gates.
+- [x] Add a GitHub-safe, non-secret environment template artifact for external deployers.

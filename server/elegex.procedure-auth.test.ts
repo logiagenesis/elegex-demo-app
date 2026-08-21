@@ -73,4 +73,13 @@ describe("Elegex protected procedure authorization", () => {
     const viewerCaller = appRouter.createCaller(context(user));
     await expect(viewerCaller.elegex.documents.upload({ fileName: "brief.pdf", mimeType: "application/pdf", dataUrl: "data:application/pdf;base64,QQ==" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
+
+  it("blocks viewers from database connector health and configuration procedures", async () => {
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("viewer"));
+    const viewerCaller = appRouter.createCaller(context(user));
+    await expect(viewerCaller.elegex.integrations.databaseHealth()).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("viewer"));
+    await expect(viewerCaller.elegex.integrations.upsert({ provider: "webhook", name: "Outbound events", configuration: { url: "https://example.invalid" } })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
 });

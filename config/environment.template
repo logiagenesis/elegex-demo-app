@@ -1,0 +1,11 @@
+# Copy these variable names into your hosting provider's encrypted secret manager.
+# Replace every value with a real value. Do not rename this file to .env or commit secrets.
+
+DATABASE_URL=mysql://<username>:<password>@<host>:3306/<database>
+JWT_SECRET=<generate-a-long-random-secret>
+VITE_APP_ID=<oauth-application-id>
+OAUTH_SERVER_URL=https://api.manus.im
+VITE_OAUTH_PORTAL_URL=https://manus.im
+
+# Optional for the standalone seed script only.
+SEED_OPEN_ID=<local-demo-owner-id>

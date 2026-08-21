@@ -1,5 +1,4 @@
 import { and, asc, count, desc, eq, isNull, like, or, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
 import {
   activityLogs,
   appSettings,
@@ -17,14 +16,11 @@ import {
   users,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
-
-let _db: ReturnType<typeof drizzle> | null = null;
+import { writeAuditEvent } from "./connectors/audit";
+import { getDatabase, withTransaction } from "./connectors/database";
 
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    _db = drizzle(process.env.DATABASE_URL);
-  }
-  return _db;
+  return getDatabase();
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
@@ -76,9 +72,7 @@ async function logActivity(
   entityId: number | null,
   summary: string,
 ) {
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(activityLogs).values({ organizationId, actorId, action, entityType, entityId, summary });
+  await writeAuditEvent({ organizationId, actorId, action, entityType, entityId, summary });
 }
 
 async function seedDemoWorkspace(organizationId: number, ownerId: number) {
@@ -284,7 +278,13 @@ export async function updateCase(organizationId: number, userId: number, id: num
 }
 
 export async function createTask(organizationId: number, userId: number, input: { title: string; description?: string; projectId?: number; caseId?: number; priority?: "low" | "medium" | "high" | "urgent"; assigneeId?: number; dueDate?: Date }) {
-  const db = await getDb(); if (!db) throw new Error("Database is not available"); const result = await db.insert(tasks).values({ ...input, organizationId, createdBy: userId, updatedBy: userId }); const id = Number(result[0].insertId); if (input.assigneeId) await db.insert(notifications).values({ organizationId, userId: input.assigneeId, type: "assignment", title: `Task assigned: ${input.title}`, description: "A task has been assigned to you.", href: "/tasks" }); await logActivity(organizationId, userId, "assigned", "task", id, `Assigned task ${input.title}`); return id;
+  return withTransaction(async tx => {
+    const result = await tx.insert(tasks).values({ ...input, organizationId, createdBy: userId, updatedBy: userId });
+    const id = Number(result[0].insertId);
+    if (input.assigneeId) await tx.insert(notifications).values({ organizationId, userId: input.assigneeId, type: "assignment", title: `Task assigned: ${input.title}`, description: "A task has been assigned to you.", href: "/tasks" });
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "assigned", entityType: "task", entityId: id, summary: `Assigned task ${input.title}` });
+    return id;
+  });
 }
 
 export async function updateTask(organizationId: number, userId: number, id: number, input: { title?: string; description?: string; projectId?: number; status?: "todo" | "in_progress" | "blocked" | "complete"; priority?: "low" | "medium" | "high" | "urgent"; assigneeId?: number; dueDate?: Date }) {
