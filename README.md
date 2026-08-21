@@ -1,6 +1,6 @@
 # Elegex Operations Workspace
 
-> A production-minded, multi-tenant operations workspace that demonstrates how polished product UX, strict tenant isolation, and practical integration architecture can live in the same codebase.
+> A unified, multi-tenant field-service operations workspace. This repository contains the complete application code, database schema, and deployment configuration for Elegex.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white) ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=111827) ![tRPC](https://img.shields.io/badge/tRPC-11-398CCB) ![Drizzle](https://img.shields.io/badge/Drizzle-ORM-C5F74F?logo=drizzle&logoColor=111827) ![License](https://img.shields.io/badge/license-MIT-0EA5E9)
 
@@ -102,3 +102,9 @@ Review [SECURITY.md](SECURITY.md) for vulnerability reporting and handling guida
 ## Demonstration-data boundary
 
 > All seeded clients, staff names, job histories, commercial values, field evidence, documents, invoice references, and release records are **synthetic demonstration data**. They exist to exercise the product surface and must not be presented as real operating performance or customer records.
+
+## Operational Boundaries (SEO & Infrastructure)
+
+Elegex is a private, authenticated B2B SaaS application. Because all business data is protected behind a login wall and tenant-isolation guards, **public SEO (Search Engine Optimization) and Google Search Console indexing are intentionally not applicable to this repository.** Search engines cannot and should not index private tenant job records. If public marketing is required, a separate static website (e.g., `www.elegex.com`) should be deployed alongside this application.
+
+Furthermore, host-level infrastructure concerns such as SNTP/NTP time synchronization, SMTP mail servers, and database backup orchestration are managed by the deployment environment (e.g., the Linux host or cloud provider) and are not represented as application code within this repository.
