@@ -26,30 +26,43 @@ const envSchema = z.object({
   API_MASTER_KEY: z.string().min(16).optional(),
 });
 
-const parsed = envSchema.safeParse(process.env);
+let validEnv: z.infer<typeof envSchema>;
 
-if (!parsed.success) {
-  console.error("❌ Invalid environment configuration:");
-  parsed.error.issues.forEach(issue => {
-    console.error(`   - ${issue.path.join(".")}: ${issue.message}`);
-  });
-
-  // Fail fast in production or explicit development, but allow tooling to run
-  if (
-    process.env.NODE_ENV !== "test" &&
-    process.env.NODE_ENV !== "development"
-  ) {
+if (process.env.NODE_ENV === "test") {
+  // Provide mock values for test environment
+  validEnv = {
+    VITE_APP_ID: "test-app-id",
+    JWT_SECRET: "test-secret-must-be-16-chars",
+    DATABASE_URL: "mysql://test:test@localhost:3306/test",
+    OAUTH_SERVER_URL: "http://test-oauth.com",
+    VITE_OAUTH_PORTAL_URL: "http://test-portal.com",
+    NODE_ENV: "test",
+    OWNER_OPEN_ID: "test-owner",
+    SEED_OPEN_ID: "test-seed",
+    BUILT_IN_FORGE_API_URL: "http://test-forge.com",
+    BUILT_IN_FORGE_API_KEY: "test-forge-key",
+    VITE_FRONTEND_FORGE_API_URL: "http://test-forge-frontend.com",
+    VITE_FRONTEND_FORGE_API_KEY: "test-forge-frontend-key",
+    API_MASTER_KEY: "test-master-key-must-be-16-chars",
+  };
+} else {
+  const parsed = envSchema.safeParse(process.env);
+  if (!parsed.success) {
+    console.error("❌ Invalid environment configuration:");
+    parsed.error.issues.forEach(issue => {
+      console.error(`   - ${issue.path.join(".")}: ${issue.message}`);
+    });
+    // Fail fast in production or explicit development
     process.exit(1);
   }
+  validEnv = parsed.data;
 }
 
-const validEnv = parsed.success ? parsed.data : (process.env as any);
-
 export const ENV = {
-  appId: validEnv.VITE_APP_ID || "",
-  cookieSecret: validEnv.JWT_SECRET || "",
-  databaseUrl: validEnv.DATABASE_URL || "",
-  oAuthServerUrl: validEnv.OAUTH_SERVER_URL || "",
+  appId: validEnv.VITE_APP_ID,
+  cookieSecret: validEnv.JWT_SECRET,
+  databaseUrl: validEnv.DATABASE_URL,
+  oAuthServerUrl: validEnv.OAUTH_SERVER_URL,
   ownerOpenId: validEnv.OWNER_OPEN_ID || "",
   isProduction: validEnv.NODE_ENV === "production",
   forgeApiUrl: validEnv.BUILT_IN_FORGE_API_URL || "",
