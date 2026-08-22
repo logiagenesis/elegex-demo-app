@@ -3,18 +3,15 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
-import { defineConfig, type Plugin, type ViteDevServer } from "vite";
+import { defineConfig } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
-const plugins = [
-  react(),
-  tailwindcss(),
-  jsxLocPlugin(),
-  vitePluginManusRuntime(),
-];
-
-export default defineConfig({
-  plugins,
+export default defineConfig(({ command }) => ({
+  plugins: [
+    react(),
+    tailwindcss(),
+    ...(command === "serve" ? [jsxLocPlugin(), vitePluginManusRuntime()] : []),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
@@ -28,6 +25,26 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (
+            /node_modules\/(react|react-dom|scheduler|use-sync-external-store|react-is)\//.test(
+              id
+            )
+          ) {
+            return "react-vendor";
+          }
+          if (id.includes("@tanstack") || id.includes("@trpc")) {
+            return "data-vendor";
+          }
+          if (id.includes("@radix-ui") || id.includes("lucide-react")) {
+            return "ui-vendor";
+          }
+        },
+      },
+    },
   },
   server: {
     host: true,
@@ -45,4 +62,4 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
-});
+}));

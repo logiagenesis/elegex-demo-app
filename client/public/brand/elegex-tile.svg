@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="elegex-tile-title">
+  <title id="elegex-tile-title">Elegex</title>
+  <defs>
+    <linearGradient id="egx-tile-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0B1220"/><stop offset="1" stop-color="#05080F"/></linearGradient>
+    <linearGradient id="egx-tile-chrome" x1="0.08" y1="0" x2="0.92" y2="1"><stop offset="0" stop-color="#FAFCFE"/><stop offset="0.14" stop-color="#DCE6F0"/><stop offset="0.31" stop-color="#A9BCCE"/><stop offset="0.46" stop-color="#E8F0F7"/><stop offset="0.58" stop-color="#B6C7D8"/><stop offset="0.72" stop-color="#7C90A5"/><stop offset="0.86" stop-color="#C6D4E1"/><stop offset="1" stop-color="#8395AA"/></linearGradient>
+    <g id="egx-tile-shapes"><rect x="232" y="168" width="250" height="712" rx="28"/><rect x="456" y="160" width="344" height="196" rx="28"/><rect x="456" y="430" width="306" height="186" rx="28"/><rect x="456" y="692" width="344" height="196" rx="28"/></g>
+    <mask id="egx-tile-slot"><rect width="1024" height="1024" fill="#000"/><use href="#egx-tile-shapes" fill="#fff"/><rect x="336" y="318" width="40" height="398" rx="20" fill="#000"/></mask>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#egx-tile-bg)"/>
+  <g transform="translate(512 512) scale(0.66) translate(-512 -512)" mask="url(#egx-tile-slot)"><use href="#egx-tile-shapes" fill="url(#egx-tile-chrome)"/><use href="#egx-tile-shapes" fill="none" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="6"/></g>
+</svg>

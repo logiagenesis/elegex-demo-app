@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useEffect } from "react";
 
+import { BrandMark } from "@/components/BrandMark";
 import { startLogin } from "@/const";
 
 function setRobots(content: string) {
@@ -30,16 +31,7 @@ export default function PublicLandingPage() {
       <section className="relative isolate overflow-hidden bg-[#102447] pb-24 pt-6 text-white sm:pb-32">
         <div className="absolute inset-0 -z-10 opacity-70 [background-image:radial-gradient(circle_at_84%_14%,rgba(68,131,255,0.4),transparent_28%),radial-gradient(circle_at_12%_82%,rgba(36,96,219,0.35),transparent_31%)]" />
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 sm:px-8">
-          <div className="flex items-center gap-3">
-            <img
-              src="/manus-storage/elegex-brand-mark_bd91b904.png"
-              alt=""
-              className="h-10 w-10 rounded-xl"
-            />
-            <span className="font-[Manrope] text-lg font-extrabold tracking-tight">
-              Elegex
-            </span>
-          </div>
+          <BrandMark inverted variant="compact" />
           <button
             onClick={startLogin}
             className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20 active:scale-[0.97]"

@@ -26,7 +26,7 @@ import {
   requestIdMiddleware,
 } from "./observability";
 import { registerStorageProxy } from "./storageProxy";
-import { serveStatic, setupVite } from "./vite";
+import { serveStatic } from "./static";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -181,8 +181,10 @@ async function startServer() {
     res.type("text/plain; version=0.0.4").send(metricsText());
   });
 
-  // 4. Payload sizing - strict 1MB limit for standard JSON to prevent DoS
-  app.use(express.json({ limit: "1mb" }));
+  // Field evidence and documents currently traverse tRPC as base64 data URLs.
+  // The dedicated upload limiter and schema validation bound those routes; the
+  // parser therefore admits the 25 MB binary ceiling plus base64 overhead.
+  app.use(express.json({ limit: "36mb" }));
   app.use(express.urlencoded({ limit: "1mb", extended: true }));
   app.post("/api/client-errors", (req, res) => {
     const body = req.body as {
@@ -248,6 +250,7 @@ async function startServer() {
   app.use("/api", apiNotFoundHandler);
   // development mode uses Vite, production mode uses static files
   if (ENV.isDevelopment) {
+    const { setupVite } = await import("./vite");
     await setupVite(app, server);
   } else {
     serveStatic(app);

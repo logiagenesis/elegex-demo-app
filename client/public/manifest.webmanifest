@@ -8,10 +8,16 @@
   "theme_color": "#12264F",
   "icons": [
     {
-      "src": "/manus-storage/elegex-brand-mark_bd91b904.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/brand/elegex-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/elegex-tile.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }

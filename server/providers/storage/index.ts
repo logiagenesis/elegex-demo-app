@@ -4,12 +4,17 @@ import { localStorageProvider } from "./local";
 import { manusStorageProvider } from "./manus";
 import { s3StorageProvider } from "./s3";
 import type { StorageProvider } from "./types";
-import { assertStorageKey, makeImmutableStorageKey } from "./validation";
+import {
+  assertStorageKey,
+  makeImmutableStorageKey,
+  MAX_UPLOAD_BYTES,
+} from "./validation";
 
 export * from "./types";
 export {
   assertStorageKey,
   makeImmutableStorageKey,
+  MAX_UPLOAD_BYTES,
   validateUpload,
 } from "./validation";
 

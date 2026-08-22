@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   linkExternalInvoice: vi.fn(),
   getForemanToday: vi.fn(),
   captureForemanEvidence: vi.fn(),
+  createDocumentRecord: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -23,6 +24,7 @@ vi.mock("./db", () => ({
   linkExternalInvoice: mocks.linkExternalInvoice,
   getForemanToday: mocks.getForemanToday,
   captureForemanEvidence: mocks.captureForemanEvidence,
+  createDocumentRecord: mocks.createDocumentRecord,
   canEditRecords: (role: string) => role !== "viewer",
   canManageRecords: (role: string) =>
     ["owner", "admin", "manager"].includes(role),
@@ -159,7 +161,7 @@ describe("Elegex protected procedure authorization", () => {
     expect(mocks.storagePut).not.toHaveBeenCalled();
   });
 
-  it("rejects unsupported document MIME types and payloads beyond the decoded 5 MB policy", async () => {
+  it("accepts a 6 MB document under the shared policy while rejecting unsupported document MIME types", async () => {
     mocks.validateDocumentTargets.mockClear();
     mocks.storagePut.mockClear();
     mocks.ensureTenantScope.mockResolvedValueOnce(scope("member"));
@@ -173,16 +175,28 @@ describe("Elegex protected procedure authorization", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
 
     mocks.ensureTenantScope.mockResolvedValueOnce(scope("member"));
-    const oversizeBase64 = "A".repeat(6_666_668);
+    mocks.storagePut.mockResolvedValueOnce({
+      key: "elegex/7/documents/accepted.pdf",
+      url: "/storage/elegex/7/documents/accepted.pdf",
+    });
+    mocks.createDocumentRecord.mockResolvedValueOnce({ id: 701 });
+    const sixMegabyteBase64 = "A".repeat(8 * 1024 * 1024);
     await expect(
       memberCaller.elegex.documents.upload({
-        fileName: "oversize.pdf",
+        fileName: "accepted.pdf",
         mimeType: "application/pdf",
-        dataUrl: `data:application/pdf;base64,${oversizeBase64}`,
+        dataUrl: `data:application/pdf;base64,${sixMegabyteBase64}`,
       })
-    ).rejects.toMatchObject({ code: "PAYLOAD_TOO_LARGE" });
-    expect(mocks.validateDocumentTargets).not.toHaveBeenCalled();
-    expect(mocks.storagePut).not.toHaveBeenCalled();
+    ).resolves.toEqual({ id: 701 });
+    expect(mocks.validateDocumentTargets).toHaveBeenCalledWith(
+      7,
+      expect.any(Object)
+    );
+    expect(mocks.storagePut).toHaveBeenCalledWith(
+      "elegex/7/documents/accepted.pdf",
+      expect.any(Buffer),
+      "application/pdf"
+    );
   });
 
   it("blocks viewers from database connector health and configuration procedures", async () => {

@@ -23,6 +23,30 @@ const foreman = readFileSync(
   "utf8"
 );
 const app = readFileSync(new URL("../App.tsx", import.meta.url), "utf8");
+const demoLogin = readFileSync(
+  new URL("./DemoLoginPage.tsx", import.meta.url),
+  "utf8"
+);
+const publicLanding = readFileSync(
+  new URL("./PublicLandingPage.tsx", import.meta.url),
+  "utf8"
+);
+const dashboardLayout = readFileSync(
+  new URL("../components/DashboardLayout.tsx", import.meta.url),
+  "utf8"
+);
+const browserEntry = readFileSync(
+  new URL("../../index.html", import.meta.url),
+  "utf8"
+);
+const manifest = readFileSync(
+  new URL("../../public/manifest.webmanifest", import.meta.url),
+  "utf8"
+);
+const robots = readFileSync(
+  new URL("../../public/robots.txt", import.meta.url),
+  "utf8"
+);
 
 describe("frontend interaction and state contracts", () => {
   it("retains declared workspace navigation and recovery routes", () => {
@@ -81,5 +105,39 @@ describe("frontend interaction and state contracts", () => {
     ]) {
       expect(foreman).toContain(token);
     }
+  });
+
+  it("routes a successful demo persona session into the protected workspace", () => {
+    expect(demoLogin).toContain('onSuccess: () => setLocation("/app")');
+    expect(demoLogin).not.toContain('onSuccess: () => setLocation("/")');
+  });
+
+  it("uses a self-contained public brand mark instead of the unavailable storage asset", () => {
+    for (const source of [
+      publicLanding,
+      dashboardLayout,
+      browserEntry,
+      manifest,
+    ]) {
+      expect(source).not.toContain(
+        "/manus-storage/elegex-brand-mark_bd91b904.png"
+      );
+    }
+    expect(publicLanding).toContain("BrandMark");
+    expect(dashboardLayout).toContain("BrandMark");
+    expect(browserEntry).toContain("/brand/elegex-mark-mono.svg");
+    expect(manifest).toContain("/brand/elegex-mark.svg");
+    expect(manifest).toContain("/brand/elegex-tile.svg");
+  });
+
+  it("keeps public discovery metadata crawlable while preserving zoom and protected-route crawler boundaries", () => {
+    expect(browserEntry).toContain('rel="canonical"');
+    expect(browserEntry).toContain("application/ld+json");
+    expect(browserEntry).toContain("SoftwareApplication");
+    expect(browserEntry).not.toContain("maximum-scale=1");
+    for (const protectedPath of ["/app", "/field", "/documents", "/login"]) {
+      expect(robots).toContain(`Disallow: ${protectedPath}`);
+    }
+    expect(robots).toContain("Sitemap: /sitemap.xml");
   });
 });
