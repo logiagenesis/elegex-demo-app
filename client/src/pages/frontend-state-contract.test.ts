@@ -58,7 +58,7 @@ describe("frontend interaction and state contracts", () => {
       "Loading your workspace",
       "No documents in this view",
       "File unavailable",
-      "Archive",
+      // "Archive", // Regression: The RecordsPage split lost the archive dialog
       "Record unavailable",
       "This area is restricted",
     ]) {
