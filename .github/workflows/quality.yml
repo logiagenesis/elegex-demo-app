@@ -60,5 +60,9 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Apply reviewed migrations from zero
         run: pnpm db:migrate
+      - name: Seed and verify the deterministic demonstration workspace
+        run: pnpm seed:demo && pnpm test:integration:seed
+      - name: Prove deterministic demo reseeding
+        run: pnpm seed:demo && pnpm test:integration:seed
       - name: Verify MariaDB schema and integrity boundaries
         run: pnpm test:integration:mariadb

@@ -17,6 +17,7 @@
     "release:evidence:check": "node scripts/validate-release-evidence.mjs",
     "test:integration:mariadb": "node scripts/verify-mariadb-integration.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
+    "test:integration:seed": "node scripts/verify-seed-demo.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "pnpm db:generate && pnpm db:migrate",

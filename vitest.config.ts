@@ -20,6 +20,7 @@ export default defineConfig({
       "client/src/lib/**/*.test.ts",
       "client/src/pages/**/*.test.ts",
       "client/src/components/**/*.test.tsx",
+      "scripts/**/*.test.mjs",
     ],
   },
 });

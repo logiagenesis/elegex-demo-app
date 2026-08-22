@@ -1,16 +1,9 @@
 import mysql from "mysql2/promise";
+import { parseSeedEnvironment } from "./seed-config.mjs";
 
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl)
-  throw new Error(
-    "DATABASE_URL is required to seed the Elegex demo workspace."
-  );
-
+const { databaseUrl, ownerOpenId, ownerName, ownerEmail } =
+  parseSeedEnvironment(process.env);
 const connection = await mysql.createConnection(databaseUrl);
-const ownerOpenId =
-  process.env.SEED_OPEN_ID || process.env.OWNER_OPEN_ID || "elegex-demo-owner";
-const ownerName = process.env.SEED_OWNER_NAME || "Demo Workspace Owner";
-const ownerEmail = process.env.SEED_OWNER_EMAIL || "owner@elegex.demo";
 
 try {
   await connection.execute(
