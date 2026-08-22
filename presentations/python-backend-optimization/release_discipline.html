@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Corporate Release Discipline</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #f5f7fb;
+        color: #102a43;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .frame {
+        min-height: 720px;
+        padding-top: 48px;
+        padding-left: 72px;
+        padding-right: 72px;
+      }
+      .eyebrow {
+        color: #087e8b;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 39px;
+        line-height: 1.1;
+        letter-spacing: -1px;
+        margin-top: 10px;
+      }
+      .sub {
+        color: #526579;
+        font-size: 18px;
+        line-height: 1.38;
+        margin-top: 12px;
+        max-width: 1030px;
+      }
+      /* reduced sequence height to save vertical space */
+      .sequence {
+        min-height: 120px;
+        margin-top: 28px;
+        display: grid;
+        grid-template-columns: 1fr 33px 1fr 33px 1fr 33px 1fr 33px 1fr;
+        align-items: center;
+        background: #102a43;
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+      .step {
+        min-height: 80px;
+        border-top: 4px solid #53d1c9;
+        padding-top: 10px;
+        padding-left: 13px;
+        padding-right: 10px;
+      }
+      .step.warn {
+        border-top-color: #f2bd65;
+      }
+      .step-no {
+        color: #8ce4dc;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+      }
+      .warn .step-no {
+        color: #f6cb83;
+      }
+      .step-title {
+        color: #ffffff;
+        font-size: 16px;
+        line-height: 1.13;
+        font-weight: 700;
+        margin-top: 6px;
+      }
+      .step-copy {
+        color: #bcd0e1;
+        font-size: 12px;
+        line-height: 1.25;
+        margin-top: 6px;
+      }
+      .arrow {
+        text-align: center;
+        color: #7f9cb5;
+        font-size: 22px;
+        font-weight: 300;
+      }
+      /* reduced gap between sequence and lower to save space */
+      .lower {
+        min-height: 310px;
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: 43% 57%;
+        column-gap: 24px;
+      }
+      .controls {
+        min-height: 310px;
+        background: #ffffff;
+        border-top: 6px solid #1aa99d;
+        padding-top: 12px;
+        padding-left: 23px;
+        padding-right: 23px;
+      }
+      .heading {
+        color: #087e8b;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 1.3px;
+        text-transform: uppercase;
+      }
+      .controls h2 {
+        font-size: 25px;
+        line-height: 1.12;
+        letter-spacing: -0.4px;
+        margin-top: 9px;
+      }
+      /* slightly reduced control-row height and padding */
+      .control-row {
+        min-height: 50px;
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: 35px 1fr;
+        border-top: 1px solid #d9e3ed;
+        padding-top: 8px;
+      }
+      .control-row:first-of-type {
+        margin-top: 17px;
+      }
+      .mark {
+        color: #087e8b;
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .control-copy {
+        color: #365067;
+        font-size: 15px;
+        line-height: 1.32;
+      }
+      .control-copy strong {
+        color: #102a43;
+      }
+      .signals {
+        min-height: 310px;
+        background: #e8eef5;
+        padding-top: 12px;
+        padding-left: 23px;
+        padding-right: 23px;
+      }
+      .signals h2 {
+        font-size: 25px;
+        line-height: 1.12;
+        letter-spacing: -0.4px;
+        margin-top: 9px;
+      }
+      .signals-intro {
+        color: #516579;
+        font-size: 15px;
+        line-height: 1.35;
+        margin-top: 12px;
+      }
+      .metric-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 14px;
+        row-gap: 10px;
+        margin-top: 14px;
+      }
+      .metric {
+        min-height: 46px;
+        background: #ffffff;
+        border-top: 3px solid #8ba3b8;
+        padding-top: 6px;
+        padding-left: 11px;
+        padding-right: 11px;
+      }
+      .metric:last-child {
+        grid-column: 1 / 3;
+      }
+      .metric-name {
+        color: #102a43;
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+      .metric-why {
+        color: #5e7184;
+        font-size: 12px;
+        line-height: 1.2;
+        margin-top: 4px;
+      }
+      /* slight reduction to footer spacing to help fit under 720px */
+      .footer-band {
+        min-height: 49px;
+        margin-top: 12px;
+        background: #d9f2ef;
+        border-top: 4px solid #1aa99d;
+        display: flex;
+        align-items: center;
+        padding-left: 20px;
+        padding-right: 20px;
+        color: #25485b;
+        font-size: 16px;
+        line-height: 1.3;
+      }
+      .footer-band strong {
+        color: #0c6769;
+        margin-right: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <main class="frame">
+        <div class="eyebrow">Operating model 09</div>
+        <h1>Corporate release discipline keeps GitHub and evidence aligned</h1>
+        <p class="sub">
+          The release process should make each deployable change traceable from
+          a fresh clone through a required remote check, then measure the
+          service behaviours that matter after deployment.
+        </p>
+
+        <section class="sequence" aria-label="GitHub-first release sequence">
+          <article class="step">
+            <div class="step-no">01 / SOURCE</div>
+            <div class="step-title">Fresh clone</div>
+            <div class="step-copy">
+              Start from an immutable commit on <strong>origin/main</strong>.
+            </div>
+          </article>
+          <div class="arrow">→</div>
+          <article class="step">
+            <div class="step-no">02 / QUALITY</div>
+            <div class="step-title">Deterministic verify</div>
+            <div class="step-copy">
+              Frozen install and one integrated local gate.
+            </div>
+          </article>
+          <div class="arrow">→</div>
+          <article class="step">
+            <div class="step-no">03 / REVIEW</div>
+            <div class="step-title">Reviewable change</div>
+            <div class="step-copy">
+              Small, attributable change set with explicit scope.
+            </div>
+          </article>
+          <div class="arrow">→</div>
+          <article class="step">
+            <div class="step-no">04 / REMOTE</div>
+            <div class="step-title">Required GitHub check</div>
+            <div class="step-copy">
+              Push only integrated code; verify the remote Quality run.
+            </div>
+          </article>
+          <div class="arrow">→</div>
+          <article class="step warn">
+            <div class="step-no">05 / OPERATE</div>
+            <div class="step-title">Health and rollback</div>
+            <div class="step-copy">
+              Recommended next control: observed service health governs release
+              pace.
+            </div>
+          </article>
+        </section>
+
+        <section class="lower">
+          <section class="controls">
+            <div class="heading">Controls that make reviews credible</div>
+            <h2>Evidence before approval</h2>
+            <div class="control-row">
+              <div class="mark">✓</div>
+              <div class="control-copy">
+                <strong>Protected quality gate:</strong> formatting, type
+                checking, tests and build run as a single release command.
+              </div>
+            </div>
+            <div class="control-row">
+              <div class="mark">✓</div>
+              <div class="control-copy">
+                <strong>Remote confirmation:</strong> the GitHub Actions Quality
+                workflow must pass for the exact pushed commit.
+              </div>
+            </div>
+            <div class="control-row">
+              <div class="mark">✓</div>
+              <div class="control-copy">
+                <strong>Safe deployment record:</strong> migrations, rollback
+                criteria and health checks should accompany every operational
+                release.
+              </div>
+            </div>
+          </section>
+
+          <section class="signals">
+            <div class="heading">Next operational control</div>
+            <h2>Track a small set of meaningful indicators</h2>
+            <p class="signals-intro">
+              Google SRE recommends selecting a limited set of service
+              indicators tied to user outcomes—not every metric available.
+            </p>
+            <div class="metric-grid">
+              <div class="metric">
+                <div class="metric-name">Request success rate</div>
+                <div class="metric-why">Detects user-visible failures.</div>
+              </div>
+              <div class="metric">
+                <div class="metric-name">p95 latency</div>
+                <div class="metric-why">Shows tail user experience.</div>
+              </div>
+              <div class="metric">
+                <div class="metric-name">Outbox backlog age</div>
+                <div class="metric-why">Reveals stalled background work.</div>
+              </div>
+              <div class="metric">
+                <div class="metric-name">Failed delivery count</div>
+                <div class="metric-why">Shows provider/integration stress.</div>
+              </div>
+              <div class="metric">
+                <div class="metric-name">Idempotency conflict rate</div>
+                <div class="metric-why">
+                  Checks replay and client retry behaviour.
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <div class="footer-band">
+          <strong>Operating principle:</strong> do not equate a successful push
+          with a successful release; measure the integrated commit in GitHub,
+          then monitor the service behaviour it creates.
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

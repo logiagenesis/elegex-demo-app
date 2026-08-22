@@ -1,5 +1,104 @@
 {
   "version": "7",
   "dialect": "mysql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1787274207596,
+      "tag": "0000_gifted_forge",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1787274430296,
+      "tag": "0001_puzzling_micromax",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1787274810168,
+      "tag": "0002_lovely_jetstream",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1787292209749,
+      "tag": "0003_unknown_gamma_corps",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1787312024557,
+      "tag": "0004_right_jetstream",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1787312486422,
+      "tag": "0005_slimy_puff_adder",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1787317344309,
+      "tag": "0006_remarkable_lester",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1787317513638,
+      "tag": "0007_flippant_thunderball",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1787332495919,
+      "tag": "0008_living_skaar",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1787333270100,
+      "tag": "0009_sloppy_red_skull",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1787333492780,
+      "tag": "0010_groovy_gwen_stacy",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1787364052137,
+      "tag": "0011_cold_namora",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1787413372796,
+      "tag": "0012_shiny_whizzer",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1787413540066,
+      "tag": "0013_curved_beast",
+      "breakpoints": true
+    }
+  ]
 }

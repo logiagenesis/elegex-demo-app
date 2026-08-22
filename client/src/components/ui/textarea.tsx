@@ -1,7 +1,8 @@
+import * as React from "react";
+
 import { useDialogComposition } from "@/components/ui/dialog";
 import { useComposition } from "@/hooks/useComposition";
 import { cn } from "@/lib/utils";
-import * as React from "react";
 
 function Textarea({
   className,
@@ -19,9 +20,11 @@ function Textarea({
     onCompositionEnd: handleCompositionEnd,
     onKeyDown: handleKeyDown,
   } = useComposition<HTMLTextAreaElement>({
-    onKeyDown: (e) => {
+    onKeyDown: e => {
       // Check if this is an Enter key that should be blocked
-      const isComposing = (e.nativeEvent as any).isComposing || dialogComposition.justEndedComposing();
+      const isComposing =
+        (e.nativeEvent as any).isComposing ||
+        dialogComposition.justEndedComposing();
 
       // If Enter key is pressed while composing or just after composition ended,
       // don't call the user's onKeyDown (this blocks the business logic)

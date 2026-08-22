@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Queue Safety Controls</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #ffffff;
+        color: #000000;
+        font-family: Arial, Helvetica, sans-serif;
+        display: grid;
+        grid-template-columns: 390px 1fr;
+      }
+      .title-column {
+        padding-top: 65px;
+        padding-left: 70px;
+        padding-right: 40px;
+      }
+      .kicker {
+        color: #ea580c;
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin-top: 24px;
+        font-size: 56px;
+        line-height: 0.92;
+        font-weight: 800;
+        letter-spacing: -3.5px;
+      }
+      .title-note {
+        margin-top: 37px;
+        border-top: 4px solid #000000;
+        padding-top: 15px;
+        font-size: 17px;
+        line-height: 1.37;
+        color: #404040;
+      }
+      .content-column {
+        padding-top: 66px;
+        padding-left: 35px;
+        padding-right: 75px;
+      }
+      .intro {
+        border-top: 4px solid #000000;
+        padding-top: 17px;
+        max-width: 730px;
+        font-size: 24px;
+        line-height: 1.2;
+        font-weight: 700;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 37px;
+        table-layout: fixed;
+      }
+      th {
+        height: 39px;
+        border: 2px solid #000000;
+        text-align: left;
+        padding-top: 8px;
+        padding-left: 12px;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+      }
+      td {
+        border: 1px solid #000000;
+        height: 62px;
+        vertical-align: middle;
+        padding-left: 12px;
+        padding-right: 12px;
+        font-size: 17px;
+        line-height: 1.24;
+      }
+      td:first-child {
+        width: 33%;
+        font-weight: 800;
+      }
+      td:last-child {
+        color: #404040;
+      }
+      .control {
+        color: #ea580c;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 1.1px;
+        text-transform: uppercase;
+      }
+      .assurance {
+        margin-top: 31px;
+        border-top: 4px solid #ea580c;
+        padding-top: 15px;
+        max-width: 760px;
+        font-size: 20px;
+        line-height: 1.25;
+        font-weight: 800;
+      }
+      .assurance span {
+        color: #ea580c;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <section class="title-column">
+        <div class="kicker">09 / WP5 DESIGN</div>
+        <h1>QUEUE<br />SAFETY<br />CONTROLS</h1>
+        <div class="title-note">
+          Offline safety is not a single retry button. It is a coordinated set
+          of persistence, ordering, binary, and failure-management controls.
+        </div>
+      </section>
+      <section class="content-column">
+        <div class="intro">
+          Every queue item must protect the foreman's completed work from
+          network loss, replay, and silent failure.
+        </div>
+        <table aria-label="Queue safety controls">
+          <thead>
+            <tr>
+              <th>Risk scenario</th>
+              <th>Required control</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="control">Interrupted network</span></td>
+              <td>
+                Exponential backoff with jitter, capped retries, and an
+                actionable failure state.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="control">Replay after reconnection</span></td>
+              <td>
+                Client-generated UUID idempotency keys; server deduplication by
+                organization and key.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="control">Out-of-order job updates</span></td>
+              <td>
+                Explicit dependencies: check-in before materials; materials and
+                evidence before completion.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="control">Large photos and signatures</span></td>
+              <td>
+                Persist blobs in IndexedDB—not base64 Data URLs—before uploading
+                to storage.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="control">Permanent failure</span></td>
+              <td>
+                Surface a job-language remediation item; never silently discard
+                a mutation.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="assurance">
+          <span>Required assurance:</span> replaying a completed queue must
+          produce zero duplicate rows and preserve the original causal order.
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

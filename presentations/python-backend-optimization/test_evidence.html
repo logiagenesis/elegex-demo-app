@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>What the Current Test Gate Proves</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #f5f7fb;
+        color: #102a43;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .frame {
+        min-height: 720px;
+        padding-top: 52px;
+        padding-left: 72px;
+        padding-right: 72px;
+      }
+      .eyebrow {
+        color: #087e8b;
+        font-size: 13px;
+        letter-spacing: 2px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 39px;
+        letter-spacing: -1px;
+        line-height: 1.1;
+        margin-top: 10px;
+      }
+      .subtitle {
+        color: #526579;
+        font-size: 18px;
+        line-height: 1.4;
+        margin-top: 12px;
+        max-width: 960px;
+      }
+      .rule {
+        width: 84px;
+        height: 5px;
+        background: #1aa99d;
+        margin-top: 24px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 24px;
+        background: #ffffff;
+      }
+      th {
+        height: 44px;
+        background: #102a43;
+        color: #ffffff;
+        text-align: left;
+        font-size: 13px;
+        letter-spacing: 0.7px;
+        text-transform: uppercase;
+        padding-top: 13px;
+        padding-left: 18px;
+        padding-right: 18px;
+      }
+      td {
+        height: 43px;
+        border-bottom: 1px solid #d8e2ed;
+        padding-top: 10px;
+        padding-left: 18px;
+        padding-right: 18px;
+        font-size: 16px;
+        line-height: 1.25;
+        vertical-align: middle;
+      }
+      td:nth-child(1) {
+        width: 23%;
+        font-weight: 700;
+      }
+      td:nth-child(2) {
+        width: 16%;
+        color: #087e8b;
+        font-weight: 700;
+      }
+      td:nth-child(3) {
+        width: 61%;
+      }
+      .status {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        background: #1aa99d;
+        margin-right: 9px;
+      }
+      .lower {
+        min-height: 146px;
+        margin-top: 28px;
+        display: grid;
+        grid-template-columns: 54% 46%;
+      }
+      .proves {
+        background: #d9f2ef;
+        padding-top: 20px;
+        padding-left: 23px;
+        padding-right: 23px;
+      }
+      .doesnot {
+        background: #e7edf4;
+        padding-top: 20px;
+        padding-left: 23px;
+        padding-right: 23px;
+      }
+      .lower h2 {
+        font-size: 16px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-bottom: 11px;
+      }
+      .proves h2 {
+        color: #087e8b;
+      }
+      .doesnot h2 {
+        color: #526579;
+      }
+      .lower p {
+        font-size: 16px;
+        line-height: 1.42;
+        color: #27445a;
+      }
+      .lower strong {
+        color: #102a43;
+      }
+      .foot {
+        color: #66788e;
+        font-size: 12px;
+        margin-top: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <main class="frame">
+        <div class="eyebrow">Release evidence 04</div>
+        <h1>What the current test gate proves</h1>
+        <p class="subtitle">
+          The integrated gate establishes committed-source quality and build
+          consistency. It is valuable evidence, but it is not a substitute for a
+          deployed-system acceptance test.
+        </p>
+        <div class="rule"></div>
+        <table aria-label="Verified test gate evidence">
+          <thead>
+            <tr>
+              <th>Stage</th>
+              <th>Result</th>
+              <th>What it demonstrates</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Format check</td>
+              <td><span class="status"></span>Passed</td>
+              <td>No Prettier formatting drift remains in committed source.</td>
+            </tr>
+            <tr>
+              <td>Type check</td>
+              <td><span class="status"></span>Passed</td>
+              <td>
+                TypeScript compile-time contracts resolve across the current
+                application.
+              </td>
+            </tr>
+            <tr>
+              <td>Test suite</td>
+              <td><span class="status"></span>16 files / 74 tests</td>
+              <td>
+                Access control, workflow, offline queue, contract and mocked
+                concurrency scenarios passed.
+              </td>
+            </tr>
+            <tr>
+              <td>Production build</td>
+              <td><span class="status"></span>Passed</td>
+              <td>
+                Vite client build and bundled Node server build complete
+                successfully.
+              </td>
+            </tr>
+            <tr>
+              <td>GitHub Actions</td>
+              <td><span class="status"></span>Passed</td>
+              <td>
+                The same Quality workflow completed successfully on GitHub
+                <strong>main</strong>.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <section class="lower">
+          <div class="proves">
+            <h2>Verified by this gate</h2>
+            <p>
+              <strong>Repeatable repository quality:</strong> source formatting,
+              static typing, deterministic test execution and a buildable
+              artefact are all checked from the GitHub baseline.
+            </p>
+          </div>
+          <div class="doesnot">
+            <h2>Not yet proven by this gate</h2>
+            <p>
+              Live OAuth, external storage, real MySQL locking, provider
+              delivery, authenticated browser E2E, production telemetry and
+              recovery behaviour.
+            </p>
+          </div>
+        </section>
+        <p class="foot">
+          Evidence observed from a fresh clone at commit 9f51916 on 22 Aug 2026.
+          “Passed” means the specified gate completed; it does not expand the
+          verified scope beyond that gate.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>

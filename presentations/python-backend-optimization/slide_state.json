@@ -1,0 +1,144 @@
+{
+  "project_info": {
+    "title": "Elegex Backend Optimization Review",
+    "created": 1787392977.739,
+    "last_updated": 1787393182.707,
+    "total_slides": 12
+  },
+  "slides": [
+    {
+      "id": "cover",
+      "state": "edited",
+      "pageNum": 1
+    },
+    {
+      "id": "github_baseline",
+      "state": "edited",
+      "pageNum": 2
+    },
+    {
+      "id": "review_standard",
+      "state": "edited",
+      "pageNum": 3
+    },
+    {
+      "id": "release_gate",
+      "state": "edited",
+      "pageNum": 4
+    },
+    {
+      "id": "test_evidence",
+      "state": "edited",
+      "pageNum": 5
+    },
+    {
+      "id": "configuration",
+      "state": "edited",
+      "pageNum": 6
+    },
+    {
+      "id": "outbox_boundary",
+      "state": "edited",
+      "pageNum": 7
+    },
+    {
+      "id": "idempotency",
+      "state": "edited",
+      "pageNum": 8
+    },
+    {
+      "id": "priorities",
+      "state": "edited",
+      "pageNum": 9
+    },
+    {
+      "id": "release_discipline",
+      "state": "edited",
+      "pageNum": 10
+    },
+    {
+      "id": "assessment",
+      "state": "edited",
+      "pageNum": 11
+    },
+    {
+      "id": "closing",
+      "state": "edited",
+      "pageNum": 12
+    }
+  ],
+  "outline": [
+    {
+      "id": "cover",
+      "title": "Elegex Backend Optimization Review",
+      "summary": "Title slide introducing the corporate engineering readiness review, verified fixes and production-boundary priorities.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "github_baseline",
+      "title": "GitHub Is the Authoritative Release Baseline",
+      "summary": "Fresh-clone, local verification and GitHub Actions evidence establish the source-of-truth release workflow.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "review_standard",
+      "title": "Corporate Python-Backend Lens",
+      "summary": "Review dimensions covering configuration, data integrity, background work, delivery quality and operations.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "release_gate",
+      "title": "A Stricter Integrated Gate",
+      "summary": "Formatting, type checking, tests and build now compose the local release gate, with remote verification.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "test_evidence",
+      "title": "What the Current Test Gate Proves",
+      "summary": "Evidence table of format, type, tests, build and remote CI—along with clearly stated boundaries.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "configuration",
+      "title": "Fail Fast, Then Complete the Contract",
+      "summary": "Environment validation improvement and the remaining client/server configuration-contract reconciliation priority.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "outbox_boundary",
+      "title": "Outbox: Honest Boundary, Not Celery Parity",
+      "summary": "Current outbox controls versus missing real delivery, leases, claims, telemetry and isolated worker operation.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "idempotency",
+      "title": "Idempotency Design Needs Real-DB Proof",
+      "summary": "Database idempotency strengths, current test evidence and missing MySQL/MariaDB concurrent integration validation.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "priorities",
+      "title": "P0 and P1: The Right Next Investments",
+      "summary": "Prioritized high-confidence work items and measurable acceptance criteria.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "release_discipline",
+      "title": "Corporate Release Discipline",
+      "summary": "A GitHub-first release sequence, review controls, health checks and measurable service indicators.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "assessment",
+      "title": "Strong Showcase, Not Yet Production SaaS",
+      "summary": "Completion estimates with transparent rationales and a precise positioning statement.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "closing",
+      "title": "Evidence Before Claims",
+      "summary": "Closing statement emphasizing GitHub-first validation, measurable reliability and explicit boundaries.",
+      "image_plan": "Use a suitable image if needed"
+    }
+  ]
+}

@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Strong Showcase, Not Yet Production SaaS</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #f5f7fb;
+        color: #102a43;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .frame {
+        min-height: 720px;
+        padding-top: 48px;
+        padding-left: 72px;
+        padding-right: 72px;
+      }
+      .eyebrow {
+        color: #087e8b;
+        font-size: 13px;
+        letter-spacing: 2px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 39px;
+        line-height: 1.08;
+        letter-spacing: -1px;
+        margin-top: 10px;
+      }
+      .subtitle {
+        color: #526579;
+        font-size: 18px;
+        line-height: 1.38;
+        margin-top: 12px;
+        max-width: 970px;
+      }
+
+      /* Reduced vertical spacing to avoid overflow while keeping fonts unchanged */
+      .assessments {
+        margin-top: 20px;
+        display: grid;
+        row-gap: 12px;
+      }
+      .assessment {
+        min-height: 140px;
+        display: grid;
+        grid-template-columns: 255px 168px 1fr;
+        background: #ffffff;
+      }
+      .assessment.repro {
+        border-top: 6px solid #1aa99d;
+      }
+      .assessment.ops {
+        border-top: 6px solid #db9632;
+      }
+
+      .label {
+        padding-top: 18px;
+        padding-left: 22px;
+        padding-right: 18px;
+        border-right: 1px solid #d9e3ec;
+      }
+      .kicker {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #60778f;
+      }
+      .label h2 {
+        font-size: 22px;
+        line-height: 1.14;
+        letter-spacing: -0.4px;
+        margin-top: 10px;
+      }
+      .score {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-right: 1px solid #d9e3ec;
+      }
+      .score span {
+        font-size: 44px;
+        line-height: 1;
+        letter-spacing: -2px;
+        font-weight: 700;
+      }
+      .repro .score span {
+        color: #087e8b;
+      }
+      .ops .score span {
+        color: #a46310;
+      }
+      .score small {
+        display: block;
+        margin-top: 7px;
+        color: #63768a;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      .evidence {
+        padding-top: 14px;
+        padding-left: 25px;
+        padding-right: 28px;
+      }
+      .evidence h3 {
+        color: #27465f;
+        font-size: 15px;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+      }
+      .evidence-list {
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 28px;
+        row-gap: 8px;
+      }
+      .evidence-item {
+        color: #40586e;
+        font-size: 15px;
+        line-height: 1.28;
+      }
+      .evidence-item strong {
+        color: #102a43;
+      }
+      .marker {
+        color: #087e8b;
+        font-weight: 700;
+        margin-right: 5px;
+      }
+      .ops .marker {
+        color: #b67018;
+      }
+
+      .positioning {
+        min-height: 128px;
+        margin-top: 18px;
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        background: #102a43;
+      }
+      .positioning-head {
+        padding-top: 18px;
+        padding-left: 24px;
+        padding-right: 22px;
+        color: #53d1c9;
+        font-size: 22px;
+        line-height: 1.18;
+        font-weight: 700;
+      }
+      .positioning-copy {
+        border-left: 1px solid #47627a;
+        padding-top: 16px;
+        padding-left: 27px;
+        padding-right: 30px;
+        color: #d7e4ef;
+        font-size: 18px;
+        line-height: 1.42;
+      }
+      .positioning-copy strong {
+        color: #ffffff;
+      }
+      .foot {
+        color: #66788e;
+        font-size: 12px;
+        line-height: 1.3;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <main class="frame">
+        <div class="eyebrow">Assessment boundary 11</div>
+        <h1>Strong showcase, not yet production SaaS</h1>
+        <p class="subtitle">
+          These ranges are transparent engineering estimates against two
+          different denominators. They are not service-level measurements and
+          should not be presented as a deployment certification.
+        </p>
+
+        <section class="assessments" aria-label="Completion assessment">
+          <section class="assessment repro">
+            <div class="label">
+              <div class="kicker">Repository quality</div>
+              <h2>Reproducibility and synthetic-demo workflow</h2>
+            </div>
+            <div class="score">
+              <div><span>80–85%</span><small>estimated completion</small></div>
+            </div>
+            <div class="evidence">
+              <h3>Why this is comparatively strong</h3>
+              <div class="evidence-list">
+                <div class="evidence-item">
+                  <span class="marker">✓</span
+                  ><strong>Fresh clone</strong> exercised from GitHub
+                  <code>main</code>.
+                </div>
+                <div class="evidence-item">
+                  <span class="marker">✓</span
+                  ><strong>Frozen install</strong> and a passing remote Quality
+                  workflow.
+                </div>
+                <div class="evidence-item">
+                  <span class="marker">✓</span><strong>Quality gate</strong> now
+                  includes format, type, test and build.
+                </div>
+                <div class="evidence-item">
+                  <span class="marker">✓</span
+                  ><strong>Core demo flows</strong> have access, workflow and
+                  offline-queue test coverage.
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="assessment ops">
+            <div class="label">
+              <div class="kicker">Operational posture</div>
+              <h2>Production-grade backend service operation</h2>
+            </div>
+            <div class="score">
+              <div><span>45–55%</span><small>estimated completion</small></div>
+            </div>
+            <div class="evidence">
+              <h3>Why this remains materially incomplete</h3>
+              <div class="evidence-list">
+                <div class="evidence-item">
+                  <span class="marker">!</span
+                  ><strong>Provider delivery</strong>, signed webhooks and
+                  worker isolation are not implemented.
+                </div>
+                <div class="evidence-item">
+                  <span class="marker">!</span
+                  ><strong>Worker safety</strong> lacks atomic claims, leases,
+                  DLQ and telemetry.
+                </div>
+                <div class="evidence-item">
+                  <span class="marker">!</span
+                  ><strong>Real DB proof</strong> for concurrent idempotency is
+                  still absent.
+                </div>
+                <div class="evidence-item">
+                  <span class="marker">!</span
+                  ><strong>Operational proof</strong> lacks browser E2E, SLOs
+                  and deployed-service controls.
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section class="positioning">
+          <div class="positioning-head">Required external positioning</div>
+          <div class="positioning-copy">
+            Present Elegex as a
+            <strong
+              >well-tested engineering showcase with explicit boundaries</strong
+            >. Do not represent the current repository as a completed production
+            SaaS, as an externally integrated dispatch platform, or as a
+            financial-services-ready deployment until the remaining operational
+            controls are implemented and independently evidenced.
+          </div>
+        </section>
+        <p class="foot">
+          Estimate basis: fresh-clone validation at GitHub commit 9f51916,
+          repository audit findings, and the documented scope of current test
+          and operational controls. Percentages are judgement-based ranges, not
+          measured reliability values.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>

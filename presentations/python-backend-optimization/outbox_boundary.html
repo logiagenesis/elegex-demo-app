@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Outbox: Honest Boundary, Not Celery Parity</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #f5f7fb;
+        color: #102a43;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .frame {
+        min-height: 720px;
+        padding-top: 50px;
+        padding-left: 72px;
+        padding-right: 72px;
+      }
+      .eyebrow {
+        color: #087e8b;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 39px;
+        line-height: 1.1;
+        letter-spacing: -1px;
+        margin-top: 10px;
+      }
+      .sub {
+        color: #526579;
+        font-size: 18px;
+        line-height: 1.42;
+        margin-top: 12px;
+        max-width: 980px;
+      }
+      .state-band {
+        margin-top: 12px;
+        min-height: 68px;
+        background: #102a43;
+        display: grid;
+        grid-template-columns: 192px 1fr;
+        align-items: center;
+      }
+      .state-label {
+        color: #53d1c9;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        padding-left: 21px;
+      }
+      .state-copy {
+        color: #f7fbff;
+        font-size: 19px;
+        line-height: 1.35;
+        padding-right: 28px;
+      }
+      .matrix {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        min-height: 337px;
+        background: #ffffff;
+      }
+      .column {
+        min-height: 337px;
+      }
+      .column:first-child {
+        border-right: 1px solid #d7e2ec;
+      }
+      .column-head {
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        padding-left: 24px;
+        padding-right: 24px;
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .implemented .column-head {
+        background: #d9f2ef;
+        color: #115a62;
+      }
+      .missing .column-head {
+        background: #f9ead8;
+        color: #80551c;
+      }
+      .row {
+        min-height: 54px;
+        border-bottom: 1px solid #e1e8f0;
+        display: grid;
+        grid-template-columns: 38px 1fr;
+        align-items: center;
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+      .marker {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .implemented .marker {
+        color: #087e8b;
+      }
+      .missing .marker {
+        color: #bd7a25;
+      }
+      .row-copy {
+        font-size: 16px;
+        line-height: 1.3;
+        color: #29465d;
+      }
+      .row-copy strong {
+        color: #102a43;
+      }
+      .disclosure {
+        min-height: 66px;
+        margin-top: 12px;
+        background: #fff3e7;
+        border-top: 4px solid #d58c2e;
+        padding-top: 14px;
+        padding-left: 21px;
+        padding-right: 22px;
+        color: #5c4325;
+        font-size: 17px;
+        line-height: 1.35;
+      }
+      .foot {
+        margin-top: 15px;
+        color: #66788e;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <main class="frame">
+        <div class="eyebrow">Backend reliability boundary</div>
+        <h1>Outbox: honest boundary, not Celery parity</h1>
+        <p class="sub">
+          The repository contains a useful durable-outbox direction, but its
+          current worker is a polling demonstration—not a production-grade
+          external-delivery service.
+        </p>
+
+        <section class="state-band" aria-label="Current worker state">
+          <div class="state-label">Current worker</div>
+          <div class="state-copy">
+            Polls active connections, selects ready events, updates status and
+            attempts, and applies retry backoff. Its successful delivery path is
+            <strong>simulated</strong>.
+          </div>
+        </section>
+
+        <section class="matrix" aria-label="Outbox implementation comparison">
+          <div class="column implemented">
+            <div class="column-head">Implemented control surface</div>
+            <div class="row">
+              <div class="marker">✓</div>
+              <div class="row-copy">
+                <strong>Durable event records</strong> exist in the
+                integration-event store.
+              </div>
+            </div>
+            <div class="row">
+              <div class="marker">✓</div>
+              <div class="row-copy">
+                <strong>Status and attempt counters</strong> record basic
+                processing state.
+              </div>
+            </div>
+            <div class="row">
+              <div class="marker">✓</div>
+              <div class="row-copy">
+                <strong>Retry backoff</strong> reschedules failures up to a
+                local attempt limit.
+              </div>
+            </div>
+            <div class="row">
+              <div class="marker">✓</div>
+              <div class="row-copy">
+                <strong>Worker lifecycle hooks</strong> start and stop an
+                in-process poller.
+              </div>
+            </div>
+            <div class="row">
+              <div class="marker">✓</div>
+              <div class="row-copy">
+                <strong>Explicit code comment</strong> now identifies simulated
+                delivery as a demo limitation.
+              </div>
+            </div>
+          </div>
+          <div class="column missing">
+            <div class="column-head">Required for production dispatch</div>
+            <div class="row">
+              <div class="marker">!</div>
+              <div class="row-copy">
+                <strong>Provider adapter and signed delivery</strong> are
+                absent; no webhook/API call is made.
+              </div>
+            </div>
+            <div class="row">
+              <div class="marker">!</div>
+              <div class="row-copy">
+                <strong>Atomic conditional claim</strong> is absent; concurrent
+                workers can race after selection.
+              </div>
+            </div>
+            <div class="row">
+              <div class="marker">!</div>
+              <div class="row-copy">
+                <strong>Lease expiry and recovery</strong> are absent for events
+                stuck in <code>processing</code>.
+              </div>
+            </div>
+            <div class="row">
+              <div class="marker">!</div>
+              <div class="row-copy">
+                <strong>Timeouts, dead-letter operations and metrics</strong>
+                are not implemented.
+              </div>
+            </div>
+            <div class="row">
+              <div class="marker">!</div>
+              <div class="row-copy">
+                <strong
+                  >Separate worker deployment and health/SLO controls</strong
+                >
+                are not implemented.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="disclosure">
+          <strong>Required positioning:</strong> describe this as an engineering
+          showcase of a durable-outbox pattern. Do not describe it as completed
+          webhook/API integration or as a Celery-equivalent worker platform.
+        </div>
+        <div class="foot">
+          Source: current repository worker and outbox implementation;
+          recommended operational controls align with SRE-style measurable
+          service ownership.
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,68 @@
+name: Quality gates
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Type, test, and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Verify codebase
+        run: pnpm verify
+  mariadb-integration:
+    name: MariaDB migrations and integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_DATABASE: elegex_ci
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/elegex_ci
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Apply reviewed migrations from zero
+        run: pnpm db:migrate
+      - name: Seed and verify the deterministic demonstration workspace
+        run: pnpm seed:demo && pnpm test:integration:seed
+      - name: Prove deterministic demo reseeding
+        run: pnpm seed:demo && pnpm test:integration:seed
+      - name: Verify MariaDB schema and integrity boundaries
+        run: pnpm test:integration:mariadb

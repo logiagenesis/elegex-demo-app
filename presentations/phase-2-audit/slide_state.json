@@ -1,0 +1,144 @@
+{
+  "project_info": {
+    "title": "Elegex Phase 2 Audit",
+    "created": 1787332641.86,
+    "last_updated": 1787332771.462,
+    "total_slides": 12
+  },
+  "slides": [
+    {
+      "id": "cover",
+      "state": "edited",
+      "pageNum": 1
+    },
+    {
+      "id": "evidence_reset",
+      "state": "edited",
+      "pageNum": 2
+    },
+    {
+      "id": "foreman_ground_truth",
+      "state": "edited",
+      "pageNum": 3
+    },
+    {
+      "id": "acceptance_retraction",
+      "state": "edited",
+      "pageNum": 4
+    },
+    {
+      "id": "wp2_domain",
+      "state": "edited",
+      "pageNum": 5
+    },
+    {
+      "id": "domain_schema",
+      "state": "edited",
+      "pageNum": 6
+    },
+    {
+      "id": "migration_foundation",
+      "state": "edited",
+      "pageNum": 7
+    },
+    {
+      "id": "offline_gap",
+      "state": "edited",
+      "pageNum": 8
+    },
+    {
+      "id": "offline_architecture",
+      "state": "edited",
+      "pageNum": 9
+    },
+    {
+      "id": "queue_controls",
+      "state": "edited",
+      "pageNum": 10
+    },
+    {
+      "id": "implementation_path",
+      "state": "edited",
+      "pageNum": 11
+    },
+    {
+      "id": "closing",
+      "state": "edited",
+      "pageNum": 12
+    }
+  ],
+  "outline": [
+    {
+      "id": "cover",
+      "title": "Elegex Phase 2 Audit",
+      "summary": "Cover slide presenting the Phase 2 audit focus: ground truth, domain restoration, and the offline-first path.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "evidence_reset",
+      "title": "Evidence Standards Reset",
+      "summary": "Why the contradiction between the prior acceptance report and UX analysis required a reset of evidence standards.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "foreman_ground_truth",
+      "title": "Foreman Ground Truth",
+      "summary": "Per-step summary of what is absent, partial, or verified in the current foreman journey.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "acceptance_retraction",
+      "title": "Acceptance Retracted",
+      "summary": "Clear explanation of why the prior acceptance decision was retracted and reissued.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "wp2_domain",
+      "title": "WP2 Restores the Domain",
+      "summary": "The South African locale, currency, timezone, call-out taxonomy, and operating model restored in the WP2 schema foundation.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "domain_schema",
+      "title": "Domain Schema",
+      "summary": "How new tenant-scoped tables and fields support the required contracting relationships.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "migration_foundation",
+      "title": "Migration Foundation",
+      "summary": "What the WP2 migration adds and why it preserves historical records.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "offline_gap",
+      "title": "Offline Gap",
+      "summary": "The gap between the current direct-mutation foreman implementation and true offline-first behaviour.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "offline_architecture",
+      "title": "Write-Ahead Architecture",
+      "summary": "Core architectural principles required to make the mobile workflow safe offline.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "queue_controls",
+      "title": "Queue Safety Controls",
+      "summary": "The queue controls that protect field work: retry, idempotency, order, blobs, and surfacing permanent failures.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "implementation_path",
+      "title": "Sequenced Path",
+      "summary": "The ordered work-package path from WP2 foundation through documents, isolation proof, and E2E evidence.",
+      "image_plan": "Use a suitable image if needed"
+    },
+    {
+      "id": "closing",
+      "title": "Trust Through Functional Proof",
+      "summary": "Closing statement: build the real workflow, record the evidence, accept only verified work.",
+      "image_plan": "Use a suitable image if needed"
+    }
+  ]
+}

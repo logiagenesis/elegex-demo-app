@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Idempotency Design Needs Real-DB Proof</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #f5f7fb;
+        color: #102a43;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .frame {
+        min-height: 720px;
+        padding-top: 50px;
+        padding-left: 72px;
+        padding-right: 72px;
+      }
+      .eyebrow {
+        color: #087e8b;
+        font-size: 13px;
+        letter-spacing: 2px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 39px;
+        letter-spacing: -1px;
+        line-height: 1.1;
+        margin-top: 10px;
+      }
+      .subtitle {
+        color: #526579;
+        font-size: 18px;
+        line-height: 1.4;
+        margin-top: 12px;
+        max-width: 980px;
+      }
+
+      /* Reduced vertical footprints and tighter spacing */
+      .flow {
+        min-height: 140px;
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: 1fr 40px 1fr 40px 1fr 40px 1fr;
+        align-items: center;
+        border-top: 1px solid #c9d5e0;
+        border-bottom: 1px solid #c9d5e0;
+      }
+      .node {
+        min-height: 100px;
+        background: #ffffff;
+        border-top: 5px solid #1aa99d;
+        padding-top: 12px;
+        padding-left: 18px;
+        padding-right: 16px;
+      }
+      .node.warn {
+        border-top-color: #df9632;
+      }
+      .node-number {
+        color: #087e8b;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.3px;
+      }
+      .node.warn .node-number {
+        color: #ad6a0f;
+      }
+      .node-title {
+        font-size: 19px;
+        line-height: 1.14;
+        font-weight: 700;
+        margin-top: 8px;
+      }
+      .node-copy {
+        font-size: 14px;
+        line-height: 1.35;
+        color: #526579;
+        margin-top: 8px;
+      }
+
+      .arrow {
+        color: #7a8da2;
+        text-align: center;
+        font-size: 28px;
+        font-weight: 300;
+      }
+
+      .evidence {
+        min-height: 240px;
+        margin-top: 20px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 24px;
+      }
+      .panel {
+        min-height: 240px;
+        background: #ffffff;
+      }
+      .panel-head {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        padding-left: 18px;
+        padding-right: 18px;
+        font-size: 19px;
+        font-weight: 700;
+      }
+      .verified .panel-head {
+        background: #d9f2ef;
+        color: #115a62;
+      }
+      .required .panel-head {
+        background: #f9ead8;
+        color: #80551c;
+      }
+      .panel-body {
+        padding-top: 12px;
+        padding-left: 22px;
+        padding-right: 22px;
+      }
+      .item {
+        min-height: 48px;
+        display: grid;
+        grid-template-columns: 29px 1fr;
+        border-bottom: 1px solid #dfe8f0;
+        padding-top: 6px;
+      }
+      .mark {
+        font-weight: 700;
+        font-size: 20px;
+        color: #087e8b;
+      }
+      .required .mark {
+        color: #bd7a25;
+      }
+      .item-copy {
+        color: #304a61;
+        font-size: 15px;
+        line-height: 1.33;
+      }
+      .item-copy strong {
+        color: #102a43;
+      }
+
+      .callout {
+        min-height: 52px;
+        margin-top: 12px;
+        background: #102a43;
+        color: #e8f3fb;
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        align-items: center;
+      }
+      .callout-label {
+        color: #53d1c9;
+        font-size: 14px;
+        letter-spacing: 1px;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding-left: 16px;
+      }
+      .callout-copy {
+        font-size: 16px;
+        line-height: 1.36;
+        padding-right: 20px;
+      }
+      .foot {
+        color: #66788e;
+        font-size: 12px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <main class="frame">
+        <div class="eyebrow">Data integrity 07</div>
+        <h1>Idempotency design needs real-DB proof</h1>
+        <p class="subtitle">
+          The architecture places duplicate prevention at the database
+          boundary—a sound direction. The remaining work is to prove the exact
+          locking and failure behaviour against the actual MySQL/MariaDB engine.
+        </p>
+
+        <section class="flow" aria-label="Idempotent replay control flow">
+          <div class="node">
+            <div class="node-number">01 / CLIENT</div>
+            <div class="node-title">UUID per queued action</div>
+            <div class="node-copy">
+              The IndexedDB queue assigns a stable idempotency key before retry
+              or replay.
+            </div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="node">
+            <div class="node-number">02 / SERVER</div>
+            <div class="node-title">Tenant scope is derived</div>
+            <div class="node-copy">
+              Protected procedures derive organisation scope from authenticated
+              membership.
+            </div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="node">
+            <div class="node-number">03 / DATABASE</div>
+            <div class="node-title">Composite uniqueness boundary</div>
+            <div class="node-copy">
+              Organisation and idempotency key are handled within the
+              transaction path.
+            </div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="node warn">
+            <div class="node-number">04 / EVIDENCE GAP</div>
+            <div class="node-title">Real engine race is unproven</div>
+            <div class="node-copy">
+              The current concurrency test is mocked, not an InnoDB integration
+              run.
+            </div>
+          </div>
+        </section>
+
+        <section class="evidence" aria-label="Idempotency evidence comparison">
+          <section class="panel verified">
+            <div class="panel-head">Current evidence supports the design</div>
+            <div class="panel-body">
+              <div class="item">
+                <div class="mark">✓</div>
+                <div class="item-copy">
+                  <strong>Stable replay key:</strong> a UUID persists with the
+                  queued browser action and crosses the tRPC boundary.
+                </div>
+              </div>
+              <div class="item">
+                <div class="mark">✓</div>
+                <div class="item-copy">
+                  <strong>Server-owned tenancy:</strong> the client does not
+                  submit organisation scope as an authority.
+                </div>
+              </div>
+              <div class="item">
+                <div class="mark">✓</div>
+                <div class="item-copy">
+                  <strong>Database-first duplicate control:</strong> unique-key
+                  handling avoids trusting an application-only cache.
+                </div>
+              </div>
+              <div class="item">
+                <div class="mark">✓</div>
+                <div class="item-copy">
+                  <strong>Stress scenario:</strong> a mocked 50-request
+                  concurrent idempotency simulation passes.
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="panel required">
+            <div class="panel-head">Production proof still required</div>
+            <div class="panel-body">
+              <div class="item">
+                <div class="mark">!</div>
+                <div class="item-copy">
+                  <strong>Ephemeral MySQL/MariaDB CI job:</strong> exercise real
+                  transaction and unique-index behaviour.
+                </div>
+              </div>
+              <div class="item">
+                <div class="mark">!</div>
+                <div class="item-copy">
+                  <strong>Parallel request test:</strong> assert a single
+                  business effect under genuine contention.
+                </div>
+              </div>
+              <div class="item">
+                <div class="mark">!</div>
+                <div class="item-copy">
+                  <strong>Deadlock and lock-wait policy:</strong> assert
+                  retry/error handling rather than assuming happy-path
+                  atomicity.
+                </div>
+              </div>
+              <div class="item">
+                <div class="mark">!</div>
+                <div class="item-copy">
+                  <strong>Authenticated browser E2E:</strong> validate the full
+                  queue → server → database replay path.
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section class="callout">
+          <div class="callout-label">Why the distinction matters</div>
+          <div class="callout-copy">
+            InnoDB uses row-level shared/exclusive locks and conflicting
+            transactions can wait. A mock validates application intent; only a
+            real-engine test validates the interaction with those database
+            semantics.
+          </div>
+        </section>
+        <p class="foot">
+          Source: repository idempotency tests and database workflow code; MySQL
+          8.0 Reference Manual, “InnoDB Locking.”
+        </p>
+      </main>
+    </div>
+  </body>
+</html>

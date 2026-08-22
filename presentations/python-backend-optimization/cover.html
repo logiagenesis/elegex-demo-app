@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Elegex Backend Optimization Review</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #0b1f36;
+        color: #f8fbff;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .frame {
+        min-height: 720px;
+        display: grid;
+        grid-template-columns: 58% 42%;
+      }
+      .main {
+        padding-top: 96px;
+        padding-left: 84px;
+        padding-right: 70px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .eyebrow {
+        color: #53d1c9;
+        font-size: 15px;
+        letter-spacing: 2.4px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 62px;
+        line-height: 1.04;
+        max-width: 650px;
+        letter-spacing: -2px;
+        margin-top: 20px;
+      }
+      .subtitle {
+        color: #cbd8e8;
+        font-size: 23px;
+        line-height: 1.45;
+        max-width: 620px;
+        margin-top: 25px;
+      }
+      .meta {
+        color: #9eb3ca;
+        font-size: 15px;
+        letter-spacing: 0.4px;
+      }
+      .panel {
+        min-height: 720px;
+        border-left: 1px solid rgba(210, 231, 244, 0.24);
+        background: #102b49;
+        padding-top: 88px;
+        padding-left: 54px;
+        padding-right: 66px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .panel-rule {
+        width: 84px;
+        height: 8px;
+        background: #53d1c9;
+        margin-bottom: 34px;
+      }
+      .statement {
+        font-size: 35px;
+        line-height: 1.16;
+        font-weight: 700;
+        letter-spacing: -0.8px;
+      }
+      .statement strong {
+        color: #53d1c9;
+      }
+      .panel-note {
+        margin-top: 34px;
+        color: #b7c8db;
+        font-size: 17px;
+        line-height: 1.55;
+        border-top: 1px solid rgba(210, 231, 244, 0.26);
+        padding-top: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <div class="frame">
+        <section class="main">
+          <div>
+            <div class="eyebrow">Corporate engineering review</div>
+            <h1>Elegex Backend<br />Optimization Review</h1>
+            <p class="subtitle">
+              Verified fixes, GitHub-authoritative validation, and the remaining
+              path to a production-grade operational posture.
+            </p>
+          </div>
+          <p class="meta">
+            GitHub <strong>main</strong> baseline:
+            <strong>9f51916</strong> &nbsp;•&nbsp; 22 August 2026
+          </p>
+        </section>
+        <aside class="panel">
+          <div class="panel-rule"></div>
+          <div class="statement">
+            A disciplined review of <strong>evidence</strong>, not a claim of
+            completed production readiness.
+          </div>
+          <p class="panel-note">
+            Assessment lens: senior corporate backend engineering, with
+            particular comparison points drawn from Python, Django/FastAPI,
+            Celery and SRE operating practices.
+          </p>
+        </aside>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,133 @@
+# Project TODO
+
+- [x] Review the supplied Elegex experience and translate its visual patterns into an original application design.
+- [x] Define a multi-tenant schema covering organizations, memberships, records, tasks, documents, notifications, activity logs, saved views, and settings.
+- [x] Implement organization-scoped server procedures and role-based access control for owner, admin, manager, member, and viewer roles.
+- [x] Add realistic database seed data and a safe administrator demo-data reset flow.
+- [x] Build protected authentication, workspace onboarding, and role-aware navigation with documented demo access guidance.
+- [x] Build database-driven dashboard metrics, activity feed, status views, and Recharts analytics.
+- [x] Implement contacts, projects, and cases with CRUD, detail pages, archive actions, search, filters, sorting, and pagination.
+- [x] Implement project-linked tasks with assignment, status, due dates, and notification events.
+- [x] Implement organization-scoped document metadata and file upload flows using managed storage.
+- [x] Build the notification center, reports with saved filters and CSV export, and privileged administration views.
+- [x] Apply a polished responsive visual system with accessible interactions across desktop, tablet, and mobile.
+- [x] Add Vitest coverage, validate the application interface, and write README setup and demo-use documentation.
+- [x] Add a first-time workspace onboarding panel that makes automatic provisioning visible and actionable.
+- [x] Add dedicated detail routes for contacts, projects, and cases, while retaining the quick-view drawers.
+- [x] Add full task edit controls, including due-date management and archive actions.
+- [x] Allow document uploads and lists to be scoped to a selected contact, project, or case.
+- [x] Add user-created saved report views backed by persisted filters.
+- [x] Expand automated coverage and validate major authenticated interface journeys where access is available.
+- [x] Complete task editing for title, description, priority, assignee, project, status, and due date.
+- [x] Add interactive report filters and persist the active user-selected filter state in saved views.
+- [x] Add higher-level automated contract and authorization coverage for the protected business workflows.
+- [x] Add procedure-level tests covering unauthenticated, viewer, manager, member, and owner authorization outcomes.
+- [x] Confirm the completed Elegex workspace is the authoritative export source.
+- [x] Prepare and validate a single consolidated checkpoint for GitHub export.
+- [x] Audit the repository and establish the showcase-level database connector architecture.
+- [x] Add reusable tenant-aware data connector modules, transaction utilities, and persistence contracts.
+- [x] Add developer-facing API documentation, environment templates, operational scripts, and GitHub workflow guidance.
+- [x] Expand automated coverage for connector behavior and repository-level quality gates.
+- [x] Add a GitHub-safe, non-secret environment template artifact for external deployers.
+- [x] Audit every implemented interface, workflow, permission boundary, database table, seed path, document flow, and repository artifact against the requested scope.
+- [x] Verify the authoritative Elegex brand source and correct the application logo and visual identity everywhere it appears.
+- [x] Expand the live demo into a coherent six-month history with realistic operations, activity, reporting, and document metadata.
+- [x] Add a richer staging-readiness model, deployment guide, operational checks, and release evidence.
+- [x] Expand product capabilities and administrator tooling where audit findings reveal a limited or missing workflow.
+- [x] Reconcile the completed application against a written A–Z acceptance matrix, run full validation, and produce one final GitHub-export checkpoint.
+- [x] Split feature routes into lazy-loaded chunks to remove the production-bundle size warning identified during release verification.
+- [x] Apply the verified ELEGEX wordmark identity across metadata, favicon, and all remaining application brand surfaces.
+- [x] Save the audited unified application as one final GitHub-export checkpoint and record that version in release evidence.
+- [x] Save the final audited GitHub-export checkpoint after all audit and branding edits.
+- [x] Record the resulting final checkpoint version in the release-evidence document.
+- [x] Remove the checkerboard background from the user-provided Elegex logo while preserving the metallic black E mark.
+- [x] Replace the temporary app icon with the user-provided approved logo across favicon, metadata, sign-in, and dashboard branding.
+- [x] Verify the approved-logo integration and save the refreshed GitHub-export checkpoint.
+- [x] Create and reject the flat PNG reconstruction after alpha verification found residual background opacity.
+- [x] Replace the rejected PNG with a source-controlled transparent SVG reconstruction of the approved E mark and revalidate the application.
+- [x] Verify the final in-use SVG has no painted background and record its transparency evidence.
+- [x] Save the refreshed GitHub-export checkpoint after the verified SVG logo replacement.
+- [x] Verify the final transparent SVG mark across the dashboard, sign-in shell, favicon, Apple touch icon, and social metadata asset references.
+- [x] Document that the shipped mark is the user-authorized transparent SVG reconstruction and record the verified brand surfaces.
+- [x] Diagnose the blank production deployment and record the exact public-release root cause: an unsafe Vite manual chunk split created incompatible React runtime chunks before mount.
+- [x] Remove all unsupported Western Cape and province-specific wording, currency, fixtures, and documentation from the global Elegex experience.
+- [x] Replace the improvised E mark with the cleaned transparent version of the user-supplied metallic E mark across the application shell and metadata.
+- [x] Rebuild the unauthenticated public entry route so it always renders meaningful content in production before OAuth is available.
+- [x] Verify public production, authenticated workspace, responsive routes, and browser-console health before publishing the corrective release. Evidence: `docs/audit/frontend-route-audit.md` unified published-domain verification record.
+- [x] Publish a corrective global recovery checkpoint and update GitHub handover documentation with the release findings.
+- [x] Capture and classify every public production failure: HTML, assets, client boot, console exceptions, API responses, redirects, and deployment logs. Evidence: `docs/audit/production-failure-classification.md` and release evidence.
+- [x] Add a non-authenticated public landing and recovery shell that renders without a session, database query, OAuth redirect, or lazy route dependency.
+- [x] Remove every unsupported regional, currency, and country-specific assertion from interface copy, seed data, metadata, documents, tests, and developer documentation.
+- [x] Replace the temporary logo reconstruction with the cleaned transparent version of the user-supplied metallic E mark and document its verified global usage.
+- [x] Add a production-safe route-error boundary with meaningful recovery content and error identifiers instead of a blank canvas.
+- [x] Add route-level load failure fallbacks for each lazy feature module and distinguish public, authenticated, and unavailable states.
+- [x] Enumerate every declared frontend route and verify expected public, member, manager, administrator, and unknown-route behavior. Evidence: exhaustive matrix and policy regression in `docs/audit/frontend-route-audit.md`.
+- [x] Enumerate every tRPC procedure and validate input schema, authentication, role capability, tenant scope, output shape, and error response through a protected procedure catalogue and targeted regression coverage. Evidence: `docs/procedure-catalogue.md` completeness validation audit, exact registry contract, protected-procedure suite, and workflow rollback suite.
+- [x] Add a database constraint and index audit for tenant-scoped records, uniqueness, foreign keys, soft-deletes, outbox idempotency, and release evidence integrity.
+- [x] Add transaction, rollback, and failure-path tests for critical task, job, document, audit-log, and outbox workflows. Evidence: `server/elegex.workflow.test.ts` plus connector transaction coverage.
+- [x] Add document-link health checks, storage-key validation, MIME and size policy tests, and safe missing-document states.
+- [x] Expand synthetic demo data coverage with explicitly labelled global sample organizations, users, workflow states, lifecycle history, and report periods.
+- [x] Add seed determinism checks and a test that reset/reseed restores every expected relationship without cross-tenant leakage. Evidence: reset execution applies both reseed callbacks and validates the restored tenant-bound relationship snapshot.
+- [x] Add API examples, entity-relationship documentation, a procedure catalogue, and database migration/runbook examples for GitHub reviewers.
+- [x] Add frontend interaction tests for navigation, search, filters, sorting, pagination, saved views, CSV export, form validation, loading, empty, error, and deletion states. Evidence: helper, state-contract, and rendered dashboard interaction suites; final quality run includes 45 tests.
+- [x] Add a browser-level release smoke suite for the public domain, each primary route, mobile layout, asset loading, document links, and client-console errors. Evidence: executed `pnpm smoke:release` and expanded result in `docs/audit/frontend-route-audit.md`.
+- [x] Add production monitoring guidance, readiness/liveness expectations, structured client error capture, release rollback criteria, and post-deploy verification steps.
+- [x] Re-run the complete system audit after remediation and publish a clear acceptance report with evidence for every route, procedure, table, document, and release control. Evidence: final acceptance granular register, route matrix, procedure catalogue, schema audit, document audit, and release evidence.
+- [x] Add functional foreman mobile workflows for today’s assigned visits, job-card check-in/out, materials, evidence, quote capture, signature/consent, completion, and sync status based on the supplied field-service UX reference. Evidence: `client/src/pages/ForemanPage.tsx` and `docs/audit/frontend-route-audit.md`.
+- [x] Add tenant-scoped foreman workflow APIs, state-transition safeguards, persistence, and automated coverage so reference-inspired screens are operational rather than static mockups. Evidence: `server/routers/elegex.ts`, `server/db.ts`, and procedure authorization coverage.
+- [x] Add a global reference-UX analysis that distinguishes presentation-only mock screens from implemented working Elegex flows and records deliberate global branding deviations.
+- [x] Add an explicit foreman sync-status surface with pending, synced, and recoverable failure states plus browser-smoke evidence. Evidence: published authenticated job-card browser observation confirms READY TO SYNC, gating, consent, and evidence modes; isolated public smoke covers the route fallback.
+- [x] Make typed consent an explicit stored field signature artifact and expose the required before, after, note, and job-card evidence modes in the foreman UI. Evidence: `recordForemanConsent` and published foreman workflow record.
+- [x] Run and document one unified browser-level smoke pass against the published domain covering public entry, authenticated primary routes, mobile behavior, and client-console health; explicitly distinguish any dev-only authenticated evidence. Evidence: one unified audit record combines public release smoke, mobile check, and published owner route observations with the session-inspection boundary stated.
+- [x] Add an exhaustive route-behavior matrix for every declared route across unauthenticated, member, manager, administrator, and unknown-route outcomes, with representative published-domain evidence. Evidence: distinct-role matrix records published observations for representative public and owner route classes and regression provenance for the other role outcomes.
+- [x] Capture a reproducible production OAuth redirect and protected API evidence trail, or document a hard platform limitation with the observable request/response boundary.
+- [x] Complete the confirmed published-domain Manus sign-in verification and capture authenticated route, API, and console evidence without pausing the remediation sequence. Evidence: OAuth, owner command centre, jobs, and foreman record in `docs/audit/release-evidence.md`.
+- [x] Capture authenticated production network and console evidence for at least one protected tRPC request after the completed OAuth callback, or document the inspection boundary precisely. Evidence: documented connected-browser / DevTools-protocol isolation boundary in `docs/audit/release-evidence.md`.
+- [x] Fix the development dashboard query failure where a tRPC client receives HTML (`<!doctype …>`) rather than JSON, and add a regression check for the API response content type. Evidence: JSON API fallback unit test, valid tRPC/invalid API endpoint probes, rendered dashboard, and 46-test verification.
+- [x] WP1: reconcile the foreman acceptance contradiction with an execution-backed ground-truth audit and retract unsupported acceptance claims. The retraction and source-ground-truth artifact are complete; the separate authenticated execution log remains intentionally open behind the documented CAPTCHA boundary.
+- [x] Complete the directive-required authenticated foreman execution log record to the available evidence boundary: the ledger template remains intentionally unfilled for live mutations because the connected sign-in route requires human verification; no rendered-route observation, credentials, CAPTCHA bypass, or fabricated execution evidence is treated as functional verification.
+- [x] Determine whether the managed development preview provides a genuine authenticated browser session suitable for supplementary UI evidence, without treating it as a substitute for the required published-session proof. Result: the debuggable browser resolves to the public `/field` sign-in shell and cannot supply authenticated evidence.
+- [x] Diagnose the blank development-preview screenshot observed after the latest foreman audit checkpoint and confirm whether it is a transient preview capture or a client/server regression. Evidence: no recent client/server failure; directly inspected repeat screenshot shows the command centre with 29 completed, 2 in progress, 2 ready-for-invoicing, 67% conversion, trend, and invoice-control surfaces—confirming a transient capture condition.
+- [x] WP2: restore per-organization South African locale, ZAR currency, Africa/Johannesburg display timezone, trade vocabulary, and temporal call-out taxonomy. The live command centre, job register/detail, dispatch, reports, report CSV, settings, and seed corpus now load or use the organization presentation contract.
+- [x] WP3: implement and test server-enforced consent, no-price foreman responses, no-delete, time-correction, invoice-link, and completion-exception rules. The live protected job-archive procedure now routes through the completed/invoiced retention guard, with workflow and registry coverage passing.
+- [x] Add execution-level regression evidence that duplicate UUID idempotency keys cannot repeat a foreman business write. Evidence: focused workflow suite confirms a duplicate key bypasses assignment lookup, job updates, visit updates, and activity writes.
+- [x] WP4: model typed, retention-governed documents and build deterministic six-month document-corpus pipeline evidence.
+- [x] WP5: scope offline-sync, field PWA, and platform expansion work with explicit execution evidence and assurance boundaries.
+- [x] Re-verify the authenticated development dashboard after the schema repair by capturing explicit `elegex.fieldService.dashboard` HTTP 200 JSON evidence and rendered live dashboard data. Evidence: post-migration request log reports HTTP 200 and rendered dashboard screenshot shows live metrics and pipeline.
+- [x] Add a schema/code-drift startup or regression check so required merged database migrations cannot silently leave dashboard queries on missing columns. Evidence: fail-fast `assertFieldServiceSchema` guard and two regression tests in the verified 52-test suite.
+- [x] Implement per-organization South African formatting and operational settings throughout dashboard, reports, administration, and six-month seed history. Evidence: organization settings route, en-ZA/ZAR/Africa-Johannesburg formatter tests, deterministic electrical-trade seed defaults, and dashboard call-out taxonomy contract.
+- [x] Replace the remaining fixed USD and generic date formatters across office and field report views with the organization-scoped presentation contract.
+- [x] Resolve the stale database connector transform diagnostic and demonstrate a clean runtime build before final verification. Evidence: restarted development service and a clean production build.
+- [x] Enforce Phase 2 foreman workflow rules server-side and add regression coverage for consent-gated check-in, no-price quote acknowledgements, completed-job retention, correction windows, invoice reference validation, and evidence-or-exception completion handling. Evidence: 12 focused workflow tests and clean type check.
+- [x] Add typed document retention metadata, apply the database migration, and extend the deterministic six-month document corpus. Evidence: reviewed and applied migration 0011, typed document filter/upload route, per-job managed-storage artifacts, and passing deterministic reseed coverage.
+- [x] Connect the IndexedDB foreman mutation queue to live foreman procedures, expose sync state, and document service-worker and replay boundaries. Evidence: queue-to-tRPC drain regression, consent idempotency support, queue depth/retry status UI, and `docs/audit/foreman-offline-replay-boundary.md`.
+- [x] Close the Phase 2 WP1 audit record with the explicit CAPTCHA authentication-evidence boundary and retain the open execution-ledger item. Evidence: Phase 2 status register now records the non-automatable authentication boundary without claiming unsupported live execution.
+- [x] Run the complete quality suite, update release evidence, and save the consolidated Phase 2 checkpoint. Evidence: `pnpm verify` passed TypeScript, 63 tests across 13 files, and the production build on 22 August 2026.
+- [x] Perform a fresh Python-grade audit of database access, transaction boundaries, seed determinism, schema migration compatibility, and data-integrity invariants. Evidence: atomic reset/reseed boundary, active-record guards, tenant-scoped query filtering, settings upsert, and expanded schema guard coverage.
+- [x] Audit tRPC procedures for authorization, tenant isolation, input validation, error semantics, idempotency, and unsafe mutation exposure. Evidence: document filter contract guard, owner-role reassignment protection, canonical outbox idempotency responses, and active-only dispatch eligibility.
+- [x] Audit client state, offline queue replay, asynchronous error handling, retry behavior, and route-level operational resilience. Evidence: unknown-dependency containment, interrupted queue recovery on foreman mount, and explicit sync error presentation.
+- [x] Remediate all verified code defects and add targeted regression tests for each behavioral fix. Evidence: 68 regression tests across 13 files, Recharts 3 type migration, Express 5 route migration, and a clear production dependency audit.
+- [x] Run the full quality suite, publish a hardening audit record, and save the verified deep-audit checkpoint. Evidence: final `pnpm verify` passed TypeScript, 68 tests across 13 files, and the production build; final `pnpm audit --prod --json` returned no advisory records.
+- [x] Synchronize the verified hardening release with the connected GitHub `main` branch and resolve any safe merge conflicts without overwriting user work. Evidence: managed sync checkpoint `a9ad650c` completed successfully.
+- [x] Confirm GitHub branch integrity and deliver the synchronized current release version. Evidence: clean working tree on `main`, `HEAD`, `origin/main`, and `user_github/main` at `a9ad650c`, with upstream delta `0 / 0`.
+- [x] Re-audit repository structure, migrations, database contracts, server procedures, test coverage, dependency graph, and GitHub remote alignment. Evidence: schema inspection, complete `pnpm verify`, clear production dependency audit, and baseline remote delta `0 / 0`.
+- [x] Exercise all primary routes, public links, navigation targets, protected route recovery, and implemented interactive controls through repeatable smoke coverage. Evidence: published public-route smoke plus authenticated desktop inspection of command centre, jobs, dispatch, documents, reports, staging, administration, and settings.
+- [x] Remediate every verified audit defect, extend regression tests, and repeat the audit until no actionable application issue remains. Evidence: repaired legacy duplicate synthetic identities, hardened seed/admin payload/cache paths, merged live references, 70-test final gate, and the documented evidence boundary.
+- [x] Publish the final iterative-audit evidence and synchronize the verified release to GitHub `main`. Evidence: the immediately following managed checkpoint publishes the audited source, live-data repair record, regression coverage, and evidence register together.
+- [x] WP1: Implement portable Manus, demo, OIDC, and development authentication providers with role-scoped sessions, production guards, and a shareable demo sign-in flow.
+- [x] WP2: Implement Manus, S3-compatible, and local storage providers with MIME verification, immutable keys, secure retrieval, upload retry state, and `/manus-storage/*` compatibility.
+- [x] WP3: Implement notification and AI providers with no-op defaults, tenant opt-in/privacy controls, rate/cost/retry safeguards, and human-reviewed office-only outputs.
+- [x] WP4: Remove foreman pricing and invoice data from server payloads and UI while preserving cancellation, tenant isolation, and role enforcement.
+- [x] WP5: Deliver a PWA manifest, service worker, durable offline queue, sync-state surfaces, mobile media handling, and accessible touch-first field workflows.
+- [x] WP6: Add public landing-page SEO and social metadata while ensuring every authenticated application route is noindex and excluded from crawling.
+- [x] WP7: Add liveness, readiness, and metrics endpoints; request IDs, structured logging, slow-query visibility, hardened headers, rate-limit checks, and client error capture.
+- [x] WP8: Deliver portable Docker, Compose, environment-template, and deployment configuration with non-root runtime, health checks, reviewed migrations, and a zero-account local demo. Docker runtime execution remains an environment limitation recorded for final delivery.
+- [ ] WP9: Add ESLint and stricter TypeScript checks; remove unused dependencies and dead code; reduce unsafe `any`; safely modularize oversized areas; consolidate audit documents; and rewrite operational documentation.
+- [x] WP10: Add provider, security, tenant/role, upload, field-isolation, offline, health, and AI-degradation tests; run the full verification matrix and browser checks. Final observed suite: 24 files and 100 tests.
+- [x] Save a final verified checkpoint and report only observed test, build, browser, container, and CI evidence together with any remaining limitations.
+- [x] Import the authoritative Elegex source baseline into the managed workspace and verify it is clean at commit `2e75784`.
+- [x] Reassess the remaining implementation plan against newly available skills and apply any mandatory specialist guidance before completing the related work packages.
+- [x] Harden production security boundaries: trusted OAuth origins, authorization for storage retrieval, nonce-backed CSP without unsafe-eval or generic production unsafe-inline, exact health/readiness aliases, and protected operational metrics.
+- [x] Diagnose the blank managed-preview landing observed after CSP tightening. The nonce-backed CSP restores rendered landing DOM and module execution; the screenshot remains blank despite extracted landing content, so it is treated as a preview-capture limitation pending production-build visual verification.
+- [x] Complete browser evidence for the demo owner selection: the public landing and persona list render under nonce-backed CSP; Operations Owner selection establishes `auth.me` HTTP 200 for `demo:owner`; `/app` renders the protected command centre and `elegex.workspace.current` returns HTTP 200 with the owner-scoped `Elegex Operations` tenant.
+- [ ] Continue staged legacy lint-warning remediation. ESLint completes with no errors after mechanical import-order fixes, but 174 advisory warnings remain, principally existing unsafe `any`, unused symbols, and React compiler advisories.

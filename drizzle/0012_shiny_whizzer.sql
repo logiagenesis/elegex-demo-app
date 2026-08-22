@@ -1,0 +1,1 @@
+ALTER TABLE `appSettings` ADD `aiOptIn` boolean DEFAULT false NOT NULL;

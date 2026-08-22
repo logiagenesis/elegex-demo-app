@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Write-Ahead Architecture</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #ffffff;
+        color: #000000;
+        font-family: Arial, Helvetica, sans-serif;
+        display: grid;
+        grid-template-columns: 390px 1fr;
+      }
+      .title-column {
+        padding-top: 64px;
+        padding-left: 70px;
+        padding-right: 40px;
+      }
+      .eyebrow {
+        color: #ea580c;
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin-top: 25px;
+        font-size: 56px;
+        line-height: 0.92;
+        letter-spacing: -3.5px;
+        font-weight: 800;
+      }
+      .title-note {
+        margin-top: 39px;
+        border-top: 4px solid #000000;
+        padding-top: 15px;
+        color: #404040;
+        font-size: 17px;
+        line-height: 1.38;
+      }
+      .content-column {
+        padding-top: 65px;
+        padding-left: 34px;
+        padding-right: 75px;
+      }
+      .top-rule {
+        border-top: 4px solid #000000;
+      }
+      .flow {
+        display: grid;
+        grid-template-columns: 1fr 42px 1fr 42px 1fr;
+        align-items: center;
+        margin-top: 28px;
+        min-height: 76px;
+      }
+      .flow-step {
+        font-size: 20px;
+        font-weight: 800;
+        line-height: 1.1;
+      }
+      .flow-step small {
+        display: block;
+        color: #404040;
+        font-size: 14px;
+        line-height: 1.25;
+        font-weight: 400;
+        margin-top: 7px;
+      }
+      .arrow {
+        color: #ea580c;
+        font-size: 29px;
+        font-weight: 800;
+        text-align: center;
+      }
+      .flow-step:last-child {
+        color: #ea580c;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 26px;
+        row-gap: 0;
+        margin-top: 42px;
+        border-top: 4px solid #ea580c;
+      }
+      .principle {
+        min-height: 156px;
+        border-bottom: 1px solid #000000;
+        padding-top: 18px;
+      }
+      .principle:nth-child(odd) {
+        padding-right: 22px;
+      }
+      .principle:nth-child(even) {
+        padding-left: 22px;
+      }
+      .number {
+        color: #ea580c;
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+      }
+      .principle h2 {
+        margin-top: 8px;
+        font-size: 24px;
+        line-height: 1.05;
+        font-weight: 800;
+      }
+      .principle p {
+        margin-top: 10px;
+        font-size: 16px;
+        line-height: 1.3;
+        color: #404040;
+      }
+      .footer {
+        margin-top: 27px;
+        border-top: 4px solid #000000;
+        padding-top: 13px;
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1.32;
+      }
+      .footer strong {
+        color: #ea580c;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <section class="title-column">
+        <div class="eyebrow">08 / WP5 TARGET DESIGN</div>
+        <h1>WRITE-AHEAD ARCHITECTURE</h1>
+        <div class="title-note">
+          The mobile workflow must make field work durable before it relies on a
+          network connection.
+        </div>
+      </section>
+      <section class="content-column">
+        <div class="top-rule"></div>
+        <div class="flow">
+          <div class="flow-step">
+            Foreman action<small
+              >Check-in, evidence, materials, completion</small
+            >
+          </div>
+          <div class="arrow">→</div>
+          <div class="flow-step">
+            IndexedDB queue<small>Persistent mutation and Blob payload</small>
+          </div>
+          <div class="arrow">→</div>
+          <div class="flow-step">
+            Idempotent server write<small
+              >Exactly-once durable application</small
+            >
+          </div>
+        </div>
+        <div class="grid">
+          <div class="principle">
+            <div class="number">01 / PERSIST FIRST</div>
+            <h2>Write ahead of network</h2>
+            <p>
+              Enqueue every mutation in IndexedDB before a network attempt so
+              work survives force-quit and reboot.
+            </p>
+          </div>
+          <div class="principle">
+            <div class="number">02 / IDENTIFY ONCE</div>
+            <h2>Use client UUIDs</h2>
+            <p>
+              Each queued mutation carries its own v4 idempotency key; replaying
+              it must never create another record.
+            </p>
+          </div>
+          <div class="principle">
+            <div class="number">03 / RESPECT CAUSALITY</div>
+            <h2>Drain dependencies in order</h2>
+            <p>
+              Check-in applies before materials; required materials and evidence
+              apply before completion is submitted.
+            </p>
+          </div>
+          <div class="principle">
+            <div class="number">04 / HANDLE BINARY SAFELY</div>
+            <h2>Queue Blobs, not Data URLs</h2>
+            <p>
+              Photos and signatures remain binary Blobs in local storage to
+              avoid inflated device quota consumption.
+            </p>
+          </div>
+        </div>
+        <div class="footer">
+          <strong>Server requirement:</strong> enforce uniqueness on
+          <code>(organizationId, idempotencyKey)</code> so a second drain is a
+          successful no-op.
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

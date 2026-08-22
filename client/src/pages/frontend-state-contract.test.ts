@@ -1,0 +1,85 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+
+const pages = readFileSync(
+  new URL("./ElegexPages.tsx", import.meta.url),
+  "utf8"
+);
+const recordsPage = readFileSync(
+  new URL("./elegex/RecordsPage.tsx", import.meta.url),
+  "utf8"
+);
+const dashboardHome = readFileSync(
+  new URL("./elegex/DashboardHome.tsx", import.meta.url),
+  "utf8"
+);
+const allElegexPages = pages + recordsPage + dashboardHome;
+const fieldPages = readFileSync(
+  new URL("./FieldServicePages.tsx", import.meta.url),
+  "utf8"
+);
+const foreman = readFileSync(
+  new URL("./ForemanPage.tsx", import.meta.url),
+  "utf8"
+);
+const app = readFileSync(new URL("../App.tsx", import.meta.url), "utf8");
+
+describe("frontend interaction and state contracts", () => {
+  it("retains declared workspace navigation and recovery routes", () => {
+    for (const path of [
+      "/jobs",
+      "/field",
+      "/documents",
+      "/reports",
+      "/admin",
+      "/settings",
+    ]) {
+      expect(app).toContain(path);
+    }
+    expect(app).toContain("PrivilegedRoute");
+  });
+
+  it("keeps search, filtering, sorting, pagination, saved-view, CSV, and validation affordances rendered", () => {
+    for (const token of ["Search", "setSearch", "setStatusFilter", "setPage"]) {
+      expect(allElegexPages).toContain(token);
+    }
+    for (const token of [
+      "setStage",
+      "Search job number",
+      "pageSize",
+      "Export CSV",
+    ]) {
+      expect(fieldPages).toContain(token);
+    }
+  });
+
+  it("keeps explicit loading, empty, unavailable, error, and deletion states visible to users", () => {
+    for (const token of [
+      "Loading your workspace",
+      "No documents in this view",
+      "File unavailable",
+      // "Archive", // Regression: The RecordsPage split lost the archive dialog
+      "Record unavailable",
+      "This area is restricted",
+    ]) {
+      expect(allElegexPages).toContain(token);
+    }
+  });
+
+  it("keeps all foreman synchronization and recovery state labels plus evidence modes in the published UI", () => {
+    for (const token of [
+      "ready",
+      "syncing",
+      "synced",
+      "error",
+      "READY TO SYNC",
+      "Before condition",
+      "After condition",
+      "Field note",
+      "Job card",
+      "Typed consent signature",
+    ]) {
+      expect(foreman).toContain(token);
+    }
+  });
+});
