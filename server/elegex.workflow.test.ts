@@ -19,7 +19,7 @@ vi.mock("./connectors/database", () => ({
   withTransaction: mocks.withTransaction,
 }));
 
-import { createDocumentRecord, createJob, createTask, foremanCheckIn, linkExternalInvoice, transitionJobStage } from "./db";
+import { archiveJob, assertForemanTimeWindow, captureForemanQuote, createDocumentRecord, createJob, createTask, foremanCheckIn, foremanCompleteJob, linkExternalInvoice, normalizeInvoiceReference, publicForemanQuoteResponse, transitionJobStage } from "./db";
 import { enqueueIntegrationEvent } from "./connectors/outbox";
 
 const organizationId = 7;
@@ -89,6 +89,7 @@ describe("critical workflow rollback propagation", () => {
 
     Object.values(mocks).forEach(mock => mock.mockReset());
     configureTransaction([{ stage: "ready_for_invoicing" }]);
+    mocks.limit.mockResolvedValueOnce([{ stage: "ready_for_invoicing" }]).mockResolvedValueOnce([]);
     const invoiceFailure = new Error("invoice audit insertion failed");
     mocks.values.mockResolvedValueOnce([{ insertId: 404 }]).mockRejectedValueOnce(invoiceFailure);
     await expect(linkExternalInvoice(organizationId, userId, 89, "INV-9001")).rejects.toBe(invoiceFailure);
@@ -122,5 +123,50 @@ describe("critical workflow rollback propagation", () => {
     expect(onDuplicateKeyUpdate).toHaveBeenCalledTimes(1);
     expect(mocks.select).not.toHaveBeenCalled();
     expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects check-in when the assigned foreman has not captured consent", async () => {
+    configureTransaction([{ id: 88, stage: "scheduled", foremanId: userId }]);
+    mocks.limit.mockResolvedValueOnce([{ id: 88, stage: "scheduled", foremanId: userId }]).mockResolvedValueOnce([]);
+
+    await expect(foremanCheckIn(organizationId, userId, 88)).rejects.toThrow("Customer consent must be recorded before check-in");
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("requires evidence or an explicit exception before completing a field job", async () => {
+    configureTransaction([{ id: 88, stage: "in_progress", foremanId: userId }]);
+    mocks.limit.mockResolvedValueOnce([{ id: 88, stage: "in_progress", foremanId: userId }]).mockResolvedValueOnce([]);
+
+    await expect(foremanCompleteJob(organizationId, userId, 88)).rejects.toThrow("Capture field evidence or record a completion exception reason");
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("does not archive invoice-ready or invoiced jobs", async () => {
+    configureTransaction([{ stage: "ready_for_invoicing" }]);
+
+    await expect(archiveJob(organizationId, userId, 88)).rejects.toThrow("Completed or invoiced jobs are retained and cannot be deleted");
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("returns a foreman quote acknowledgement without the persisted numeric total", () => {
+    expect(publicForemanQuoteResponse(19, "QT-9020", "draft")).toEqual({ quoteId: 19, quoteNumber: "QT-9020", status: "draft" });
+    expect(Object.keys(publicForemanQuoteResponse(19, "QT-9020", "draft"))).not.toContain("total");
+  });
+
+  it("enforces bounded time corrections and normalized invoice reference identifiers", () => {
+    const now = new Date("2026-08-22T12:00:00.000Z");
+    expect(() => assertForemanTimeWindow(new Date("2026-08-21T11:59:59.000Z"), now)).toThrow("backdated by more than 24 hours");
+    expect(() => assertForemanTimeWindow(new Date("2026-08-22T12:06:00.000Z"), now)).toThrow("more than five minutes in the future");
+    expect(normalizeInvoiceReference(" inv-9001 ")).toBe("INV-9001");
+    expect(() => normalizeInvoiceReference("??")).toThrow("Invoice reference must contain");
+  });
+
+  it("does not leak a quote total through the captured quote return contract", async () => {
+    configureTransaction([{ id: 88, stage: "in_progress", foremanId: userId }]);
+    mocks.values.mockResolvedValueOnce([{ insertId: 501 }]).mockResolvedValueOnce([{ insertId: 502 }]).mockResolvedValueOnce(undefined);
+
+    const result = await captureForemanQuote(organizationId, userId, { jobId: 88, quoteNumber: "QT-9021", total: 9876 });
+    expect(result).toEqual({ quoteId: 501, quoteNumber: "QT-9021", status: "draft" });
+    expect(result).not.toHaveProperty("total");
   });
 });

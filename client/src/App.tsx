@@ -10,7 +10,8 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import NotFound from "./pages/NotFound";
 
 const AdminPage = lazy(() => import("@/pages/ElegexPages").then(module => ({ default: module.AdminPage })));
-const DocumentsPage = lazy(() => import("@/pages/ElegexPages").then(module => ({ default: module.DocumentsPage })));
+const OrganizationSettingsPage = lazy(() => import("@/pages/OrganizationSettingsPage"));
+const DocumentsPage = lazy(() => import("@/pages/TypedDocumentsPage"));
 const NotificationsPage = lazy(() => import("@/pages/ElegexPages").then(module => ({ default: module.NotificationsPage })));
 const RecordDetailPage = lazy(() => import("@/pages/ElegexPages").then(module => ({ default: module.RecordDetailPage })));
 const RecordsPage = lazy(() => import("@/pages/ElegexPages").then(module => ({ default: module.RecordsPage })));
@@ -61,7 +62,7 @@ function Router() {
     <Route path="/staging">{() => <PrivilegedRoute path="/staging"><StagingReadinessPage /></PrivilegedRoute>}</Route>
     <Route path="/notifications" component={NotificationsPage} />
     <Route path="/admin">{() => <PrivilegedRoute path="/admin"><AdminPage /></PrivilegedRoute>}</Route>
-    <Route path="/settings">{() => <PrivilegedRoute path="/settings"><AdminPage settingsOnly /></PrivilegedRoute>}</Route>
+    <Route path="/settings">{() => <PrivilegedRoute path="/settings"><OrganizationSettingsPage /></PrivilegedRoute>}</Route>
     <Route><NotFound /></Route>
   </Switch></Suspense></RouteLoadBoundary></DashboardLayout>;
 }

@@ -1,4 +1,4 @@
-export type ForemanMutationType = "checkIn" | "material" | "evidence" | "quote" | "complete";
+export type ForemanMutationType = "consent" | "checkIn" | "material" | "evidence" | "quote" | "complete";
 
 export type QueueStatus = "queued" | "syncing" | "retrying" | "succeeded" | "failed";
 

@@ -1,6 +1,7 @@
 import "fake-indexeddb/auto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SyncQueue, type SyncMutation } from "./syncQueue";
+import { submitQueuedForemanMutation } from "./foremanSync";
 
 const queues: SyncQueue[] = [];
 
@@ -84,5 +85,23 @@ describe("SyncQueue", () => {
     const rows = await queue.list();
     expect(rows.find(row => row.id === checkIn.id)?.status).toBe("failed");
     expect(dispatched).not.toContain("complete");
+  });
+
+  it("drains a queued foreman action into its matching tRPC procedure with the queue UUID", async () => {
+    const transport = {
+      consent: vi.fn().mockResolvedValue(undefined),
+      checkIn: vi.fn().mockResolvedValue(undefined),
+      material: vi.fn().mockResolvedValue(undefined),
+      evidence: vi.fn().mockResolvedValue(undefined),
+      quote: vi.fn().mockResolvedValue(undefined),
+      complete: vi.fn().mockResolvedValue(undefined),
+    };
+    const queue = createQueue(mutation => submitQueuedForemanMutation(transport, mutation));
+
+    const mutation = await queue.enqueue({ type: "material", payload: { jobId: 2039, description: "DB board breaker", quantity: 1, unit: "each" } });
+    await queue.drain();
+
+    expect(transport.material).toHaveBeenCalledWith({ jobId: 2039, description: "DB board breaker", quantity: 1, unit: "each", idempotencyKey: mutation.id });
+    expect((await queue.list())[0]?.status).toBe("succeeded");
   });
 });

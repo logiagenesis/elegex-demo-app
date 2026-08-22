@@ -78,6 +78,13 @@
       "when": 1787333492780,
       "tag": "0010_groovy_gwen_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1787364052137,
+      "tag": "0011_cold_namora",
+      "breakpoints": true
     }
   ]
 }

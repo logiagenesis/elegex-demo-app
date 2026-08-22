@@ -29,6 +29,7 @@ export const elegexRouter = router({
   workspace: router({
     current: tenantProcedure.query(({ ctx }) => ctx.scope),
     members: tenantProcedure.query(({ ctx }) => db.listWorkspaceMembers(ctx.scope.organizationId)),
+    operationalSettings: tenantProcedure.query(({ ctx }) => db.getOrganizationSettings(ctx.scope.organizationId)),
   }),
   dashboard: tenantProcedure.query(({ ctx }) => db.getDashboard(ctx.scope.organizationId, ctx.user.id)),
   contacts: router({
@@ -63,17 +64,18 @@ export const elegexRouter = router({
     dashboard: tenantProcedure.query(({ ctx }) => db.getFieldServiceDashboard(ctx.scope.organizationId)),
     foreman: router({
       today: tenantProcedure.query(({ ctx }) => { requireEdit(ctx.scope.role); return db.getForemanToday(ctx.scope.organizationId, ctx.user.id); }),
-      consent: tenantProcedure.input(z.object({ jobId: z.number().int().positive(), signerName: z.string().min(2).max(160) })).mutation(({ ctx, input }) => { requireEdit(ctx.scope.role); return db.recordForemanConsent(ctx.scope.organizationId, ctx.user.id, input.jobId, input.signerName); }),
-      checkIn: tenantProcedure.input(z.object({ jobId: z.number().int().positive(), idempotencyKey: z.string().uuid().optional() })).mutation(({ ctx, input }) => { requireEdit(ctx.scope.role); return db.foremanCheckIn(ctx.scope.organizationId, ctx.user.id, input.jobId, input.idempotencyKey); }),
+      consent: tenantProcedure.input(z.object({ jobId: z.number().int().positive(), signerName: z.string().min(2).max(160), idempotencyKey: z.string().uuid().optional() })).mutation(({ ctx, input }) => { requireEdit(ctx.scope.role); return db.recordForemanConsent(ctx.scope.organizationId, ctx.user.id, input.jobId, input.signerName, input.idempotencyKey); }),
+      checkIn: tenantProcedure.input(z.object({ jobId: z.number().int().positive(), idempotencyKey: z.string().uuid().optional(), occurredAt: z.date().optional() })).mutation(({ ctx, input }) => { requireEdit(ctx.scope.role); return db.foremanCheckIn(ctx.scope.organizationId, ctx.user.id, input.jobId, input.idempotencyKey, input.occurredAt); }),
       material: tenantProcedure.input(z.object({ jobId: z.number().int().positive(), description: z.string().min(2).max(240), quantity: z.number().positive().max(10_000), unit: z.string().min(1).max(40), idempotencyKey: z.string().uuid().optional() })).mutation(({ ctx, input }) => { requireEdit(ctx.scope.role); return db.addForemanMaterial(ctx.scope.organizationId, ctx.user.id, input); }),
       evidence: tenantProcedure.input(z.object({ jobId: z.number().int().positive(), evidenceType: z.enum(["before_photo", "after_photo", "note", "job_card", "signature"]), title: z.string().min(2).max(240), note: z.string().max(4000).optional(), idempotencyKey: z.string().uuid().optional() })).mutation(({ ctx, input }) => { requireEdit(ctx.scope.role); return db.captureForemanEvidence(ctx.scope.organizationId, ctx.user.id, input); }),
       quote: tenantProcedure.input(z.object({ jobId: z.number().int().positive(), quoteNumber: z.string().min(3).max(60), total: z.number().nonnegative().max(10_000_000), idempotencyKey: z.string().uuid().optional() })).mutation(({ ctx, input }) => { requireEdit(ctx.scope.role); return db.captureForemanQuote(ctx.scope.organizationId, ctx.user.id, input); }),
-      complete: tenantProcedure.input(z.object({ jobId: z.number().int().positive(), idempotencyKey: z.string().uuid().optional() })).mutation(({ ctx, input }) => { requireEdit(ctx.scope.role); return db.foremanCompleteJob(ctx.scope.organizationId, ctx.user.id, input.jobId, input.idempotencyKey); }),
+      complete: tenantProcedure.input(z.object({ jobId: z.number().int().positive(), idempotencyKey: z.string().uuid().optional(), completedAt: z.date().optional(), exceptionReason: z.string().min(3).max(500).optional() })).mutation(({ ctx, input }) => { requireEdit(ctx.scope.role); return db.foremanCompleteJob(ctx.scope.organizationId, ctx.user.id, input.jobId, input.idempotencyKey, input.completedAt, input.exceptionReason); }),
     }),
     jobs: router({
       list: tenantProcedure.input(z.object({ query: z.string().max(120).optional(), stage: z.enum(["scheduled", "in_progress", "on_hold", "ready_for_invoicing", "invoiced", "cancelled"]).optional(), foremanId: z.number().int().positive().optional(), page: z.number().int().positive().optional(), pageSize: z.number().int().positive().max(50).optional() })).query(({ ctx, input }) => db.listJobs({ ...input, organizationId: ctx.scope.organizationId })),
       detail: tenantProcedure.input(z.object({ id: z.number().int().positive() })).query(({ ctx, input }) => db.getJobDetail(ctx.scope.organizationId, input.id)),
       create: tenantProcedure.input(z.object({ jobNumber: z.string().regex(/^#?\d{4,8}$/), title: z.string().min(3).max(180), description: z.string().min(5).max(5000), contactId: z.number().int().positive(), serviceAddress: z.string().min(5).max(360), priority: z.enum(["routine", "standard", "urgent", "critical"]).optional(), foremanId: z.number().int().positive().optional(), scheduledStart: z.date().optional(), scheduledEnd: z.date().optional() })).mutation(({ ctx, input }) => { requireEdit(ctx.scope.role); return db.createJob(ctx.scope.organizationId, ctx.user.id, input); }),
+      archive: tenantProcedure.input(z.object({ id: z.number().int().positive() })).mutation(({ ctx, input }) => { requireManage(ctx.scope.role); return db.archiveJob(ctx.scope.organizationId, ctx.user.id, input.id); }),
       transition: tenantProcedure.input(z.object({ id: z.number().int().positive(), stage: z.enum(["scheduled", "in_progress", "on_hold", "ready_for_invoicing", "invoiced", "cancelled"]), reason: z.string().max(500).optional() })).mutation(({ ctx, input }) => { requireManage(ctx.scope.role); return db.transitionJobStage(ctx.scope.organizationId, ctx.user.id, input.id, input.stage, input.reason); }),
       linkInvoice: tenantProcedure.input(z.object({ id: z.number().int().positive(), invoiceNumber: z.string().min(3).max(80) })).mutation(({ ctx, input }) => { requireManage(ctx.scope.role); return db.linkExternalInvoice(ctx.scope.organizationId, ctx.user.id, input.id, input.invoiceNumber); }),
     }),
@@ -81,8 +83,8 @@ export const elegexRouter = router({
     reports: tenantProcedure.query(({ ctx }) => db.getFieldServiceReports(ctx.scope.organizationId)),
   }),
   documents: router({
-    list: tenantProcedure.input(z.object({ resource: z.enum(["contact", "project", "case"]).optional(), recordId: z.number().int().positive().optional() }).optional()).query(({ ctx, input }) => db.listDocuments(ctx.scope.organizationId, input?.resource, input?.recordId)),
-    upload: tenantProcedure.input(z.object({ fileName: z.string().min(1).max(255), mimeType: z.string().min(1).max(120), dataUrl: z.string().max(7_000_000), projectId: z.number().int().positive().optional(), caseId: z.number().int().positive().optional(), contactId: z.number().int().positive().optional() })).mutation(async ({ ctx, input }) => {
+    list: tenantProcedure.input(z.object({ resource: z.enum(["contact", "project", "case"]).optional(), recordId: z.number().int().positive().optional(), documentType: z.enum(["coc", "quote", "invoice", "job_card", "photo_evidence", "material_list", "compliance_cert", "site_report"]).optional() }).optional()).query(({ ctx, input }) => db.listDocuments(ctx.scope.organizationId, input?.resource, input?.recordId, input?.documentType)),
+    upload: tenantProcedure.input(z.object({ fileName: z.string().min(1).max(255), mimeType: z.string().min(1).max(120), dataUrl: z.string().max(7_000_000), documentType: z.enum(["coc", "quote", "invoice", "job_card", "photo_evidence", "material_list", "compliance_cert", "site_report"]).optional(), retentionYears: z.number().int().min(1).max(30).optional(), classificationLevel: z.enum(["public", "internal", "confidential", "restricted"]).optional(), projectId: z.number().int().positive().optional(), caseId: z.number().int().positive().optional(), contactId: z.number().int().positive().optional() })).mutation(async ({ ctx, input }) => {
       requireEdit(ctx.scope.role);
       const allowed = ["application/pdf", "text/plain", "text/csv", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/jpeg", "image/png"];
       if (!allowed.includes(input.mimeType)) throw new TRPCError({ code: "BAD_REQUEST", message: "This file type is not permitted." });
@@ -114,7 +116,16 @@ export const elegexRouter = router({
   admin: router({
     data: tenantProcedure.query(({ ctx }) => { requireAdmin(ctx.scope.role); return db.getAdminData(ctx.scope.organizationId); }),
     updateMemberRole: tenantProcedure.input(z.object({ membershipId: z.number().int().positive(), role: z.enum(["admin", "manager", "member", "viewer"]) })).mutation(({ ctx, input }) => { requireAdmin(ctx.scope.role); return db.updateMemberRole(ctx.scope.organizationId, ctx.user.id, input.membershipId, input.role); }),
-    updateSettings: tenantProcedure.input(z.object({ name: z.string().min(2).max(160).optional(), primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(), timezone: z.string().max(80).optional(), allowMemberInvites: z.boolean().optional(), notificationDigest: z.boolean().optional() })).mutation(({ ctx, input }) => { requireAdmin(ctx.scope.role); return db.updateSettings(ctx.scope.organizationId, ctx.user.id, input); }),
+    updateSettings: tenantProcedure.input(z.object({
+      name: z.string().min(2).max(160).optional(),
+      primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+      locale: z.string().max(32).optional(),
+      currency: z.string().regex(/^[A-Z]{3}$/).optional(),
+      timezone: z.string().max(80).optional(),
+      tradeVocabulary: z.array(z.string().min(2).max(80)).min(1).max(20).optional(),
+      allowMemberInvites: z.boolean().optional(),
+      notificationDigest: z.boolean().optional(),
+    })).mutation(({ ctx, input }) => { requireAdmin(ctx.scope.role); return db.updateSettings(ctx.scope.organizationId, ctx.user.id, input); }),
     resetDemo: tenantProcedure.mutation(({ ctx }) => { requireAdmin(ctx.scope.role); return db.resetDemoData(ctx.scope.organizationId, ctx.user.id); }),
   }),
 });

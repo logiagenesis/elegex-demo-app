@@ -81,8 +81,8 @@ describe("Elegex role capabilities", () => {
       select: () => ({ from: () => ({ where: async () => selectCall++ === 0 ? [{ id: 11 }, { id: 12 }] : [{ id: 21 }] }) }),
       delete: vi.fn(() => ({ where: async (clause: unknown) => { deletedWhereClauses.push(clause); } })),
     };
-    const seedWorkspace = vi.fn(async (tenantId: number) => { Object.assign(restored, { contacts: 4, projects: 4, cases: 3, tasks: 5, documents: 3, notifications: 3, savedViews: 1, tenantIds: [tenantId, tenantId, tenantId] }); });
-    const seedFieldService = vi.fn(async (tenantId: number) => { Object.assign(restored, { jobs: 36, visits: 36, materials: 72, evidence: 72, quotes: 12, invoices: 23, snapshots: 6, releaseRecords: 3, quoteItems: 24, releaseChecks: 15, tenantIds: [...restored.tenantIds, tenantId, tenantId] }); });
+    const seedWorkspace = vi.fn(async (tenantId: number) => { Object.assign(restored, { contacts: 4, projects: 4, cases: 3, tasks: 5, documents: 0, notifications: 3, savedViews: 1, tenantIds: [tenantId, tenantId, tenantId] }); });
+    const seedFieldService = vi.fn(async (tenantId: number) => { Object.assign(restored, { documents: 36, jobs: 36, visits: 36, materials: 72, evidence: 72, quotes: 12, invoices: 23, snapshots: 6, releaseRecords: 3, quoteItems: 24, releaseChecks: 15, tenantIds: [...restored.tenantIds, tenantId, tenantId] }); });
     await resetDemoData(7, 42, { database, seedWorkspace, seedFieldService });
     expect(seedWorkspace).toHaveBeenCalledWith(7, 42);
     expect(seedFieldService).toHaveBeenCalledWith(7, 42);

@@ -215,6 +215,9 @@ export const documents = mysqlTable("documents", {
   projectId: int("projectId"),
   caseId: int("caseId"),
   contactId: int("contactId"),
+  documentType: mysqlEnum("documentType", ["coc", "quote", "invoice", "job_card", "photo_evidence", "material_list", "compliance_cert", "site_report"]).default("site_report").notNull(),
+  retentionYears: int("retentionYears").default(7).notNull(),
+  classificationLevel: mysqlEnum("classificationLevel", ["public", "internal", "confidential", "restricted"]).default("internal").notNull(),
   fileName: varchar("fileName", { length: 255 }).notNull(),
   mimeType: varchar("mimeType", { length: 120 }).notNull(),
   sizeBytes: int("sizeBytes").notNull(),
@@ -227,6 +230,7 @@ export const documents = mysqlTable("documents", {
   index("document_contact_idx").on(table.organizationId, table.contactId),
   index("document_project_idx").on(table.organizationId, table.projectId),
   index("document_case_idx").on(table.organizationId, table.caseId),
+  index("document_type_retention_idx").on(table.organizationId, table.documentType, table.classificationLevel),
   uniqueIndex("document_organization_storage_key_unique").on(table.organizationId, table.storageKey),
 ]);
 

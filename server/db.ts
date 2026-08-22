@@ -2,6 +2,7 @@ import { and, asc, count, desc, eq, isNull, like, or, sql } from "drizzle-orm";
 import {
   activityLogs,
   appSettings,
+  callOutTypes,
   cases,
   contacts,
   documents,
@@ -140,12 +141,28 @@ async function seedDemoWorkspace(organizationId: number, ownerId: number) {
     }
   }
 
-  await db.insert(appSettings).values({ organizationId, updatedBy: ownerId });
+  await db.insert(appSettings).values({
+    organizationId,
+    updatedBy: ownerId,
+    locale: "en-ZA",
+    currency: "ZAR",
+    timezone: "Africa/Johannesburg",
+    metadata: {
+      tradeVocabulary: ["DB board", "COC", "SANS 10142", "load shedding", "Eskom", "fault finding", "geyser", "earth leakage"],
+      domain: "South African electrical field service",
+    },
+  });
+  await db.insert(callOutTypes).values([
+    { organizationId, name: "Standard electrical call-out", baseRate: 650, travelIncludedKm: 15, perKmRate: 8, appliesFrom: "07:00", appliesTo: "17:00" },
+    { organizationId, name: "After-hours electrical emergency", baseRate: 1450, travelIncludedKm: 15, perKmRate: 10, appliesFrom: "17:00", appliesTo: "07:00" },
+    { organizationId, name: "Load-shedding and backup-power fault finding", baseRate: 980, travelIncludedKm: 20, perKmRate: 8, appliesFrom: "07:00", appliesTo: "17:00" },
+    { organizationId, name: "COC and SANS 10142 compliance inspection", baseRate: 1200, travelIncludedKm: 20, perKmRate: 8, appliesFrom: "07:00", appliesTo: "17:00" },
+  ]);
   const contactValues = [
-    { name: "Aisha Naidoo", company: "Northstar Properties", email: "aisha@northstar.demo", phone: "+1 555 014 0193", location: "North District", status: "active" as const, notes: "Primary portfolio contact. Prefers concise Friday updates." },
-    { name: "Lucas Mthembu", company: "Cedar Health Group", email: "lucas@cedarhealth.demo", phone: "+1 555 014 1224", location: "South District", status: "active" as const, notes: "Stakeholder for the digital intake programme." },
-    { name: "Elena Meyer", company: "Helio Retail", email: "elena@helioretail.demo", phone: "+1 555 014 8900", location: "Central Quarter", status: "lead" as const, notes: "Exploring a phased service rollout in Q4." },
-    { name: "Tendai Ncube", company: "Arbor Logistics", email: "tendai@arborlogistics.demo", phone: "+1 555 014 4371", location: "East District", status: "active" as const, notes: "Monthly steering review on the first Wednesday." },
+    { name: "Aisha Naidoo", company: "Northstar Properties", email: "aisha@northstar.demo", phone: "+27 21 555 0193", location: "Cape Town CBD", status: "active" as const, notes: "Primary portfolio contact. Prefers concise Friday updates and COC close-out packs." },
+    { name: "Lucas Mthembu", company: "Cedar Health Group", email: "lucas@cedarhealth.demo", phone: "+27 11 555 1224", location: "Sandton", status: "active" as const, notes: "Stakeholder for the digital intake programme and generator fault-finding workflow." },
+    { name: "Elena Meyer", company: "Helio Retail", email: "elena@helioretail.demo", phone: "+27 31 555 8900", location: "Umhlanga", status: "lead" as const, notes: "Exploring a phased DB board and emergency-lighting compliance rollout in Q4." },
+    { name: "Tendai Ncube", company: "Arbor Logistics", email: "tendai@arborlogistics.demo", phone: "+27 12 555 4371", location: "Centurion", status: "active" as const, notes: "Monthly steering review on the first Wednesday; includes load-shedding readiness reviews." },
   ];
   await db.insert(contacts).values(contactValues.map(contact => ({ ...contact, organizationId, createdBy: ownerId, updatedBy: ownerId })));
   const seededContacts = await db.select().from(contacts).where(eq(contacts.organizationId, organizationId)).orderBy(asc(contacts.id));
@@ -209,7 +226,7 @@ export const DEMO_RESET_RELATIONSHIPS = {
   projects: 4,
   cases: 3,
   tasks: 5,
-  documents: 3,
+  documents: 36,
   notifications: 3,
   savedViews: 1,
   auditSeedRecords: 4,
@@ -285,14 +302,22 @@ async function seedFieldServiceDemo(organizationId: number, ownerId: number) {
   if (!contactRows.length) return;
 
   const serviceTemplates = [
-    ["DB board trip after storm", "Diagnose intermittent breaker trip and restore safe power to affected circuits.", "14 Summit Avenue, North District"],
-    ["Geyser thermostat replacement", "Assess heating fault, replace approved component, and capture safety evidence.", "3 Shoreline Road, Bayview"],
-    ["Kitchen plug-point fault", "Trace failed kitchen outlets and test circuit protection before handover.", "18 Market Street, Central Quarter"],
-    ["Pool pump isolation fault", "Investigate recurring pool pump trip and document recovery plan.", "42 Oak Avenue, Eastside"],
-    ["Emergency lighting compliance visit", "Complete scheduled emergency-lighting inspection and submit job-card evidence.", "9 Harbour Way, Waterfront"],
-    ["Extraction fan assessment", "Assess extraction fan replacement scope and capture pricing inputs.", "11 Main Road, West End"],
+    ["DB board trip after storm", "Diagnose an intermittent DB board breaker trip, complete fault finding, and restore safe power to affected circuits.", "14 Summit Avenue, Cape Town CBD"],
+    ["Geyser thermostat replacement", "Assess the geyser heating fault, replace the approved component, and capture electrical safety evidence.", "3 Shoreline Road, Umhlanga"],
+    ["Kitchen plug-point fault", "Trace failed kitchen plug points and test earth-leakage protection before handover.", "18 Market Street, Sandton"],
+    ["Pool pump isolation fault", "Investigate a recurring pool-pump trip, verify isolation, and document the recovery plan.", "42 Oak Avenue, Centurion"],
+    ["Emergency lighting and COC compliance visit", "Complete the scheduled emergency-lighting inspection and submit COC/SANS 10142 job-card evidence.", "9 Harbour Way, Cape Town CBD"],
+    ["Load-shedding backup supply assessment", "Assess backup supply and essential-circuit resilience during load shedding; capture commercial inputs.", "11 Main Road, Sandton"],
   ] as const;
-  const materials = ["Circuit breaker 20A", "Cable 2.5 mm", "Geyser element 3 kW", "Weatherproof isolator", "LED emergency fitting", "Extraction fan capacitor"];
+  const materials = ["DB board circuit breaker 20A", "SANS-approved 2.5 mm cable", "Geyser element 3 kW", "Weatherproof isolator", "LED emergency fitting", "Earth-leakage test component"];
+  const documentTemplates = [
+    { documentType: "job_card" as const, retentionYears: 7, classificationLevel: "internal" as const, label: "Job Card" },
+    { documentType: "photo_evidence" as const, retentionYears: 3, classificationLevel: "confidential" as const, label: "Photo Evidence Register" },
+    { documentType: "material_list" as const, retentionYears: 7, classificationLevel: "internal" as const, label: "Material List" },
+    { documentType: "compliance_cert" as const, retentionYears: 10, classificationLevel: "restricted" as const, label: "SANS 10142 Compliance Record" },
+    { documentType: "coc" as const, retentionYears: 10, classificationLevel: "restricted" as const, label: "Certificate of Compliance" },
+    { documentType: "quote" as const, retentionYears: 7, classificationLevel: "confidential" as const, label: "Field Quote Summary" },
+  ];
   const now = new Date();
   const monthStarts = Array.from({ length: DEMO_DATA_EXPECTATIONS.months }, (_, index) => {
     const month = new Date(now.getFullYear(), now.getMonth() - 5 + index, 1, 9, 0, 0);
@@ -349,6 +374,23 @@ async function seedFieldServiceDemo(organizationId: number, ownerId: number) {
         { organizationId, jobId, evidenceType: "before_photo", title: `Before condition · ${jobNumber}`, capturedBy: foremanId, capturedAt: scheduledStart, syncStatus: "synced", metadata: { demo: true, device: "Foreman mobile", label: "Synthetic evidence metadata" } },
         { organizationId, jobId, evidenceType: isCompleted ? "signature" : "note", title: isCompleted ? `Client sign-off · ${jobNumber}` : `Office note · ${jobNumber}`, capturedBy: foremanId, capturedAt: scheduledEnd, syncStatus: stage === "in_progress" ? "pending_upload" : "synced", metadata: { demo: true, status: stage } },
       ]);
+      const documentTemplate = documentTemplates[(monthIndex + sequence) % documentTemplates.length]!;
+      const documentContent = `ELEGEX SYNTHETIC DEMONSTRATION DOCUMENT\n\nDocument: ${documentTemplate.label}\nJob: ${jobNumber}\nStatus: ${stage}\nScheduled (UTC): ${scheduledStart.toISOString()}\nService address: ${template[2]}\n\nThis tenant-scoped artifact is generated deterministically for the six-month demonstration corpus. It does not contain customer data.`;
+      const documentArtifact = await storagePut(`elegex/${organizationId}/demo-documents/${jobNumber.replace("#", "")}-${documentTemplate.documentType}.txt`, documentContent, "text/plain");
+      await db.insert(documents).values({
+        organizationId,
+        contactId: contact.id,
+        documentType: documentTemplate.documentType,
+        retentionYears: documentTemplate.retentionYears,
+        classificationLevel: documentTemplate.classificationLevel,
+        fileName: `${documentTemplate.label} ${jobNumber}.txt`,
+        mimeType: "text/plain",
+        sizeBytes: Buffer.byteLength(documentContent),
+        storageKey: documentArtifact.key,
+        storageUrl: documentArtifact.url,
+        uploadedBy: ownerId,
+        createdAt: scheduledEnd,
+      });
       if (sequence === 1 || sequence === 5) {
         const quoteInsert = await db.insert(quotes).values({ organizationId, jobId, quoteNumber: `QT-${2601 + monthIndex * 6 + sequence}`, status: sequence === 5 ? "needs_pricing" : monthIndex < 4 ? "accepted" : "sent", assessedAt: scheduledEnd, sentAt: sequence === 1 ? new Date(scheduledEnd.getTime() + 86_400_000) : null, respondedAt: monthIndex < 4 && sequence === 1 ? new Date(scheduledEnd.getTime() + 3 * 86_400_000) : null, validUntil: new Date(scheduledEnd.getTime() + 14 * 86_400_000), total: 1280 + monthIndex * 110 + sequence * 70, createdBy: ownerId });
         const quoteId = Number(quoteInsert[0].insertId);
@@ -366,12 +408,6 @@ async function seedFieldServiceDemo(organizationId: number, ownerId: number) {
     { organizationId, provider: "database", name: "Primary operations database", status: "active", configuration: { dialect: "mysql", environment: "demo" }, secretReference: "DATABASE_URL", createdBy: ownerId, lastValidatedAt: new Date() },
     { organizationId, provider: "webhook", name: "Accounting invoice handoff", status: "active", configuration: { eventTypes: ["invoice.linked", "job.ready_for_invoicing"], mode: "outbox" }, secretReference: "ACCOUNTING_WEBHOOK_URL", createdBy: ownerId, lastValidatedAt: new Date() },
   ]).onDuplicateKeyUpdate({ set: { status: "active", lastValidatedAt: new Date(), lastError: null } });
-  const documentJobs = await db.select({ contactId: jobs.contactId, jobNumber: jobs.jobNumber }).from(jobs).where(and(eq(jobs.organizationId, organizationId), or(eq(jobs.jobNumber, "#2045"), eq(jobs.jobNumber, "#2037"))));
-  const job2045 = documentJobs.find(job => job.jobNumber === "#2045"); const job2037 = documentJobs.find(job => job.jobNumber === "#2037");
-  await db.insert(documents).values([
-    ...(job2045 ? [{ organizationId, contactId: job2045.contactId, fileName: "Synthetic Job Card #2045.txt", mimeType: "text/plain", sizeBytes: 679, storageKey: "elegex-demo-job-card-2045_7797837f.txt", storageUrl: "/manus-storage/elegex-demo-job-card-2045_7797837f.txt", uploadedBy: ownerId }] : []),
-    ...(job2037 ? [{ organizationId, contactId: job2037.contactId, fileName: "Synthetic Quote QT-2601.txt", mimeType: "text/plain", sizeBytes: 566, storageKey: "elegex-demo-quote-2601_c8829b18.txt", storageUrl: "/manus-storage/elegex-demo-quote-2601_c8829b18.txt", uploadedBy: ownerId }, { organizationId, contactId: job2037.contactId, fileName: "Synthetic Safety Checklist #2037.txt", mimeType: "text/plain", sizeBytes: 419, storageKey: "elegex-demo-safety-checklist_2a07066b.txt", storageUrl: "/manus-storage/elegex-demo-safety-checklist_2a07066b.txt", uploadedBy: ownerId }] : []),
-  ]);
   const releaseRows = [
     ["development", "v2.8.0-dev.14", "a12d5f7", "v2.8.0-dev.13", "Synthetic development release record for demo validation."],
     ["staging", "v2.8.0-rc.3", "c8f3a10", "v2.8.0-rc.2", "Synthetic staging candidate with field-service migration and release evidence."],
@@ -586,12 +622,35 @@ export async function getAdminData(organizationId: number) {
   return { members, logs, settings: settings[0] };
 }
 
+export async function getOrganizationSettings(organizationId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const [settings, callOuts] = await Promise.all([
+    db.select().from(appSettings).where(eq(appSettings.organizationId, organizationId)).limit(1),
+    db.select().from(callOutTypes).where(eq(callOutTypes.organizationId, organizationId)).orderBy(asc(callOutTypes.appliesFrom), asc(callOutTypes.name)),
+  ]);
+  return { settings: settings[0], callOutTypes: callOuts };
+}
+
 export async function updateMemberRole(organizationId: number, actorId: number, membershipId: number, role: Exclude<OrganizationRole, "owner">) {
   const db = await getDb(); if (!db) throw new Error("Database is not available"); await db.update(organizationMembers).set({ role }).where(and(eq(organizationMembers.id, membershipId), eq(organizationMembers.organizationId, organizationId))); await logActivity(organizationId, actorId, "updated", "member", membershipId, `Updated a member role to ${role}`);
 }
 
-export async function updateSettings(organizationId: number, userId: number, input: { name?: string; primaryColor?: string; timezone?: string; locale?: string; currency?: string; allowMemberInvites?: boolean; notificationDigest?: boolean }) {
-  const db = await getDb(); if (!db) throw new Error("Database is not available"); const { name, primaryColor, ...settingFields } = input; if (name || primaryColor) await db.update(organizations).set({ ...(name ? { name } : {}), ...(primaryColor ? { primaryColor } : {}) }).where(eq(organizations.id, organizationId)); if (Object.keys(settingFields).length) await db.update(appSettings).set({ ...settingFields, updatedBy: userId }).where(eq(appSettings.organizationId, organizationId)); await logActivity(organizationId, userId, "updated", "settings", organizationId, "Updated workspace settings");
+export async function updateSettings(organizationId: number, userId: number, input: { name?: string; primaryColor?: string; timezone?: string; locale?: string; currency?: string; tradeVocabulary?: string[]; allowMemberInvites?: boolean; notificationDigest?: boolean }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const { name, primaryColor, tradeVocabulary, ...settingFields } = input;
+  if (name || primaryColor) await db.update(organizations).set({ ...(name ? { name } : {}), ...(primaryColor ? { primaryColor } : {}) }).where(eq(organizations.id, organizationId));
+  if (Object.keys(settingFields).length || tradeVocabulary) {
+    const existing = await db.select({ metadata: appSettings.metadata }).from(appSettings).where(eq(appSettings.organizationId, organizationId)).limit(1);
+    const existingMetadata = (existing[0]?.metadata ?? {}) as Record<string, unknown>;
+    await db.update(appSettings).set({
+      ...settingFields,
+      ...(tradeVocabulary ? { metadata: { ...existingMetadata, tradeVocabulary } } : {}),
+      updatedBy: userId,
+    }).where(eq(appSettings.organizationId, organizationId));
+  }
+  await logActivity(organizationId, userId, "updated", "settings", organizationId, "Updated workspace settings");
 }
 
 export async function getSavedViews(organizationId: number, userId: number) {
@@ -613,15 +672,17 @@ export async function getReportRows(organizationId: number) {
 export async function getFieldServiceDashboard(organizationId: number) {
   const db = await getDb(); if (!db) throw new Error("Database is not available");
   const scoped = and(eq(jobs.organizationId, organizationId), isNull(jobs.deletedAt));
-  const [stageRows, currentJobs, snapshotRows, quoteRows, invoiceReadyRows, recentActivity] = await Promise.all([
+  const [stageRows, currentJobs, snapshotRows, quoteRows, invoiceReadyRows, recentActivity, organizationSettings, callOuts] = await Promise.all([
     db.select({ stage: jobs.stage, total: count() }).from(jobs).where(scoped).groupBy(jobs.stage),
     db.select({ job: jobs, contact: contacts }).from(jobs).innerJoin(contacts, eq(jobs.contactId, contacts.id)).where(scoped).orderBy(desc(jobs.scheduledStart)).limit(8),
     db.select().from(monthlyOperationalSnapshots).where(eq(monthlyOperationalSnapshots.organizationId, organizationId)).orderBy(asc(monthlyOperationalSnapshots.periodStart)).limit(6),
     db.select({ status: quotes.status, total: count() }).from(quotes).where(eq(quotes.organizationId, organizationId)).groupBy(quotes.status),
     db.select({ job: jobs, contact: contacts }).from(jobs).innerJoin(contacts, eq(jobs.contactId, contacts.id)).where(and(scoped, eq(jobs.stage, "ready_for_invoicing"))).orderBy(asc(jobs.readyForInvoiceAt)).limit(8),
     db.select().from(activityLogs).where(eq(activityLogs.organizationId, organizationId)).orderBy(desc(activityLogs.createdAt)).limit(12),
+    db.select().from(appSettings).where(eq(appSettings.organizationId, organizationId)).limit(1),
+    db.select().from(callOutTypes).where(eq(callOutTypes.organizationId, organizationId)).orderBy(asc(callOutTypes.appliesFrom), asc(callOutTypes.name)),
   ]);
-  return { stageRows, currentJobs, snapshots: snapshotRows, quoteRows, invoiceReadyRows, recentActivity };
+  return { stageRows, currentJobs, snapshots: snapshotRows, quoteRows, invoiceReadyRows, recentActivity, settings: organizationSettings[0], callOutTypes: callOuts };
 }
 
 export async function listJobs(input: { organizationId: number; query?: string; stage?: string; foremanId?: number; page?: number; pageSize?: number }) {
@@ -659,14 +720,15 @@ export async function listDispatchVisits(organizationId: number, start?: Date, e
 
 export async function getFieldServiceReports(organizationId: number) {
   const db = await getDb(); if (!db) throw new Error("Database is not available");
-  const [snapshots, stageRows, quoteRows, readyForInvoice, invoiceRows] = await Promise.all([
+  const [snapshots, stageRows, quoteRows, readyForInvoice, invoiceRows, organizationSettings] = await Promise.all([
     db.select().from(monthlyOperationalSnapshots).where(eq(monthlyOperationalSnapshots.organizationId, organizationId)).orderBy(asc(monthlyOperationalSnapshots.periodStart)),
     db.select({ stage: jobs.stage, total: count() }).from(jobs).where(and(eq(jobs.organizationId, organizationId), isNull(jobs.deletedAt))).groupBy(jobs.stage),
     db.select({ status: quotes.status, total: count(), value: sql<number>`COALESCE(SUM(${quotes.total}), 0)` }).from(quotes).where(eq(quotes.organizationId, organizationId)).groupBy(quotes.status),
     db.select({ job: jobs, contact: contacts }).from(jobs).innerJoin(contacts, eq(jobs.contactId, contacts.id)).where(and(eq(jobs.organizationId, organizationId), eq(jobs.stage, "ready_for_invoicing"))).orderBy(asc(jobs.readyForInvoiceAt)),
     db.select({ total: count(), value: sql<number>`COALESCE(SUM(${quotes.total}), 0)` }).from(invoiceLinks).leftJoin(jobs, eq(invoiceLinks.jobId, jobs.id)).leftJoin(quotes, eq(quotes.jobId, jobs.id)).where(and(eq(invoiceLinks.organizationId, organizationId), eq(invoiceLinks.status, "linked"))),
+    db.select().from(appSettings).where(eq(appSettings.organizationId, organizationId)).limit(1),
   ]);
-  return { snapshots, stageRows, quoteRows, readyForInvoice, invoiceRows: invoiceRows[0] };
+  return { snapshots, stageRows, quoteRows, readyForInvoice, invoiceRows: invoiceRows[0], settings: organizationSettings[0] };
 }
 
 export async function getStagingReadiness(organizationId: number) {
@@ -690,6 +752,22 @@ export async function createJob(organizationId: number, userId: number, input: {
 }
 
 const jobStageTransitions: Record<string, string[]> = { scheduled: ["in_progress", "on_hold", "cancelled"], in_progress: ["on_hold", "ready_for_invoicing", "cancelled"], on_hold: ["scheduled", "in_progress", "cancelled"], ready_for_invoicing: ["invoiced", "in_progress", "cancelled"], invoiced: [], cancelled: [] };
+export const FOREMAN_TIME_CORRECTION_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export function assertForemanTimeWindow(occurredAt: Date, now = new Date()) {
+  if (occurredAt.getTime() < now.getTime() - FOREMAN_TIME_CORRECTION_WINDOW_MS) throw new Error("Field time corrections may not be backdated by more than 24 hours");
+  if (occurredAt.getTime() > now.getTime() + 5 * 60 * 1000) throw new Error("Field time cannot be recorded more than five minutes in the future");
+}
+
+export function publicForemanQuoteResponse(quoteId: number, quoteNumber: string, status: "draft" | "needs_pricing" | "sent" | "accepted" | "declined" | "expired") {
+  return { quoteId, quoteNumber, status };
+}
+
+export function normalizeInvoiceReference(invoiceNumber: string) {
+  const normalized = invoiceNumber.trim().toUpperCase();
+  if (!/^[A-Z0-9][A-Z0-9/_-]{2,79}$/.test(normalized)) throw new Error("Invoice reference must contain 3–80 letters, numbers, hyphens, underscores, or slashes");
+  return normalized;
+}
 
 export async function transitionJobStage(organizationId: number, userId: number, jobId: number, stage: "scheduled" | "in_progress" | "on_hold" | "ready_for_invoicing" | "invoiced" | "cancelled", reason?: string) {
   return withTransaction(async tx => {
@@ -709,9 +787,22 @@ export async function linkExternalInvoice(organizationId: number, userId: number
     const job = await tx.select({ stage: jobs.stage }).from(jobs).where(and(eq(jobs.id, jobId), eq(jobs.organizationId, organizationId), isNull(jobs.deletedAt))).limit(1);
     if (!job[0]) throw new Error("Job is not available in this workspace");
     if (job[0].stage !== "ready_for_invoicing") throw new Error("Only invoice-ready jobs can be linked to an external invoice");
-    await tx.insert(invoiceLinks).values({ organizationId, jobId, externalInvoiceNumber: invoiceNumber, linkedBy: userId, notes: "Linked from office workflow." });
+    const activeLink = await tx.select({ id: invoiceLinks.id }).from(invoiceLinks).where(and(eq(invoiceLinks.organizationId, organizationId), eq(invoiceLinks.jobId, jobId), eq(invoiceLinks.status, "linked"))).limit(1);
+    if (activeLink[0]) throw new Error("This job already has an active external invoice link");
+    const normalizedInvoiceNumber = normalizeInvoiceReference(invoiceNumber);
+    await tx.insert(invoiceLinks).values({ organizationId, jobId, externalInvoiceNumber: normalizedInvoiceNumber, linkedBy: userId, notes: "Linked from office workflow." });
     await tx.update(jobs).set({ stage: "invoiced", updatedBy: userId }).where(and(eq(jobs.organizationId, organizationId), eq(jobs.id, jobId)));
-    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "invoice_linked", entityType: "job", entityId: jobId, summary: `External invoice ${invoiceNumber} linked to job` });
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "invoice_linked", entityType: "job", entityId: jobId, summary: `External invoice ${normalizedInvoiceNumber} linked to job` });
+  });
+}
+
+export async function archiveJob(organizationId: number, userId: number, jobId: number) {
+  return withTransaction(async tx => {
+    const job = await tx.select({ stage: jobs.stage }).from(jobs).where(and(eq(jobs.organizationId, organizationId), eq(jobs.id, jobId), isNull(jobs.deletedAt))).limit(1);
+    if (!job[0]) throw new Error("Job is not available in this workspace");
+    if (["ready_for_invoicing", "invoiced"].includes(job[0].stage)) throw new Error("Completed or invoiced jobs are retained and cannot be deleted");
+    await tx.update(jobs).set({ deletedAt: new Date(), updatedBy: userId }).where(and(eq(jobs.organizationId, organizationId), eq(jobs.id, jobId)));
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "archived", entityType: "job", entityId: jobId, summary: "Job archived before completion" });
   });
 }
 
@@ -722,17 +813,28 @@ async function assertAssignedForeman(tx: any, organizationId: number, userId: nu
   return row[0];
 }
 
+async function hasForemanConsent(tx: any, organizationId: number, jobId: number) {
+  const consent = await tx.select({ id: jobEvidence.id }).from(jobEvidence).where(and(eq(jobEvidence.organizationId, organizationId), eq(jobEvidence.jobId, jobId), eq(jobEvidence.evidenceType, "signature"))).limit(1);
+  return Boolean(consent[0]);
+}
+
+async function hasCompletionEvidence(tx: any, organizationId: number, jobId: number) {
+  const evidence = await tx.select({ id: jobEvidence.id }).from(jobEvidence).where(and(eq(jobEvidence.organizationId, organizationId), eq(jobEvidence.jobId, jobId))).limit(1);
+  return Boolean(evidence[0]);
+}
+
 export async function getForemanToday(organizationId: number, userId: number) {
   const db = await getDb(); if (!db) throw new Error("Database is not available");
   const rows = await db.select({ job: jobs, contact: contacts, visit: jobVisits }).from(jobs).innerJoin(contacts, eq(jobs.contactId, contacts.id)).leftJoin(jobVisits, and(eq(jobVisits.jobId, jobs.id), eq(jobVisits.organizationId, organizationId), eq(jobVisits.foremanId, userId))).where(and(eq(jobs.organizationId, organizationId), eq(jobs.foremanId, userId), isNull(jobs.deletedAt), or(eq(jobs.stage, "scheduled"), eq(jobs.stage, "in_progress"), eq(jobs.stage, "on_hold")))).orderBy(asc(jobs.scheduledStart));
   return rows;
 }
 
-export async function recordForemanConsent(organizationId: number, userId: number, jobId: number, signerName: string) {
+export async function recordForemanConsent(organizationId: number, userId: number, jobId: number, signerName: string, idempotencyKey?: string) {
   const capturedAt = new Date();
-  const artifact = await storagePut(`elegex/${organizationId}/foreman-consent/${jobId}-${randomUUID()}.txt`, `ELEGEX FIELD CONSENT\n\nJob ID: ${jobId}\nOrganization ID: ${organizationId}\nTyped signature: ${signerName}\nCaptured at (UTC): ${capturedAt.toISOString()}\n\nThis immutable synthetic demo artifact records a typed consent acknowledgement.`, "text/plain");
   return withTransaction(async tx => {
+    if (await checkIdempotency(tx, organizationId, idempotencyKey, "consent")) return { duplicate: true as const };
     await assertAssignedForeman(tx, organizationId, userId, jobId);
+    const artifact = await storagePut(`elegex/${organizationId}/foreman-consent/${jobId}-${randomUUID()}.txt`, `ELEGEX FIELD CONSENT\n\nJob ID: ${jobId}\nOrganization ID: ${organizationId}\nTyped signature: ${signerName}\nCaptured at (UTC): ${capturedAt.toISOString()}\n\nThis immutable synthetic demo artifact records a typed consent acknowledgement.`, "text/plain");
     const result = await tx.insert(jobEvidence).values({ organizationId, jobId, evidenceType: "signature", title: `Typed consent signature: ${signerName}`, storageUrl: artifact.url, capturedBy: userId, capturedAt, syncStatus: "synced", metadata: { workflow: "foreman_consent", signatureMethod: "typed_name", signerName, capturedAt: capturedAt.toISOString(), storageKey: artifact.key } });
     await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "consent_recorded", entityType: "job", entityId: jobId, summary: `Consent recorded for field visit by ${signerName}` });
     return Number(result[0].insertId);
@@ -751,13 +853,14 @@ async function checkIdempotency(tx: any, organizationId: number, idempotencyKey:
   return Number(result[0].affectedRows) === 0;
 }
 
-export async function foremanCheckIn(organizationId: number, userId: number, jobId: number, idempotencyKey?: string) {
+export async function foremanCheckIn(organizationId: number, userId: number, jobId: number, idempotencyKey?: string, occurredAt = new Date()) {
   return withTransaction(async tx => {
     if (await checkIdempotency(tx, organizationId, idempotencyKey, "checkIn")) return;
     const job = await assertAssignedForeman(tx, organizationId, userId, jobId);
     if (!["scheduled", "on_hold", "in_progress"].includes(job.stage)) throw new Error("This job cannot be checked in from its current stage");
-    const now = new Date();
-    await tx.update(jobs).set({ stage: "in_progress", checkInAt: now, geoStatus: "manual_override", updatedBy: userId }).where(and(eq(jobs.id, jobId), eq(jobs.organizationId, organizationId)));
+    if (!await hasForemanConsent(tx, organizationId, jobId)) throw new Error("Customer consent must be recorded before check-in");
+    assertForemanTimeWindow(occurredAt);
+    await tx.update(jobs).set({ stage: "in_progress", checkInAt: occurredAt, geoStatus: "manual_override", updatedBy: userId }).where(and(eq(jobs.id, jobId), eq(jobs.organizationId, organizationId)));
     await tx.update(jobVisits).set({ status: "on_site", geoStatus: "manual_override" }).where(and(eq(jobVisits.organizationId, organizationId), eq(jobVisits.jobId, jobId), eq(jobVisits.foremanId, userId)));
     await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "checked_in", entityType: "job", entityId: jobId, summary: "Foreman checked in on site" });
   });
@@ -787,36 +890,37 @@ export async function captureForemanEvidence(organizationId: number, userId: num
 
 export async function captureForemanQuote(organizationId: number, userId: number, input: { jobId: number; quoteNumber: string; total: number; idempotencyKey?: string }) {
   return withTransaction(async tx => {
-    if (await checkIdempotency(tx, organizationId, input.idempotencyKey, "quote")) return 0;
+    if (await checkIdempotency(tx, organizationId, input.idempotencyKey, "quote")) return { duplicate: true as const };
     const job = await assertAssignedForeman(tx, organizationId, userId, input.jobId);
     if (job.stage !== "in_progress") throw new Error("Quotes can only be captured during an active field visit");
     const result = await tx.insert(quotes).values({ organizationId, jobId: input.jobId, quoteNumber: input.quoteNumber, status: "draft", assessedAt: new Date(), total: input.total, createdBy: userId });
     const quoteId = Number(result[0].insertId);
     await tx.insert(quoteItems).values({ quoteId, description: "Field assessment estimate", quantity: 1, unitPrice: input.total, total: input.total, source: "free_text" });
     await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "quote_captured", entityType: "job", entityId: input.jobId, summary: `Field quote ${input.quoteNumber} captured as draft` });
-    return quoteId;
+    return publicForemanQuoteResponse(quoteId, input.quoteNumber, "draft");
   });
 }
 
-export async function foremanCompleteJob(organizationId: number, userId: number, jobId: number, idempotencyKey?: string) {
+export async function foremanCompleteJob(organizationId: number, userId: number, jobId: number, idempotencyKey?: string, completedAt = new Date(), exceptionReason?: string) {
   return withTransaction(async tx => {
     if (await checkIdempotency(tx, organizationId, idempotencyKey, "completeJob")) return;
     const job = await assertAssignedForeman(tx, organizationId, userId, jobId);
     if (job.stage !== "in_progress") throw new Error("Only an in-progress job can be completed from the foreman workflow");
-    const now = new Date();
-    await tx.update(jobs).set({ stage: "ready_for_invoicing", checkOutAt: now, completedAt: now, readyForInvoiceAt: now, updatedBy: userId }).where(and(eq(jobs.id, jobId), eq(jobs.organizationId, organizationId)));
+    if (!await hasCompletionEvidence(tx, organizationId, jobId) && !exceptionReason?.trim()) throw new Error("Capture field evidence or record a completion exception reason before handoff");
+    assertForemanTimeWindow(completedAt);
+    await tx.update(jobs).set({ stage: "ready_for_invoicing", checkOutAt: completedAt, completedAt, readyForInvoiceAt: completedAt, updatedBy: userId }).where(and(eq(jobs.id, jobId), eq(jobs.organizationId, organizationId)));
     await tx.update(jobVisits).set({ status: "complete" }).where(and(eq(jobVisits.organizationId, organizationId), eq(jobVisits.jobId, jobId), eq(jobVisits.foremanId, userId)));
-    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "foreman_completed", entityType: "job", entityId: jobId, summary: "Foreman completed job and submitted it for invoicing review" });
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "foreman_completed", entityType: "job", entityId: jobId, summary: exceptionReason?.trim() ? `Foreman completed job with documented exception: ${exceptionReason.trim()}` : "Foreman completed job and submitted it for invoicing review", metadata: { completionException: exceptionReason?.trim() || null } });
   });
 }
 
-export async function createDocumentRecord(organizationId: number, userId: number, input: { projectId?: number; caseId?: number; contactId?: number; fileName: string; mimeType: string; sizeBytes: number; storageKey: string; storageUrl: string }) {
+export async function createDocumentRecord(organizationId: number, userId: number, input: { projectId?: number; caseId?: number; contactId?: number; documentType?: "coc" | "quote" | "invoice" | "job_card" | "photo_evidence" | "material_list" | "compliance_cert" | "site_report"; retentionYears?: number; classificationLevel?: "public" | "internal" | "confidential" | "restricted"; fileName: string; mimeType: string; sizeBytes: number; storageKey: string; storageUrl: string }) {
   return withTransaction(async tx => {
     assertSingleDocumentTarget(input);
     await assertScopedEntity(tx, contacts, organizationId, input.contactId, "Contact", true);
     await assertScopedEntity(tx, projects, organizationId, input.projectId, "Project", true);
     await assertScopedEntity(tx, cases, organizationId, input.caseId, "Case", true);
-    const result = await tx.insert(documents).values({ ...input, organizationId, uploadedBy: userId });
+    const result = await tx.insert(documents).values({ documentType: input.documentType ?? "site_report", retentionYears: input.retentionYears ?? 7, classificationLevel: input.classificationLevel ?? "internal", ...input, organizationId, uploadedBy: userId });
     const id = Number(result[0].insertId);
     await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "uploaded", entityType: "document", entityId: id, summary: `Uploaded ${input.fileName}` });
     return id;
@@ -827,10 +931,10 @@ export function getDocumentHealth(document: { storageKey?: string | null; storag
   return document.storageKey && document.storageUrl?.startsWith("/manus-storage/") ? "available" as const : "unavailable" as const;
 }
 
-export async function listDocuments(organizationId: number, resource?: "contact" | "project" | "case", recordId?: number) {
+export async function listDocuments(organizationId: number, resource?: "contact" | "project" | "case", recordId?: number, documentType?: "coc" | "quote" | "invoice" | "job_card" | "photo_evidence" | "material_list" | "compliance_cert" | "site_report") {
   const db = await getDb(); if (!db) throw new Error("Database is not available");
   const relation = resource === "contact" ? eq(documents.contactId, recordId!) : resource === "project" ? eq(documents.projectId, recordId!) : resource === "case" ? eq(documents.caseId, recordId!) : undefined;
-  const rows = await db.select().from(documents).where(and(eq(documents.organizationId, organizationId), relation)).orderBy(desc(documents.createdAt));
+  const rows = await db.select().from(documents).where(and(eq(documents.organizationId, organizationId), relation, documentType ? eq(documents.documentType, documentType) : undefined)).orderBy(desc(documents.createdAt));
   return rows.map(document => ({ ...document, health: getDocumentHealth(document) }));
 }
 

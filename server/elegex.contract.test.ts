@@ -28,6 +28,7 @@ describe("Elegex protected workflow contract", () => {
       "elegex.fieldService.foreman.material",
       "elegex.fieldService.foreman.quote",
       "elegex.fieldService.foreman.today",
+      "elegex.fieldService.jobs.archive",
       "elegex.fieldService.jobs.create",
       "elegex.fieldService.jobs.detail",
       "elegex.fieldService.jobs.linkInvoice",
@@ -55,11 +56,12 @@ describe("Elegex protected workflow contract", () => {
       "elegex.tasks.update",
       "elegex.workspace.current",
       "elegex.workspace.members",
+      "elegex.workspace.operationalSettings",
     ]);
   });
 
   it("keeps every declared Elegex procedure behind a composed tRPC contract boundary", () => {
-    expect(procedures).toHaveLength(49);
+    expect(procedures).toHaveLength(51);
     for (const name of procedures) {
       const definition = (appRouter._def.procedures[name] as any)?._def;
       expect(definition, `${name} must expose a tRPC procedure definition`).toBeTruthy();
