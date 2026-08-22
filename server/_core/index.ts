@@ -141,12 +141,23 @@ async function startServer() {
   });
 
   // Graceful shutdown handling
+  let shutdownStarted = false;
   const shutdown = async (signal: string) => {
+    if (shutdownStarted) {
+      logger.warn(
+        `[Server] Ignoring repeated ${signal} during graceful shutdown.`
+      );
+      return;
+    }
+    shutdownStarted = true;
     logger.info(`[Server] Received ${signal}. Starting graceful shutdown...`);
 
     // 1. Stop accepting new connections
     server.close(async err => {
-      if (err) {
+      if (
+        err &&
+        (err as NodeJS.ErrnoException).code !== "ERR_SERVER_NOT_RUNNING"
+      ) {
         logger.error({ err }, "[Server] Error closing server");
       } else {
         logger.info("[Server] HTTP server closed.");
