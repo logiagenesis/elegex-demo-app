@@ -31,6 +31,7 @@ const envSchema = z
     PORT: z.coerce.number().int().min(1).max(65535).default(3000),
     LOG_LEVEL: logLevelSchema.default("info"),
     SLOW_QUERY_MS: z.coerce.number().int().min(10).max(60_000).default(750),
+    TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(3).default(1),
     METRICS_BEARER_TOKEN: z.string().min(24).optional(),
     OUTBOX_WORKER_ENABLED: z
       .enum(["true", "false"])
@@ -165,6 +166,7 @@ function getTestRuntimeOverrides(raw: RawEnvironment): RawEnvironment {
     PORT: raw.PORT,
     LOG_LEVEL: raw.LOG_LEVEL,
     SLOW_QUERY_MS: raw.SLOW_QUERY_MS,
+    TRUST_PROXY_HOPS: raw.TRUST_PROXY_HOPS,
     METRICS_BEARER_TOKEN: raw.METRICS_BEARER_TOKEN,
     OUTBOX_WORKER_ENABLED: raw.OUTBOX_WORKER_ENABLED,
   };
@@ -188,6 +190,7 @@ export const ENV = {
   port: runtimeEnvironment.PORT,
   logLevel: runtimeEnvironment.LOG_LEVEL,
   slowQueryMs: runtimeEnvironment.SLOW_QUERY_MS,
+  trustProxyHops: runtimeEnvironment.TRUST_PROXY_HOPS,
   metricsBearerToken: runtimeEnvironment.METRICS_BEARER_TOKEN ?? "",
   outboxWorkerEnabled: runtimeEnvironment.OUTBOX_WORKER_ENABLED,
   isDevelopment: runtimeEnvironment.NODE_ENV === "development",

@@ -51,6 +51,7 @@ async function startServer() {
   await assertFieldServiceSchema();
   const app = express();
   const server = createServer(app);
+  app.set("trust proxy", ENV.trustProxyHops);
 
   app.use(requestIdMiddleware);
   app.use(metricsMiddleware);

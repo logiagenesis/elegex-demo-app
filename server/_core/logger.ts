@@ -24,7 +24,7 @@ export const logger = pino({
 
 export const httpLogger = pinoHttp({
   logger,
-  customProps: (req, res) => {
+  customProps: (req, _res) => {
     return {
       correlationId: req.headers["x-correlation-id"] || req.id,
     };

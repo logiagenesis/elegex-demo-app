@@ -8,6 +8,7 @@ DATABASE_URL=mysql://<username>:<password>@<host>:3306/<database>
 JWT_SECRET=<generate-a-long-random-secret>
 LOG_LEVEL=info
 SLOW_QUERY_MS=750
+TRUST_PROXY_HOPS=1
 OUTBOX_WORKER_ENABLED=false
 
 # Authentication: manus | demo | oidc | dev. Demo and dev are rejected in production.

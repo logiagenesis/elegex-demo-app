@@ -4,17 +4,18 @@ Elegex reads configuration at process start. Store every real value in a hosting
 
 ## Core values
 
-| Variable                | Required         | Purpose                                                                             |
-| ----------------------- | ---------------- | ----------------------------------------------------------------------------------- |
-| `DATABASE_URL`          | Yes              | MySQL or TiDB connection string.                                                    |
-| `JWT_SECRET`            | Yes              | Signed session-cookie secret; use a long random value.                              |
-| `VITE_APP_ID`           | Yes              | Manus OAuth application ID.                                                         |
-| `OAUTH_SERVER_URL`      | Yes              | OAuth server base URL.                                                              |
-| `VITE_OAUTH_PORTAL_URL` | Yes              | Browser OAuth portal URL.                                                           |
-| `PUBLIC_APP_ORIGIN`     | Production OAuth | Exact HTTPS browser origin accepted for OAuth callbacks.                            |
-| `METRICS_BEARER_TOKEN`  | Production       | At least 24 characters; required to read `/metrics` with `Authorization: Bearer …`. |
-| `LOG_LEVEL`             | No               | Structured logging threshold; defaults to `info`.                                   |
-| `SLOW_QUERY_MS`         | No               | Slow transaction threshold; defaults to `750`.                                      |
+| Variable                | Required         | Purpose                                                                                                                                |
+| ----------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`          | Yes              | MySQL or TiDB connection string.                                                                                                       |
+| `JWT_SECRET`            | Yes              | Signed session-cookie secret; use a long random value.                                                                                 |
+| `VITE_APP_ID`           | Yes              | Manus OAuth application ID.                                                                                                            |
+| `OAUTH_SERVER_URL`      | Yes              | OAuth server base URL.                                                                                                                 |
+| `VITE_OAUTH_PORTAL_URL` | Yes              | Browser OAuth portal URL.                                                                                                              |
+| `PUBLIC_APP_ORIGIN`     | Production OAuth | Exact HTTPS browser origin accepted for OAuth callbacks.                                                                               |
+| `METRICS_BEARER_TOKEN`  | Production       | At least 24 characters; required to read `/metrics` with `Authorization: Bearer …`.                                                    |
+| `LOG_LEVEL`             | No               | Structured logging threshold; defaults to `info`.                                                                                      |
+| `SLOW_QUERY_MS`         | No               | Slow transaction threshold; defaults to `750`.                                                                                         |
+| `TRUST_PROXY_HOPS`      | No               | Number of trusted reverse-proxy hops used for rate limiting; defaults to `1`. Set `0` only for a directly exposed development process. |
 
 ## Provider selection
 

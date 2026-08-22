@@ -28,6 +28,16 @@ const stageLabel = (stage: string) =>
     .replaceAll("_", " ")
     .replace(/\b\w/g, character => character.toUpperCase());
 type SyncState = "ready" | "syncing" | "synced" | "error";
+type ForemanTodayRow = {
+  job: {
+    id: number;
+    jobNumber: string;
+    serviceAddress: string;
+    stage: string;
+    title: string;
+  };
+  contact: { name: string };
+};
 
 function FieldCard({
   title,
@@ -117,7 +127,8 @@ export function ForemanPage() {
   const today = trpc.elegex.fieldService.foreman.today.useQuery();
   const utils = trpc.useUtils();
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
-  const selected = today.data?.find((row: any) => row.job.id === selectedJobId);
+  const rows = today.data as ForemanTodayRow[] | undefined;
+  const selected = rows?.find(row => row.job.id === selectedJobId);
   if (today.isLoading)
     return (
       <div className="grid min-h-96 place-items-center text-sm font-medium text-[#667085]">
@@ -178,7 +189,7 @@ export function ForemanPage() {
           </div>
         </section>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {(today.data || []).map((row: any) => (
+          {(rows || []).map(row => (
             <button
               key={row.job.id}
               onClick={() => setSelectedJobId(row.job.id)}
@@ -222,7 +233,7 @@ export function ForemanPage() {
     );
   return (
     <ForemanJobWorkspace
-      row={selected as any}
+      row={selected}
       onBack={() => setSelectedJobId(null)}
       onRefresh={() => void utils.elegex.invalidate()}
     />
@@ -234,7 +245,7 @@ function ForemanJobWorkspace({
   onBack,
   onRefresh,
 }: {
-  row: any;
+  row: ForemanTodayRow;
   onBack: () => void;
   onRefresh: () => void;
 }) {
