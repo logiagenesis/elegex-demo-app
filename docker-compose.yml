@@ -5,12 +5,13 @@ services:
     build: .
     ports:
       - "3000:3000"
+    command: sh -c "npx drizzle-kit push && node dist/index.js"
     environment:
       - NODE_ENV=production
       - PORT=3000
       - DATABASE_URL=mysql://elegex:elegex_password@db:3306/elegex
       # These must be provided in production via .env or secrets manager
-      - JWT_SECRET=${JWT_SECRET:-fallback_secret_for_local_dev_only}
+      - JWT_SECRET=${JWT_SECRET:-fallback_secret_must_be_16_chars_for_local_dev_only}
       - OAUTH_SERVER_URL=${OAUTH_SERVER_URL:-https://auth.example.com}
       - VITE_OAUTH_PORTAL_URL=${VITE_OAUTH_PORTAL_URL:-https://auth.example.com}
       - VITE_APP_ID=${VITE_APP_ID:-elegex_local}

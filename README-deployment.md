@@ -40,8 +40,11 @@ For production, you should use a managed database and inject secrets securely.
 
 ## Database Migrations
 
-Migrations are handled via Drizzle. Run them against your production database before starting the app:
+Migrations are handled via Drizzle. For new environments, the docker-compose stack automatically runs `drizzle-kit push` before starting the application.
+
+For existing production databases, do **not** use `db:push` as it may result in data loss. Instead, generate and apply migrations explicitly:
 
 ```bash
-pnpm run db:push
+pnpm run db:generate
+pnpm run db:migrate
 ```
