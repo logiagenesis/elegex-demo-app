@@ -64,7 +64,7 @@ async function processOutbox() {
           .where(eq(integrationEvents.id, event.id));
 
         // In a real app, this would dispatch to the specific provider (webhook, etc.)
-        // For now, we just simulate successful delivery
+        // For now, we just simulate successful delivery (This is a known limitation in the demo boundary)
         console.log(`[Worker] Dispatching event ${event.id} (${event.eventType}) to ${connection.provider}`);
         
         // Simulate network delay

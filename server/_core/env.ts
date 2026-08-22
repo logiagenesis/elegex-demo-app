@@ -18,9 +18,11 @@ if (!parsed.success) {
   parsed.error.issues.forEach(issue => {
     console.error(`   - ${issue.path.join(".")}: ${issue.message}`);
   });
-  // We don't exit process here during tests/builds to avoid breaking tooling,
-  // but in a real Python/Django app, this would prevent startup.
-  // We'll throw if someone tries to access a missing critical variable.
+  
+  // Fail fast in production or explicit development, but allow tooling to run
+  if (process.env.NODE_ENV !== "test" && process.env.NODE_ENV !== "development") {
+    process.exit(1);
+  }
 }
 
 const validEnv = parsed.success ? parsed.data : (process.env as any);
