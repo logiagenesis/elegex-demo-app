@@ -18,9 +18,11 @@
 | F-08 completion with gaps | PARTIAL | `fieldService.foreman.complete` | `jobs`, `jobVisits`, `activityLogs` | Completion reaches `ready_for_invoicing`; no checklist, exception table, gap remediation, or office queue. |
 | F-09 offline sync status | PARTIAL UTILITY / ABSENT PRODUCT | Remote `syncQueue` utility; no wired procedure | Client utility only | Queue code and tests exist on the remote branch, but no field UI integration, service worker, persisted media, or end-to-end replay evidence is accepted. |
 
-### Offline queue utility boundary
+### Offline queue and idempotency boundary
 
-`client/src/lib/syncQueue.ts` does provide a browser-only IndexedDB mutation store, client-generated UUID keys, dependency ordering, interrupted-work recovery, retry state, exponential backoff with jitter, and Blob-compatible structured cloning. Its tests exercise queue ordering, retry, persistence, and recovery. However, the utility does not yet enqueue the existing foreman procedures, expose a real F-09 interface, register a service worker, submit idempotency keys to the current server procedure inputs, or prove an offline-to-online replay. It is therefore recorded as an implementation component, not as verified offline field capability.
+`client/src/lib/syncQueue.ts` does provide a browser-only IndexedDB mutation store, client-generated UUID keys, dependency ordering, interrupted-work recovery, retry state, exponential backoff with jitter, and Blob-compatible structured cloning. Its tests exercise queue ordering, retry, persistence, and recovery. The server now accepts optional UUID idempotency keys for check-in, material, evidence, quote, and completion. It claims the key in `syncLogs` under a unique `(organizationId, idempotencyKey)` constraint before applying the business mutation, so a duplicate invocation returns without creating another write.
+
+However, the utility does not yet enqueue the existing foreman procedures, expose a real F-09 interface, register a service worker, or provide a real offline-to-online replay execution record. It is therefore recorded as an implementation component with server-side deduplication support, not as verified offline field capability.
 
 ## Observed partial execution
 
