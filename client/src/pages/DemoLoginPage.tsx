@@ -8,7 +8,7 @@ export default function DemoLoginPage() {
   const [, setLocation] = useLocation();
   const personas = trpc.auth.demoPersonas.useQuery();
   const login = trpc.auth.demoLogin.useMutation({
-    onSuccess: () => setLocation("/"),
+    onSuccess: () => setLocation("/app"),
   });
 
   return (
@@ -40,6 +40,14 @@ export default function DemoLoginPage() {
             Sign in to Elegex
           </h2>
           <div className="mt-7 space-y-3">
+            {personas.isLoading ? (
+              <p
+                aria-live="polite"
+                className="rounded-2xl border border-dashed border-[#C9D7ED] bg-[#F7FAFF] p-4 text-sm font-medium text-[#5B7093]"
+              >
+                Loading secure demo roles…
+              </p>
+            ) : null}
             {personas.data?.map(persona => (
               <button
                 key={persona.id}

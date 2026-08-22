@@ -3464,12 +3464,22 @@ export async function createDocumentRecord(
   });
 }
 
+/**
+ * Recognizes both the vendor-neutral current storage route and the retained
+ * legacy compatibility route. The object key remains mandatory so arbitrary
+ * external URLs never become downloadable application documents.
+ */
+export function isManagedStorageUrl(url?: string | null) {
+  return Boolean(
+    url && (url.startsWith("/storage/") || url.startsWith("/manus-storage/"))
+  );
+}
+
 export function getDocumentHealth(document: {
   storageKey?: string | null;
   storageUrl?: string | null;
 }) {
-  return document.storageKey &&
-    document.storageUrl?.startsWith("/manus-storage/")
+  return document.storageKey && isManagedStorageUrl(document.storageUrl)
     ? ("available" as const)
     : ("unavailable" as const);
 }

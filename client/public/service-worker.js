@@ -1,4 +1,4 @@
-const CACHE_NAME = "elegex-shell-v2";
+const CACHE_NAME = "elegex-shell-v3";
 const NAVIGATION_FALLBACK = "/";
 const APP_SHELL_ROUTES = ["/", "/app", "/field", "/login"];
 

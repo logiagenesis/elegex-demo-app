@@ -11,8 +11,37 @@ import {
 } from "../connectors/outbox";
 import * as db from "../db";
 import { generateReviewedDraft } from "../providers/ai";
-import { validateUpload } from "../providers/storage";
+import { MAX_UPLOAD_BYTES, validateUpload } from "../providers/storage";
 import { storagePut } from "../storage";
+
+export const MAX_UPLOAD_DATA_URL_LENGTH =
+  Math.ceil((MAX_UPLOAD_BYTES * 4) / 3) + 512;
+
+function decodeManagedDataUrl(
+  dataUrl: string,
+  expectedMimeType: string,
+  subject: "Upload" | "Field media"
+) {
+  const match = dataUrl.match(/^data:([^;,]+);base64,([A-Za-z0-9+/]+={0,2})$/);
+  if (!match || match[1] !== expectedMimeType) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `${subject} metadata does not match its payload.`,
+    });
+  }
+
+  const base64 = match[2];
+  const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+  const decodedByteLength = Math.floor((base64.length * 3) / 4) - padding;
+  if (decodedByteLength > MAX_UPLOAD_BYTES) {
+    throw new TRPCError({
+      code: "PAYLOAD_TOO_LARGE",
+      message: `Files must be ${MAX_UPLOAD_BYTES / 1024 / 1024} MB or smaller.`,
+    });
+  }
+
+  return Buffer.from(base64, "base64");
+}
 
 const listInput = z.object({
   query: z.string().max(120).optional(),
@@ -400,7 +429,7 @@ export const elegexRouter = router({
               note: z.string().max(4000).optional(),
               fileName: z.string().min(1).max(255).optional(),
               mimeType: z.string().min(1).max(120).optional(),
-              dataUrl: z.string().max(7_000_000).optional(),
+              dataUrl: z.string().max(MAX_UPLOAD_DATA_URL_LENGTH).optional(),
               idempotencyKey: z.string().uuid().optional(),
             })
             .refine(
@@ -413,25 +442,32 @@ export const elegexRouter = router({
               }
             )
         )
-        .mutation(({ ctx, input }) => {
+        .mutation(async ({ ctx, input }) => {
           requireEdit(ctx.scope.role);
           const { dataUrl, fileName, mimeType, ...evidence } = input;
           let media:
             { fileName: string; mimeType: string; bytes: Buffer } | undefined;
           if (dataUrl && fileName && mimeType) {
-            const match = dataUrl.match(
-              /^data:([^;,]+);base64,([A-Za-z0-9+/]+={0,2})$/
+            const bytes = decodeManagedDataUrl(
+              dataUrl,
+              mimeType,
+              "Field media"
             );
-            if (!match || match[1] !== mimeType) {
+            try {
+              await validateUpload(bytes, mimeType, fileName);
+            } catch (error) {
               throw new TRPCError({
                 code: "BAD_REQUEST",
-                message: "Field media metadata does not match its payload.",
+                message:
+                  error instanceof Error
+                    ? error.message
+                    : "Invalid field-media payload.",
               });
             }
             media = {
               fileName,
               mimeType,
-              bytes: Buffer.from(match[2], "base64"),
+              bytes,
             };
           }
           return db.captureForemanEvidence(
@@ -606,7 +642,7 @@ export const elegexRouter = router({
         z.object({
           fileName: z.string().min(1).max(255),
           mimeType: z.string().min(1).max(120),
-          dataUrl: z.string().max(7_000_000),
+          dataUrl: z.string().max(MAX_UPLOAD_DATA_URL_LENGTH),
           documentType: z
             .enum([
               "coc",
@@ -630,20 +666,11 @@ export const elegexRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         requireEdit(ctx.scope.role);
-        const match = input.dataUrl.match(
-          /^data:([^;,]+);base64,([A-Za-z0-9+/]+={0,2})$/
+        const bytes = decodeManagedDataUrl(
+          input.dataUrl,
+          input.mimeType,
+          "Upload"
         );
-        if (!match || match[1] !== input.mimeType)
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Upload metadata does not match its data payload.",
-          });
-        const bytes = Buffer.from(match[2], "base64");
-        if (bytes.length > 5_000_000)
-          throw new TRPCError({
-            code: "PAYLOAD_TOO_LARGE",
-            message: "Files must be 5 MB or smaller.",
-          });
         try {
           await validateUpload(bytes, input.mimeType, input.fileName);
         } catch (error) {

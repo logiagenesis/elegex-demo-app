@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   assertStorageKey,
   makeImmutableStorageKey,
+  MAX_UPLOAD_BYTES,
   validateUpload,
 } from "./validation";
 
@@ -21,6 +22,26 @@ describe("storage upload validation", () => {
     await expect(
       validateUpload(onePixelPng, "image/jpeg", "site-photo.jpg")
     ).rejects.toThrow("File signature does not match");
+  });
+
+  it("accepts a six-megabyte payload but rejects a thirty-megabyte payload at the shared byte ceiling", async () => {
+    await expect(
+      validateUpload(
+        Buffer.alloc(6 * 1024 * 1024),
+        "application/pdf",
+        "accepted.pdf"
+      )
+    ).resolves.toMatchObject({ contentType: "application/pdf" });
+
+    await expect(
+      validateUpload(
+        Buffer.alloc(30 * 1024 * 1024),
+        "application/pdf",
+        "oversize.pdf"
+      )
+    ).rejects.toThrow(
+      `Upload exceeds the ${MAX_UPLOAD_BYTES / 1024 / 1024} MB limit`
+    );
   });
 
   it("rejects traversal and creates unique immutable object references", () => {

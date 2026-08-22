@@ -19,6 +19,7 @@ import React, { useState } from "react";
 import { useLocation } from "wouter";
 
 import { useAuth } from "@/_core/hooks/useAuth";
+import { BrandMark } from "@/components/BrandMark";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,10 +68,8 @@ function ElegexWordmark({
     <span
       className={`inline-flex items-center gap-2 ${inverted ? "text-white" : "text-[#101827]"}`}
     >
-      <img
-        src="/manus-storage/elegex-brand-mark_bd91b904.png"
-        alt="Elegex brand mark"
-        className={`h-6 w-6 object-contain ${inverted ? "rounded-md bg-white/95 p-0.5 shadow-sm" : ""}`}
+      <BrandMark
+        className={`h-6 w-6 ${inverted ? "bg-white text-[#102447] shadow-sm" : ""}`}
       />
       <span className="font-black tracking-[0.13em]">ELEGEX</span>
       {!compact ? (
