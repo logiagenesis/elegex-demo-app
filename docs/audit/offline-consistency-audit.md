@@ -29,6 +29,11 @@ A new integration test suite (`offline-integration.test.ts`) was executed to sim
 - **Verification:** The server's `checkIdempotency` handler (using an atomic `INSERT IGNORE` into the `syncLogs` table) intercepts the duplicate UUID. The business logic is bypassed, and the server returns a successful response to the client.
 - **Result:** **Pass**. The database state remains consistent. No duplicate materials are added, and no duplicate activity logs are generated.
 
+### 1.5. High-Concurrency Stress and Race Conditions
+- **Scenario:** 50 identical mutation payloads (simulating an aggressive service worker loop) hit the server concurrently, along with mixed traffic for other keys.
+- **Verification:** The `idempotency.stress.test.ts` suite mocks the database transaction layer to enforce unique index constraints and introduce random scheduling delays.
+- **Result:** **Pass**. The atomic `onDuplicateKeyUpdate` correctly serializes the claims. Exactly one request succeeds in inserting the business data (returning a valid `insertId`), while the other 49 requests bypass execution without throwing errors. The final database state contains exactly one material record and one activity log.
+
 ## 2. End-to-End Limits
 
 While the offline queue and server idempotency are robust, the following boundaries exist in the current deployment:
