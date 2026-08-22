@@ -57,32 +57,6 @@ const secondaryNavigation = [
   },
 ];
 
-function ElegexWordmark({
-  inverted = false,
-  compact = false,
-}: {
-  inverted?: boolean;
-  compact?: boolean;
-}) {
-  return (
-    <span
-      className={`inline-flex items-center gap-2 ${inverted ? "text-white" : "text-[#101827]"}`}
-    >
-      <BrandMark
-        className={`h-6 w-6 ${inverted ? "bg-white text-[#102447] shadow-sm" : ""}`}
-      />
-      <span className="font-black tracking-[0.13em]">ELEGEX</span>
-      {!compact ? (
-        <span
-          className={`text-[9px] font-bold tracking-[0.18em] ${inverted ? "text-[#A8C8FF]" : "text-[#667085]"}`}
-        >
-          OPERATIONS
-        </span>
-      ) : null}
-    </span>
-  );
-}
-
 export default function DashboardLayout({
   children,
 }: {
@@ -115,7 +89,7 @@ export default function DashboardLayout({
           <div className="absolute -left-24 top-28 h-72 w-72 rounded-full bg-[#3171F5]/30 blur-3xl" />
           <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-[#B6D4FF]/15 blur-3xl" />
           <div className="relative text-sm">
-            <ElegexWordmark inverted />
+            <BrandMark inverted />
           </div>
           <div className="relative max-w-xl">
             <p className="mb-5 text-xs font-semibold tracking-[0.24em] text-[#A8C8FF]">
@@ -158,7 +132,7 @@ export default function DashboardLayout({
         <section className="flex items-center justify-center px-6 py-12 sm:px-10">
           <div className="w-full max-w-md rounded-[1.75rem] border border-[#E4EAF4] bg-white p-8 shadow-[0_20px_60px_rgba(24,54,108,0.10)] sm:p-10">
             <div className="mb-10 text-sm">
-              <ElegexWordmark />
+              <BrandMark />
             </div>
             <p className="text-sm font-semibold tracking-[0.18em] text-[#195FE6]">
               OPERATIONS WORKSPACE
@@ -236,7 +210,7 @@ export default function DashboardLayout({
             onClick={() => navigate("/app")}
             className="text-left text-sm"
           >
-            <ElegexWordmark compact />
+            <BrandMark variant="compact" />
           </button>
         </SidebarHeader>
         <SidebarContent className="gap-7 px-3 pb-5">

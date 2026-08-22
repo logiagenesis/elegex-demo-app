@@ -121,6 +121,8 @@ describe("frontend interaction and state contracts", () => {
     }
     expect(publicLanding).toContain("BrandMark");
     expect(dashboardLayout).toContain("BrandMark");
-    expect(browserEntry).toContain("/favicon.svg");
+    expect(browserEntry).toContain("/brand/elegex-mark-mono.svg");
+    expect(manifest).toContain("/brand/elegex-mark.svg");
+    expect(manifest).toContain("/brand/elegex-tile.svg");
   });
 });

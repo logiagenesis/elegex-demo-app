@@ -26,7 +26,7 @@ import {
   requestIdMiddleware,
 } from "./observability";
 import { registerStorageProxy } from "./storageProxy";
-import { serveStatic, setupVite } from "./vite";
+import { serveStatic } from "./static";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -250,6 +250,7 @@ async function startServer() {
   app.use("/api", apiNotFoundHandler);
   // development mode uses Vite, production mode uses static files
   if (ENV.isDevelopment) {
+    const { setupVite } = await import("./vite");
     await setupVite(app, server);
   } else {
     serveStatic(app);

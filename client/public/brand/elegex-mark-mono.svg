@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="elegex-mono-title">
+  <title id="elegex-mono-title">Elegex</title>
+  <defs><mask id="egx-mono-slot"><rect width="1024" height="1024" fill="#000"/><g fill="#fff"><rect x="232" y="168" width="250" height="712" rx="28"/><rect x="456" y="160" width="344" height="196" rx="28"/><rect x="456" y="430" width="306" height="186" rx="28"/><rect x="456" y="692" width="344" height="196" rx="28"/></g><rect x="336" y="318" width="40" height="398" rx="20" fill="#000"/></mask></defs>
+  <rect width="1024" height="1024" fill="#12264F" mask="url(#egx-mono-slot)"/>
+</svg>

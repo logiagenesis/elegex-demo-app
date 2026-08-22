@@ -8,10 +8,16 @@
   "theme_color": "#12264F",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/brand/elegex-mark.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/elegex-tile.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }

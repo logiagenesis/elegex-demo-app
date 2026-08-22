@@ -1,6 +1,15 @@
-const CACHE_NAME = "elegex-shell-v3";
+const CACHE_NAME = "elegex-shell-v4";
 const NAVIGATION_FALLBACK = "/";
-const APP_SHELL_ROUTES = ["/", "/app", "/field", "/login"];
+const APP_SHELL_ROUTES = [
+  "/",
+  "/app",
+  "/field",
+  "/login",
+  "/manifest.webmanifest",
+  "/brand/elegex-mark.svg",
+  "/brand/elegex-mark-mono.svg",
+  "/brand/elegex-tile.svg",
+];
 
 self.addEventListener("install", event => {
   event.waitUntil(
