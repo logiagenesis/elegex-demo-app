@@ -14,6 +14,7 @@ import { serveStatic, setupVite } from "./vite";
 import { apiNotFoundHandler } from "./apiFallback";
 import { assertFieldServiceSchema } from "../connectors/database";
 import { startOutboxWorker, stopOutboxWorker } from "../connectors/worker";
+import { ENV } from "./env";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -116,18 +117,18 @@ async function startServer() {
   // receive `<!doctype html>`.
   app.use("/api", apiNotFoundHandler);
   // development mode uses Vite, production mode uses static files
-  if (process.env.NODE_ENV === "development") {
+  if (ENV.isDevelopment) {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
+  const preferredPort = ENV.port;
 
   // In production, bind exactly to the configured port to ensure LB health checks pass.
   // Port drift causes silent failure in orchestrated environments.
   let port = preferredPort;
-  if (process.env.NODE_ENV !== "production") {
+  if (!ENV.isProduction) {
     port = await findAvailablePort(preferredPort);
     if (port !== preferredPort) {
       logger.warn(`Port ${preferredPort} is busy, using port ${port} instead`);

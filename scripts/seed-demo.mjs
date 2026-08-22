@@ -29,7 +29,7 @@ try {
     organizationId = existingOrganizations[0].id;
   } else {
     const [result] = await connection.execute(
-      "INSERT INTO organizations (name, slug, industry, primaryColor, timezone, createdBy) VALUES ('Elegex Operations', 'elegex-demo', 'Professional services', '#195FE6', 'Africa/Johannesburg', ?)",
+      "INSERT INTO organizations (name, slug, industry, primaryColor, createdBy) VALUES ('Elegex Operations', 'elegex-demo', 'Professional services', '#195FE6', ?)",
       [owner.id]
     );
     organizationId = result.insertId;

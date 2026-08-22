@@ -1,52 +1,26 @@
-import { describe, it, expect } from "vitest";
-import { z } from "zod";
+import { describe, expect, it } from "vitest";
+import { createTestEnvironment, parseEnvironment } from "./_core/env";
 
-describe("Environment Configuration Contract", () => {
-  it("should fail fast if required variables are missing in production", () => {
-    // We test the logic of env.ts without actually exiting the test runner
-    const envSchema = z.object({
-      VITE_APP_ID: z.string().min(1),
-      JWT_SECRET: z.string().min(16),
-      DATABASE_URL: z.string().url(),
-      OAUTH_SERVER_URL: z.string().url(),
-      VITE_OAUTH_PORTAL_URL: z.string().url(),
-    });
-
-    const invalidEnv = {
-      NODE_ENV: "production",
-      VITE_APP_ID: "test-app",
-      // Missing DATABASE_URL and others
-    };
-
-    const parsed = envSchema.safeParse(invalidEnv);
-    expect(parsed.success).toBe(false);
-
-    // In our actual env.ts, this condition triggers process.exit(1)
-    const shouldExit =
-      !parsed.success &&
-      invalidEnv.NODE_ENV !== "test" &&
-      invalidEnv.NODE_ENV !== "development";
-    expect(shouldExit).toBe(true);
+describe("environment configuration contract", () => {
+  it("rejects incomplete production configuration with named validation failures", () => {
+    expect(() =>
+      parseEnvironment({ NODE_ENV: "production", VITE_APP_ID: "test-app" })
+    ).toThrow(/DATABASE_URL/);
   });
 
-  it("should not fail fast during test runs", () => {
-    const envSchema = z.object({
-      VITE_APP_ID: z.string().min(1),
-      DATABASE_URL: z.string().url(),
+  it("provides an explicit test-only configuration seam", () => {
+    const environment = createTestEnvironment({ PORT: "4310" });
+    expect(environment.NODE_ENV).toBe("test");
+    expect(environment.PORT).toBe(4310);
+    expect(environment.OUTBOX_WORKER_ENABLED).toBe(false);
+  });
+
+  it("parses constrained runtime feature flags and logging configuration", () => {
+    const environment = createTestEnvironment({
+      LOG_LEVEL: "debug",
+      OUTBOX_WORKER_ENABLED: "true",
     });
-
-    const testEnv = {
-      NODE_ENV: "test",
-      // Missing DATABASE_URL
-    };
-
-    const parsed = envSchema.safeParse(testEnv);
-    expect(parsed.success).toBe(false);
-
-    const shouldExit =
-      !parsed.success &&
-      testEnv.NODE_ENV !== "test" &&
-      testEnv.NODE_ENV !== "development";
-    expect(shouldExit).toBe(false);
+    expect(environment.LOG_LEVEL).toBe("debug");
+    expect(environment.OUTBOX_WORKER_ENABLED).toBe(true);
   });
 });

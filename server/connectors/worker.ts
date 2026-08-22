@@ -5,6 +5,7 @@ import {
 } from "../../drizzle/schema";
 import { getDatabase } from "./database";
 import { logger } from "../_core/logger";
+import { ENV } from "../_core/env";
 
 // In a Python ecosystem, this would be a Celery or RQ worker.
 // Here we implement a simple interval-based poller that drains the outbox.
@@ -17,7 +18,7 @@ let workerInterval: ReturnType<typeof setInterval> | null = null;
 export function startOutboxWorker(pollIntervalMs = 10000) {
   if (workerInterval) return;
 
-  if (process.env.OUTBOX_WORKER_ENABLED !== "true") {
+  if (!ENV.outboxWorkerEnabled) {
     logger.info(
       "[Worker] Outbox worker is disabled by default. Set OUTBOX_WORKER_ENABLED=true to enable."
     );
