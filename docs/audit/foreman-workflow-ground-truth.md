@@ -24,6 +24,8 @@
 
 However, the utility does not yet enqueue the existing foreman procedures, expose a real F-09 interface, register a service worker, or provide a real offline-to-online replay execution record. It is therefore recorded as an implementation component with server-side deduplication support, not as verified offline field capability.
 
+The workflow regression suite additionally proves the server duplicate path for check-in: when the `(organizationId, idempotencyKey)` claim already exists, the procedure returns before assignment lookup, job update, visit update, or activity-log write. This is implementation-level evidence only; it does not replace the directive-required device-offline replay journey.
+
 ## Observed partial execution
 
 In the connected published owner session, synthetic job `#2041` (`jobs.id = 30031`, organization `1`) showed the field job card. The following real persisted actions were executed before the session reverted to the public sign-in shell:

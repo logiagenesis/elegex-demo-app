@@ -19,7 +19,7 @@ vi.mock("./connectors/database", () => ({
   withTransaction: mocks.withTransaction,
 }));
 
-import { createDocumentRecord, createJob, createTask, linkExternalInvoice, transitionJobStage } from "./db";
+import { createDocumentRecord, createJob, createTask, foremanCheckIn, linkExternalInvoice, transitionJobStage } from "./db";
 import { enqueueIntegrationEvent } from "./connectors/outbox";
 
 const organizationId = 7;
@@ -110,5 +110,17 @@ describe("critical workflow rollback propagation", () => {
     database.select.mockReturnValue({ from: vi.fn(() => ({ where: vi.fn(() => ({ limit: vi.fn().mockResolvedValue([{ id: 9, status: "active" }]) })) })) });
     database.insert.mockReturnValue({ values: vi.fn(() => ({ onDuplicateKeyUpdate: vi.fn().mockRejectedValue(outboxFailure) })) });
     await expect(enqueueIntegrationEvent({ organizationId, connectionId: 9, eventType: "job.ready", payload: {}, idempotencyKey: "event-9002" })).rejects.toBe(outboxFailure);
+  });
+
+  it("does not repeat check-in writes when the tenant has already claimed the mobile idempotency key", async () => {
+    configureTransaction([{ id: 88, stage: "scheduled", foremanId: userId }]);
+    const onDuplicateKeyUpdate = vi.fn().mockResolvedValue([{ affectedRows: 0 }]);
+    mocks.values.mockReturnValueOnce({ onDuplicateKeyUpdate });
+
+    await expect(foremanCheckIn(organizationId, userId, 88, "7f5c25f0-6f3b-42c9-8bc1-4392da6e0bc8")).resolves.toBeUndefined();
+
+    expect(onDuplicateKeyUpdate).toHaveBeenCalledTimes(1);
+    expect(mocks.select).not.toHaveBeenCalled();
+    expect(mocks.update).not.toHaveBeenCalled();
   });
 });
