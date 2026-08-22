@@ -117,8 +117,8 @@ export async function validateDocumentTargets(organizationId: number, input: { p
   await assertScopedEntity(db, cases, organizationId, input.caseId, "Case", true);
 }
 
-async function seedDemoWorkspace(organizationId: number, ownerId: number) {
-  const db = await getDb();
+async function seedDemoWorkspace(organizationId: number, ownerId: number, database?: any) {
+  const db = database ?? await getDb();
   if (!db) return;
   const contactRows = await db.select({ total: count() }).from(contacts).where(eq(contacts.organizationId, organizationId));
   if ((contactRows[0]?.total ?? 0) > 0) return;
@@ -289,15 +289,15 @@ export function hasDeterministicDemoReseed(snapshot: DemoReseedSnapshot) {
  * Adds a clearly synthetic six-month field-service history to a tenant. This is
  * deliberately deterministic, repeatable demonstration content—not customer data.
  */
-async function seedFieldServiceDemo(organizationId: number, ownerId: number) {
-  const db = await getDb();
+async function seedFieldServiceDemo(organizationId: number, ownerId: number, database?: any) {
+  const db = database ?? await getDb();
   if (!db) return;
   const existing = await db.select({ total: count() }).from(jobs).where(eq(jobs.organizationId, organizationId));
   if ((existing[0]?.total ?? 0) > 0) return;
 
   const tenantContacts = await db.select().from(contacts).where(eq(contacts.organizationId, organizationId)).orderBy(asc(contacts.id));
-  const tenantMembers = await listWorkspaceMembers(organizationId);
-  const foremanIds = tenantMembers.filter(member => ["owner", "admin", "manager", "member"].includes(member.role)).map(member => member.id);
+  const tenantMembers = await listWorkspaceMembers(organizationId, db);
+  const foremanIds = (tenantMembers as Array<{ id: number; role: OrganizationRole }>).filter(member => ["owner", "admin", "manager", "member"].includes(member.role)).map(member => member.id);
   const contactRows = tenantContacts.length ? tenantContacts : [];
   if (!contactRows.length) return;
 
@@ -452,8 +452,8 @@ export async function ensureTenantScope(userId: number): Promise<TenantScope> {
   return membership[0] as TenantScope;
 }
 
-export async function listWorkspaceMembers(organizationId: number) {
-  const db = await getDb();
+export async function listWorkspaceMembers(organizationId: number, database?: any) {
+  const db = database ?? await getDb();
   if (!db) throw new Error("Database is not available");
   return db
     .select({ id: users.id, name: users.name, email: users.email, role: organizationMembers.role, title: organizationMembers.title })
@@ -538,8 +538,11 @@ export async function createContact(organizationId: number, userId: number, inpu
 }
 
 export async function updateContact(organizationId: number, userId: number, id: number, input: { name?: string; company?: string; email?: string; phone?: string; location?: string; status?: "lead" | "active" | "inactive"; notes?: string }) {
-  const db = await getDb(); if (!db) throw new Error("Database is not available");
-  await db.update(contacts).set({ ...input, updatedBy: userId }).where(and(eq(contacts.id, id), eq(contacts.organizationId, organizationId), isNull(contacts.deletedAt))); await logActivity(organizationId, userId, "updated", "contact", id, "Updated a contact record");
+  return withTransaction(async tx => {
+    await assertScopedEntity(tx, contacts, organizationId, id, "Contact", true);
+    await tx.update(contacts).set({ ...input, updatedBy: userId }).where(and(eq(contacts.id, id), eq(contacts.organizationId, organizationId), isNull(contacts.deletedAt)));
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "updated", entityType: "contact", entityId: id, summary: "Updated a contact record" });
+  });
 }
 
 export async function createProject(organizationId: number, userId: number, input: { name: string; code: string; contactId?: number; description?: string; status?: "planning" | "active" | "on_hold" | "complete" | "archived"; priority?: "low" | "medium" | "high" | "urgent"; dueDate?: Date; budget?: number }) {
@@ -553,7 +556,11 @@ export async function createProject(organizationId: number, userId: number, inpu
 }
 
 export async function updateProject(organizationId: number, userId: number, id: number, input: { name?: string; description?: string; status?: "planning" | "active" | "on_hold" | "complete" | "archived"; priority?: "low" | "medium" | "high" | "urgent"; progress?: number; dueDate?: Date; budget?: number }) {
-  const db = await getDb(); if (!db) throw new Error("Database is not available"); await db.update(projects).set({ ...input, updatedBy: userId }).where(and(eq(projects.id, id), eq(projects.organizationId, organizationId), isNull(projects.deletedAt))); await logActivity(organizationId, userId, "updated", "project", id, "Updated a project record");
+  return withTransaction(async tx => {
+    await assertScopedEntity(tx, projects, organizationId, id, "Project", true);
+    await tx.update(projects).set({ ...input, updatedBy: userId }).where(and(eq(projects.id, id), eq(projects.organizationId, organizationId), isNull(projects.deletedAt)));
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "updated", entityType: "project", entityId: id, summary: "Updated a project record" });
+  });
 }
 
 export async function createCase(organizationId: number, userId: number, input: { reference: string; title: string; summary?: string; contactId?: number; projectId?: number; severity?: "low" | "medium" | "high" | "critical"; ownerId?: number; dueDate?: Date }) {
@@ -570,6 +577,7 @@ export async function createCase(organizationId: number, userId: number, input: 
 
 export async function updateCase(organizationId: number, userId: number, id: number, input: { title?: string; summary?: string; status?: "open" | "investigating" | "pending" | "resolved" | "closed"; severity?: "low" | "medium" | "high" | "critical"; ownerId?: number; dueDate?: Date }) {
   return withTransaction(async tx => {
+    await assertScopedEntity(tx, cases, organizationId, id, "Case", true);
     await assertActiveWorkspaceMember(tx, organizationId, input.ownerId, "Case owner");
     await tx.update(cases).set({ ...input, updatedBy: userId }).where(and(eq(cases.id, id), eq(cases.organizationId, organizationId), isNull(cases.deletedAt)));
     await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "updated", entityType: "case", entityId: id, summary: "Updated a case record" });
@@ -591,6 +599,7 @@ export async function createTask(organizationId: number, userId: number, input: 
 
 export async function updateTask(organizationId: number, userId: number, id: number, input: { title?: string; description?: string; projectId?: number; status?: "todo" | "in_progress" | "blocked" | "complete"; priority?: "low" | "medium" | "high" | "urgent"; assigneeId?: number; dueDate?: Date }) {
   return withTransaction(async tx => {
+    await assertScopedEntity(tx, tasks, organizationId, id, "Task", true);
     await assertScopedEntity(tx, projects, organizationId, input.projectId, "Project", true);
     await assertActiveWorkspaceMember(tx, organizationId, input.assigneeId, "Assignee");
     const completedAt = input.status === "complete" ? new Date() : input.status ? null : undefined;
@@ -601,7 +610,12 @@ export async function updateTask(organizationId: number, userId: number, id: num
 }
 
 export async function archiveRecord(organizationId: number, userId: number, resource: "contacts" | "projects" | "cases" | "tasks", id: number) {
-  const db = await getDb(); if (!db) throw new Error("Database is not available"); const table = { contacts, projects, cases, tasks }[resource] as any; await db.update(table).set({ deletedAt: new Date(), updatedBy: userId }).where(and(eq(table.id, id), eq(table.organizationId, organizationId))); await logActivity(organizationId, userId, "archived", resource.slice(0, -1), id, `Archived a ${resource.slice(0, -1)} record`);
+  return withTransaction(async tx => {
+    const table = { contacts, projects, cases, tasks }[resource] as any;
+    await assertScopedEntity(tx, table, organizationId, id, resource.slice(0, -1), true);
+    await tx.update(table).set({ deletedAt: new Date(), updatedBy: userId }).where(and(eq(table.id, id), eq(table.organizationId, organizationId), isNull(table.deletedAt)));
+    await tx.insert(activityLogs).values({ organizationId, actorId: userId, action: "archived", entityType: resource.slice(0, -1), entityId: id, summary: `Archived a ${resource.slice(0, -1)} record` });
+  });
 }
 
 export async function getNotifications(organizationId: number, userId: number) {
@@ -633,7 +647,13 @@ export async function getOrganizationSettings(organizationId: number) {
 }
 
 export async function updateMemberRole(organizationId: number, actorId: number, membershipId: number, role: Exclude<OrganizationRole, "owner">) {
-  const db = await getDb(); if (!db) throw new Error("Database is not available"); await db.update(organizationMembers).set({ role }).where(and(eq(organizationMembers.id, membershipId), eq(organizationMembers.organizationId, organizationId))); await logActivity(organizationId, actorId, "updated", "member", membershipId, `Updated a member role to ${role}`);
+  return withTransaction(async tx => {
+    const membership = await tx.select({ role: organizationMembers.role }).from(organizationMembers).where(and(eq(organizationMembers.id, membershipId), eq(organizationMembers.organizationId, organizationId))).limit(1);
+    if (!membership[0]) throw new Error("Workspace member is not available");
+    if (membership[0].role === "owner") throw new Error("The workspace owner role cannot be reassigned");
+    await tx.update(organizationMembers).set({ role }).where(and(eq(organizationMembers.id, membershipId), eq(organizationMembers.organizationId, organizationId)));
+    await tx.insert(activityLogs).values({ organizationId, actorId, action: "updated", entityType: "member", entityId: membershipId, summary: `Updated a member role to ${role}` });
+  });
 }
 
 export async function updateSettings(organizationId: number, userId: number, input: { name?: string; primaryColor?: string; timezone?: string; locale?: string; currency?: string; tradeVocabulary?: string[]; allowMemberInvites?: boolean; notificationDigest?: boolean }) {
@@ -644,11 +664,19 @@ export async function updateSettings(organizationId: number, userId: number, inp
   if (Object.keys(settingFields).length || tradeVocabulary) {
     const existing = await db.select({ metadata: appSettings.metadata }).from(appSettings).where(eq(appSettings.organizationId, organizationId)).limit(1);
     const existingMetadata = (existing[0]?.metadata ?? {}) as Record<string, unknown>;
-    await db.update(appSettings).set({
+    const metadata = tradeVocabulary ? { ...existingMetadata, tradeVocabulary } : existing[0]?.metadata;
+    await db.insert(appSettings).values({
+      organizationId,
       ...settingFields,
-      ...(tradeVocabulary ? { metadata: { ...existingMetadata, tradeVocabulary } } : {}),
+      ...(metadata ? { metadata } : {}),
       updatedBy: userId,
-    }).where(eq(appSettings.organizationId, organizationId));
+    }).onDuplicateKeyUpdate({
+      set: {
+        ...settingFields,
+        ...(tradeVocabulary ? { metadata } : {}),
+        updatedBy: userId,
+      },
+    });
   }
   await logActivity(organizationId, userId, "updated", "settings", organizationId, "Updated workspace settings");
 }
@@ -714,7 +742,7 @@ export async function getJobDetail(organizationId: number, jobId: number) {
 
 export async function listDispatchVisits(organizationId: number, start?: Date, end?: Date) {
   const db = await getDb(); if (!db) throw new Error("Database is not available");
-  const where = and(eq(jobVisits.organizationId, organizationId), start ? sql`${jobVisits.scheduledStart} >= ${start}` : undefined, end ? sql`${jobVisits.scheduledStart} <= ${end}` : undefined);
+  const where = and(eq(jobVisits.organizationId, organizationId), eq(jobs.organizationId, organizationId), isNull(jobs.deletedAt), start ? sql`${jobVisits.scheduledStart} >= ${start}` : undefined, end ? sql`${jobVisits.scheduledStart} <= ${end}` : undefined);
   return db.select({ visit: jobVisits, job: jobs, contact: contacts, foreman: users }).from(jobVisits).innerJoin(jobs, eq(jobVisits.jobId, jobs.id)).innerJoin(contacts, eq(jobs.contactId, contacts.id)).leftJoin(users, eq(jobVisits.foremanId, users.id)).where(where).orderBy(asc(jobVisits.scheduledStart));
 }
 
@@ -724,7 +752,7 @@ export async function getFieldServiceReports(organizationId: number) {
     db.select().from(monthlyOperationalSnapshots).where(eq(monthlyOperationalSnapshots.organizationId, organizationId)).orderBy(asc(monthlyOperationalSnapshots.periodStart)),
     db.select({ stage: jobs.stage, total: count() }).from(jobs).where(and(eq(jobs.organizationId, organizationId), isNull(jobs.deletedAt))).groupBy(jobs.stage),
     db.select({ status: quotes.status, total: count(), value: sql<number>`COALESCE(SUM(${quotes.total}), 0)` }).from(quotes).where(eq(quotes.organizationId, organizationId)).groupBy(quotes.status),
-    db.select({ job: jobs, contact: contacts }).from(jobs).innerJoin(contacts, eq(jobs.contactId, contacts.id)).where(and(eq(jobs.organizationId, organizationId), eq(jobs.stage, "ready_for_invoicing"))).orderBy(asc(jobs.readyForInvoiceAt)),
+    db.select({ job: jobs, contact: contacts }).from(jobs).innerJoin(contacts, eq(jobs.contactId, contacts.id)).where(and(eq(jobs.organizationId, organizationId), isNull(jobs.deletedAt), eq(jobs.stage, "ready_for_invoicing"))).orderBy(asc(jobs.readyForInvoiceAt)),
     db.select({ total: count(), value: sql<number>`COALESCE(SUM(${quotes.total}), 0)` }).from(invoiceLinks).leftJoin(jobs, eq(invoiceLinks.jobId, jobs.id)).leftJoin(quotes, eq(quotes.jobId, jobs.id)).where(and(eq(invoiceLinks.organizationId, organizationId), eq(invoiceLinks.status, "linked"))),
     db.select().from(appSettings).where(eq(appSettings.organizationId, organizationId)).limit(1),
   ]);
@@ -933,6 +961,7 @@ export function getDocumentHealth(document: { storageKey?: string | null; storag
 
 export async function listDocuments(organizationId: number, resource?: "contact" | "project" | "case", recordId?: number, documentType?: "coc" | "quote" | "invoice" | "job_card" | "photo_evidence" | "material_list" | "compliance_cert" | "site_report") {
   const db = await getDb(); if (!db) throw new Error("Database is not available");
+  if (Boolean(resource) !== Boolean(recordId)) throw new Error("Document resource and record ID must be supplied together");
   const relation = resource === "contact" ? eq(documents.contactId, recordId!) : resource === "project" ? eq(documents.projectId, recordId!) : resource === "case" ? eq(documents.caseId, recordId!) : undefined;
   const rows = await db.select().from(documents).where(and(eq(documents.organizationId, organizationId), relation, documentType ? eq(documents.documentType, documentType) : undefined)).orderBy(desc(documents.createdAt));
   return rows.map(document => ({ ...document, health: getDocumentHealth(document) }));
@@ -945,10 +974,20 @@ export type DemoResetDependencies = {
 };
 
 export async function resetDemoData(organizationId: number, userId: number, dependencies: DemoResetDependencies = {}) {
-  const db = dependencies.database ?? await getDb(); if (!db) throw new Error("Database is not available");
-  const releases = await db.select({ id: environmentReleases.id }).from(environmentReleases).where(eq(environmentReleases.organizationId, organizationId));
-  const tenantQuotes = await db.select({ id: quotes.id }).from(quotes).where(eq(quotes.organizationId, organizationId));
-  for (const release of releases) await db.delete(releaseChecks).where(eq(releaseChecks.releaseId, release.id));
-  for (const quote of tenantQuotes) await db.delete(quoteItems).where(eq(quoteItems.quoteId, quote.id));
-  await db.delete(integrationEvents).where(eq(integrationEvents.organizationId, organizationId)); await db.delete(integrationConnections).where(eq(integrationConnections.organizationId, organizationId)); await db.delete(environmentReleases).where(eq(environmentReleases.organizationId, organizationId)); await db.delete(invoiceLinks).where(eq(invoiceLinks.organizationId, organizationId)); await db.delete(jobEvidence).where(eq(jobEvidence.organizationId, organizationId)); await db.delete(jobMaterials).where(eq(jobMaterials.organizationId, organizationId)); await db.delete(jobVisits).where(eq(jobVisits.organizationId, organizationId)); await db.delete(quotes).where(eq(quotes.organizationId, organizationId)); await db.delete(monthlyOperationalSnapshots).where(eq(monthlyOperationalSnapshots.organizationId, organizationId)); await db.delete(jobs).where(eq(jobs.organizationId, organizationId)); await db.delete(documents).where(eq(documents.organizationId, organizationId)); await db.delete(notifications).where(eq(notifications.organizationId, organizationId)); await db.delete(savedViews).where(eq(savedViews.organizationId, organizationId)); await db.delete(activityLogs).where(eq(activityLogs.organizationId, organizationId)); await db.delete(tasks).where(eq(tasks.organizationId, organizationId)); await db.delete(cases).where(eq(cases.organizationId, organizationId)); await db.delete(projects).where(eq(projects.organizationId, organizationId)); await db.delete(contacts).where(eq(contacts.organizationId, organizationId)); await db.delete(appSettings).where(eq(appSettings.organizationId, organizationId)); await (dependencies.seedWorkspace ?? seedDemoWorkspace)(organizationId, userId); await (dependencies.seedFieldService ?? seedFieldServiceDemo)(organizationId, userId);
+  const reset = async (db: any) => {
+    const releases = await db.select({ id: environmentReleases.id }).from(environmentReleases).where(eq(environmentReleases.organizationId, organizationId));
+    const tenantQuotes = await db.select({ id: quotes.id }).from(quotes).where(eq(quotes.organizationId, organizationId));
+    for (const release of releases) await db.delete(releaseChecks).where(eq(releaseChecks.releaseId, release.id));
+    for (const quote of tenantQuotes) await db.delete(quoteItems).where(eq(quoteItems.quoteId, quote.id));
+    await db.delete(integrationEvents).where(eq(integrationEvents.organizationId, organizationId)); await db.delete(integrationConnections).where(eq(integrationConnections.organizationId, organizationId)); await db.delete(environmentReleases).where(eq(environmentReleases.organizationId, organizationId)); await db.delete(invoiceLinks).where(eq(invoiceLinks.organizationId, organizationId)); await db.delete(jobEvidence).where(eq(jobEvidence.organizationId, organizationId)); await db.delete(jobMaterials).where(eq(jobMaterials.organizationId, organizationId)); await db.delete(jobVisits).where(eq(jobVisits.organizationId, organizationId)); await db.delete(quotes).where(eq(quotes.organizationId, organizationId)); await db.delete(monthlyOperationalSnapshots).where(eq(monthlyOperationalSnapshots.organizationId, organizationId)); await db.delete(jobs).where(eq(jobs.organizationId, organizationId)); await db.delete(documents).where(eq(documents.organizationId, organizationId)); await db.delete(notifications).where(eq(notifications.organizationId, organizationId)); await db.delete(savedViews).where(eq(savedViews.organizationId, organizationId)); await db.delete(activityLogs).where(eq(activityLogs.organizationId, organizationId)); await db.delete(tasks).where(eq(tasks.organizationId, organizationId)); await db.delete(cases).where(eq(cases.organizationId, organizationId)); await db.delete(projects).where(eq(projects.organizationId, organizationId)); await db.delete(contacts).where(eq(contacts.organizationId, organizationId)); await db.delete(appSettings).where(eq(appSettings.organizationId, organizationId));
+    if (dependencies.seedWorkspace) await dependencies.seedWorkspace(organizationId, userId);
+    else await seedDemoWorkspace(organizationId, userId, db);
+    if (dependencies.seedFieldService) await dependencies.seedFieldService(organizationId, userId);
+    else await seedFieldServiceDemo(organizationId, userId, db);
+  };
+  if (dependencies.database) {
+    if (typeof dependencies.database.transaction === "function") return dependencies.database.transaction(reset);
+    return reset(dependencies.database);
+  }
+  return withTransaction(reset);
 }

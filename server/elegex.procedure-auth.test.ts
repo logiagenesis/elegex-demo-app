@@ -160,5 +160,7 @@ describe("Elegex protected procedure authorization", () => {
     await expect(ownerCaller.elegex.integrations.enqueue({ connectionId: 2, eventType: "sync", payload: {}, idempotencyKey: "short" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
     await expect(ownerCaller.elegex.admin.updateMemberRole({ membershipId: 3, role: "owner" as any })).rejects.toMatchObject({ code: "BAD_REQUEST" });
     await expect(ownerCaller.elegex.fieldService.foreman.quote({ jobId: 3, quoteNumber: "Q", total: -1 })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(ownerCaller.elegex.documents.list({ resource: "contact" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(ownerCaller.elegex.documents.list({ recordId: 3 })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });

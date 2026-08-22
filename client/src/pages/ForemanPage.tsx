@@ -62,7 +62,10 @@ function ForemanJobWorkspace({ row, onBack, onRefresh }: { row: any; onBack: () 
   const refreshQueue = useCallback(async () => { const rows = await queue.list(); setQueueDepth(rows.filter(row => row.status === "queued" || row.status === "retrying").length); return rows; }, [queue]);
 
   useEffect(() => {
-    void refreshQueue();
+    void queue.recoverInterruptedWork().then(refreshQueue).then(onRefresh).catch(error => {
+      setSyncState("error");
+      setSyncDetail(`Queued field actions could not be recovered: ${error instanceof Error ? error.message : String(error)}`);
+    });
     const replay = () => void queue.drain().then(refreshQueue).then(onRefresh);
     window.addEventListener("online", replay);
     return () => window.removeEventListener("online", replay);

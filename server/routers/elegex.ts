@@ -8,6 +8,7 @@ import { storagePut } from "../storage";
 import { protectedProcedure, router } from "../_core/trpc";
 
 const listInput = z.object({ query: z.string().max(120).optional(), status: z.string().max(40).optional(), page: z.number().int().positive().optional(), pageSize: z.number().int().positive().max(50).optional() });
+const documentListInput = z.object({ resource: z.enum(["contact", "project", "case"]).optional(), recordId: z.number().int().positive().optional(), documentType: z.enum(["coc", "quote", "invoice", "job_card", "photo_evidence", "material_list", "compliance_cert", "site_report"]).optional() }).refine(input => Boolean(input.resource) === Boolean(input.recordId), { message: "Document resource and record ID must be supplied together" });
 const tenantProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   const scope = await db.ensureTenantScope(ctx.user.id);
   return next({ ctx: { ...ctx, scope } });
@@ -83,7 +84,7 @@ export const elegexRouter = router({
     reports: tenantProcedure.query(({ ctx }) => db.getFieldServiceReports(ctx.scope.organizationId)),
   }),
   documents: router({
-    list: tenantProcedure.input(z.object({ resource: z.enum(["contact", "project", "case"]).optional(), recordId: z.number().int().positive().optional(), documentType: z.enum(["coc", "quote", "invoice", "job_card", "photo_evidence", "material_list", "compliance_cert", "site_report"]).optional() }).optional()).query(({ ctx, input }) => db.listDocuments(ctx.scope.organizationId, input?.resource, input?.recordId, input?.documentType)),
+    list: tenantProcedure.input(documentListInput.optional()).query(({ ctx, input }) => db.listDocuments(ctx.scope.organizationId, input?.resource, input?.recordId, input?.documentType)),
     upload: tenantProcedure.input(z.object({ fileName: z.string().min(1).max(255), mimeType: z.string().min(1).max(120), dataUrl: z.string().max(7_000_000), documentType: z.enum(["coc", "quote", "invoice", "job_card", "photo_evidence", "material_list", "compliance_cert", "site_report"]).optional(), retentionYears: z.number().int().min(1).max(30).optional(), classificationLevel: z.enum(["public", "internal", "confidential", "restricted"]).optional(), projectId: z.number().int().positive().optional(), caseId: z.number().int().positive().optional(), contactId: z.number().int().positive().optional() })).mutation(async ({ ctx, input }) => {
       requireEdit(ctx.scope.role);
       const allowed = ["application/pdf", "text/plain", "text/csv", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/jpeg", "image/png"];

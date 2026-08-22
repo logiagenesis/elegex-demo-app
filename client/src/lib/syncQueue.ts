@@ -82,6 +82,12 @@ export class SyncQueue {
       throw new Error("A queued mutation cannot depend on itself.");
     }
 
+    const knownMutations = new Set((await this.getAll()).map(queued => queued.id));
+    const missingDependency = mutation.dependencies.find(dependencyId => !knownMutations.has(dependencyId));
+    if (missingDependency) {
+      throw new Error(`A queued mutation cannot depend on an unknown action (${missingDependency}).`);
+    }
+
     await this.put(mutation);
     void this.drain();
     return mutation;
@@ -181,13 +187,16 @@ export class SyncQueue {
     // actionable instead of scheduling an immediate, CPU-spinning empty drain.
     const blocked = mutations.filter(mutation =>
       (mutation.status === "queued" || mutation.status === "retrying")
-      && mutation.dependencies.some(dependencyId => byId.get(dependencyId)?.status === "failed"),
+      && mutation.dependencies.some(dependencyId => {
+        const dependency = byId.get(dependencyId);
+        return !dependency || dependency.status === "failed";
+      }),
     );
     await Promise.all(blocked.map(mutation => this.put({
       ...mutation,
       status: "failed",
       updatedAt: timestamp,
-      lastError: "A required earlier action failed permanently; resolve or retry the dependency first.",
+        lastError: "A required earlier action is unavailable or failed permanently; resolve or retry the dependency first.",
     })));
 
     return mutations.find(mutation => {
@@ -210,7 +219,10 @@ export class SyncQueue {
     const byId = new Map(mutations.map(mutation => [mutation.id, mutation]));
     const retrying = mutations
       .filter(mutation => (mutation.status === "queued" || mutation.status === "retrying")
-        && mutation.dependencies.every(dependencyId => byId.get(dependencyId)?.status !== "failed"))
+        && mutation.dependencies.every(dependencyId => {
+          const dependency = byId.get(dependencyId);
+          return dependency !== undefined && dependency.status !== "failed";
+        }))
       .sort((left, right) => left.nextAttemptAt - right.nextAttemptAt)[0];
     if (!retrying) return;
 

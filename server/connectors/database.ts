@@ -37,6 +37,9 @@ const fieldServiceSchemaColumns = [
   ["appSettings", "locale"],
   ["appSettings", "currency"],
   ["appSettings", "timezone"],
+  ["documents", "documentType"],
+  ["documents", "retentionYears"],
+  ["documents", "classificationLevel"],
 ] as const;
 
 /**
@@ -51,7 +54,8 @@ export async function assertFieldServiceSchema(database?: Pick<DatabaseClient, "
     FROM INFORMATION_SCHEMA.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE()
       AND ((TABLE_NAME = 'jobs' AND COLUMN_NAME IN ('clientId', 'siteId', 'callOutTypeId'))
-        OR (TABLE_NAME = 'appSettings' AND COLUMN_NAME IN ('locale', 'currency', 'timezone')))
+        OR (TABLE_NAME = 'appSettings' AND COLUMN_NAME IN ('locale', 'currency', 'timezone'))
+        OR (TABLE_NAME = 'documents' AND COLUMN_NAME IN ('documentType', 'retentionYears', 'classificationLevel')))
   `);
   const rows = (Array.isArray(result) && Array.isArray(result[0]) ? result[0] : result) as Array<{ TABLE_NAME: string; COLUMN_NAME: string }>;
   const present = new Set(rows.map(row => `${row.TABLE_NAME}.${row.COLUMN_NAME}`));
@@ -59,7 +63,7 @@ export async function assertFieldServiceSchema(database?: Pick<DatabaseClient, "
     .map(([table, column]) => `${table}.${column}`)
     .filter(column => !present.has(column));
   if (missing.length) {
-    throw new Error(`Database schema is behind the field-service application code. Apply migrations 0008–0010; missing: ${missing.join(", ")}`);
+    throw new Error(`Database schema is behind the field-service application code. Apply migrations 0008–0011; missing: ${missing.join(", ")}`);
   }
   return { verifiedColumns: fieldServiceSchemaColumns.length };
 }

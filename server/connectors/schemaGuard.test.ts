@@ -8,6 +8,9 @@ const requiredRows = [
   { TABLE_NAME: "appSettings", COLUMN_NAME: "locale" },
   { TABLE_NAME: "appSettings", COLUMN_NAME: "currency" },
   { TABLE_NAME: "appSettings", COLUMN_NAME: "timezone" },
+  { TABLE_NAME: "documents", COLUMN_NAME: "documentType" },
+  { TABLE_NAME: "documents", COLUMN_NAME: "retentionYears" },
+  { TABLE_NAME: "documents", COLUMN_NAME: "classificationLevel" },
 ];
 
 describe("field-service schema guard", () => {
@@ -17,7 +20,7 @@ describe("field-service schema guard", () => {
   });
 
   it("fails before serving requests when application code expects a missing migration column", async () => {
-    const execute = vi.fn().mockResolvedValue([[...requiredRows.slice(0, 5)]]);
-    await expect(assertFieldServiceSchema({ execute } as any)).rejects.toThrow("appSettings.timezone");
+    const execute = vi.fn().mockResolvedValue([[...requiredRows.slice(0, -1)]]);
+    await expect(assertFieldServiceSchema({ execute } as any)).rejects.toThrow("documents.classificationLevel");
   });
 });

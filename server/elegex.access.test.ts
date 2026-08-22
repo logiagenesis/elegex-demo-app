@@ -92,6 +92,17 @@ describe("Elegex role capabilities", () => {
     expect(hasDeterministicDemoReseed(restored)).toBe(true);
   });
 
+  it("runs a supplied demo reset client through its transaction boundary so reseed failures cannot commit a partial reset", async () => {
+    const database = {
+      select: () => ({ from: () => ({ where: async () => [] }) }),
+      delete: vi.fn(() => ({ where: async () => undefined })),
+      transaction: vi.fn(async (work: (tx: unknown) => Promise<unknown>) => work(database)),
+    };
+    const failure = new Error("synthetic reseed failure");
+    await expect(resetDemoData(7, 42, { database, seedWorkspace: async () => { throw failure; } })).rejects.toBe(failure);
+    expect(database.transaction).toHaveBeenCalledTimes(1);
+  });
+
   it("shows privileged frontend navigation only to owners and administrators", () => {
     expect(canAccessWorkspaceAdministration("owner")).toBe(true);
     expect(canAccessWorkspaceAdministration("admin")).toBe(true);

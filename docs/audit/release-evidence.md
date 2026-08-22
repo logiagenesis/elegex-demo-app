@@ -1,5 +1,13 @@
 # Release Evidence: Unified Elegex Demo
 
+## Deep code-hardening release — 22 August 2026
+
+The repository completed a fresh deep hardening audit focused on transactional failure semantics, tenant ownership, mutation no-ops, idempotency, offline recovery, schema drift, and runtime dependency exposure. The release adds atomic default demo reset/reseed execution, active-record guards, protected workspace owner roles, settings upsert behavior, paired document relation filters, deleted-job suppression in field lists, canonical outbox idempotency results, due-time/active-connection dispatch controls, and missing-offline-dependency containment.
+
+The runtime graph was updated to Express 5, tRPC 11.18, Drizzle ORM 0.45, Recharts 3, Axios 1.19, and NanoID 6. Express 5 routing and the Recharts 3 chart-helper type migration were exercised through the command-centre preview. Unused AWS and template-only markdown/chat dependencies were removed. The final `pnpm audit --prod --json` completed without advisory records.
+
+Verification: `pnpm verify` passed TypeScript, **68 tests across 13 files**, and the production build. The detailed finding register is [`deep-code-hardening-audit.md`](./deep-code-hardening-audit.md).
+
 **Audit scope:** brand alignment, tenant isolation, role-gated workflows, field-service lifecycle, synthetic six-month history, documents, commercial reporting, staging controls, repository documentation, and GitHub export readiness.
 
 ## Evidence summary

@@ -19,8 +19,8 @@ vi.mock("./connectors/database", () => ({
   withTransaction: mocks.withTransaction,
 }));
 
-import { archiveJob, assertForemanTimeWindow, captureForemanQuote, createDocumentRecord, createJob, createTask, foremanCheckIn, foremanCompleteJob, linkExternalInvoice, normalizeInvoiceReference, publicForemanQuoteResponse, transitionJobStage } from "./db";
-import { enqueueIntegrationEvent } from "./connectors/outbox";
+import { archiveJob, archiveRecord, assertForemanTimeWindow, captureForemanQuote, createDocumentRecord, createJob, createTask, foremanCheckIn, foremanCompleteJob, linkExternalInvoice, normalizeInvoiceReference, publicForemanQuoteResponse, transitionJobStage, updateContact, updateMemberRole } from "./db";
+import { enqueueIntegrationEvent, listDispatchableEvents } from "./connectors/outbox";
 
 const organizationId = 7;
 const userId = 42;
@@ -113,6 +113,22 @@ describe("critical workflow rollback propagation", () => {
     await expect(enqueueIntegrationEvent({ organizationId, connectionId: 9, eventType: "job.ready", payload: {}, idempotencyKey: "event-9002" })).rejects.toBe(outboxFailure);
   });
 
+  it("returns the canonical existing event ID on an idempotent outbox replay and refuses paused dispatch", async () => {
+    const limit = vi.fn().mockResolvedValueOnce([{ id: 9, status: "active" }]).mockResolvedValueOnce([{ id: 77 }]);
+    const database = {
+      select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(() => ({ limit })) })) })),
+      insert: vi.fn(() => ({ values: vi.fn(() => ({ onDuplicateKeyUpdate: vi.fn().mockResolvedValue([{ insertId: 0 }]) })) })),
+    } as any;
+    mocks.getDatabase.mockResolvedValue(database);
+    await expect(enqueueIntegrationEvent({ organizationId, connectionId: 9, eventType: "job.ready", payload: {}, idempotencyKey: "event-9003" })).resolves.toBe(77);
+
+    const paused = {
+      select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(() => ({ limit: vi.fn().mockResolvedValue([{ id: 9, status: "paused" }]) })) })) })),
+    } as any;
+    mocks.getDatabase.mockResolvedValue(paused);
+    await expect(listDispatchableEvents(organizationId, 9)).rejects.toThrow("must be active before events can be dispatched");
+  });
+
   it("does not repeat check-in writes when the tenant has already claimed the mobile idempotency key", async () => {
     configureTransaction([{ id: 88, stage: "scheduled", foremanId: userId }]);
     const onDuplicateKeyUpdate = vi.fn().mockResolvedValue([{ affectedRows: 0 }]);
@@ -146,6 +162,20 @@ describe("critical workflow rollback propagation", () => {
 
     await expect(archiveJob(organizationId, userId, 88)).rejects.toThrow("Completed or invoiced jobs are retained and cannot be deleted");
     expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("does not permit a workspace owner membership to be reassigned through the member-role mutation", async () => {
+    configureTransaction([{ role: "owner" }]);
+    await expect(updateMemberRole(organizationId, userId, 88, "admin")).rejects.toThrow("owner role cannot be reassigned");
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects updates and archive attempts for unavailable active records before false audit writes", async () => {
+    configureTransaction([]);
+    await expect(updateContact(organizationId, userId, 88, { name: "Missing contact" })).rejects.toThrow("Contact is not available");
+    await expect(archiveRecord(organizationId, userId, "tasks", 89)).rejects.toThrow("task is not available");
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.values).not.toHaveBeenCalled();
   });
 
   it("returns a foreman quote acknowledgement without the persisted numeric total", () => {

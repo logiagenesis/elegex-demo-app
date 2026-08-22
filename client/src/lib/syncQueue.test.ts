@@ -50,6 +50,13 @@ describe("SyncQueue", () => {
     expect(dispatched).toEqual(["checkIn", "material"]);
   });
 
+  it("rejects an unknown dependency before persisting a child that could never replay", async () => {
+    const queue = createQueue(async () => undefined);
+
+    await expect(queue.enqueue({ type: "material", payload: { jobId: 2039 }, dependencies: ["missing-parent"] })).rejects.toThrow("unknown action");
+    expect(await queue.list()).toEqual([]);
+  });
+
   it("retries a transient failure with the same idempotency key", async () => {
     const keys: string[] = [];
     let attempts = 0;
