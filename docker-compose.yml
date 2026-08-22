@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=mysql://elegex:elegex_password@db:3306/elegex
+      # These must be provided in production via .env or secrets manager
+      - JWT_SECRET=${JWT_SECRET:-fallback_secret_for_local_dev_only}
+      - OAUTH_SERVER_URL=${OAUTH_SERVER_URL:-https://auth.example.com}
+      - VITE_OAUTH_PORTAL_URL=${VITE_OAUTH_PORTAL_URL:-https://auth.example.com}
+      - VITE_APP_ID=${VITE_APP_ID:-elegex_local}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mariadb:10.11
+    environment:
+      - MARIADB_ROOT_PASSWORD=root_password
+      - MARIADB_DATABASE=elegex
+      - MARIADB_USER=elegex
+      - MARIADB_PASSWORD=elegex_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mariadb_data:
