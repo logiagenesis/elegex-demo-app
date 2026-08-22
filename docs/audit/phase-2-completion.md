@@ -18,3 +18,5 @@
 ## Specific unblocker
 
 The next necessary condition is a connected authenticated browser session with a synthetic foreman-capable user and disposable assigned job. The available browser is currently at the Manus sign-in page and presents a human-verification challenge; it cannot be safely or legitimately automated. No credentials belong in code, documentation, or chat. Once the session is available, the execution log will capture timestamps, tRPC procedures, and queryable resulting row IDs for each directive step.
+
+A read-only inspection of the debuggable development-browser target also returned the public `/field` sign-in shell, not an authenticated workspace. The managed screenshot preview therefore cannot be used as a substitute session for the required live evidence.
