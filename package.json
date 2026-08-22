@@ -14,11 +14,12 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "release:evidence:check": "node scripts/validate-release-evidence.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "pnpm db:generate && pnpm db:migrate",
-    "verify": "pnpm format:check && pnpm check && pnpm test && pnpm build",
+    "verify": "pnpm format:check && pnpm check && pnpm test && pnpm release:evidence:check && pnpm build",
     "smoke:release": "node scripts/release-smoke.mjs"
   },
   "dependencies": {
