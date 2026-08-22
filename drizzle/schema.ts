@@ -463,9 +463,9 @@ export const callOutTypes = mysqlTable(
     id: int("id").autoincrement().primaryKey(),
     organizationId: int("organizationId").notNull(),
     name: varchar("name", { length: 180 }).notNull(),
-    baseRate: int("baseRate").default(0).notNull(),
+    baseRate: int("baseRate").default(0).notNull(), // Stored in cents (ZAR cents)
     travelIncludedKm: int("travelIncludedKm").default(0).notNull(),
-    perKmRate: int("perKmRate").default(0).notNull(),
+    perKmRate: int("perKmRate").default(0).notNull(), // Stored in cents (ZAR cents)
     appliesFrom: varchar("appliesFrom", { length: 5 }).notNull(),
     appliesTo: varchar("appliesTo", { length: 5 }).notNull(),
     activeFrom: timestamp("activeFrom").defaultNow().notNull(),
@@ -813,8 +813,8 @@ export const quoteItems = mysqlTable(
     quoteId: int("quoteId").notNull(),
     description: varchar("description", { length: 240 }).notNull(),
     quantity: int("quantity").default(1).notNull(),
-    unitPrice: int("unitPrice").default(0).notNull(),
-    total: int("total").default(0).notNull(),
+    unitPrice: int("unitPrice").default(0).notNull(), // Stored in cents (ZAR cents)
+    total: int("total").default(0).notNull(), // Stored in cents (ZAR cents)
     source: mysqlEnum("source", ["catalog", "free_text"])
       .default("catalog")
       .notNull(),
