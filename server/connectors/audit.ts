@@ -12,7 +12,12 @@ export type AuditEvent = {
 };
 
 /** Writes immutable, organization-scoped audit evidence for a meaningful business mutation. */
-export async function writeAuditEvent(event: AuditEvent, client?: DatabaseClient) {
-  const database = client ?? await getDatabase();
-  await database.insert(activityLogs).values({ ...event, metadata: event.metadata ?? null });
+export async function writeAuditEvent(
+  event: AuditEvent,
+  client?: DatabaseClient
+) {
+  const database = client ?? (await getDatabase());
+  await database
+    .insert(activityLogs)
+    .values({ ...event, metadata: event.metadata ?? null });
 }

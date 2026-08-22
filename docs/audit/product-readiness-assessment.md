@@ -10,7 +10,7 @@ The user request expects the GitHub repository and live deployment to represent 
 **The reality of the current state:**
 Elegex is a high-quality **synthetic demonstration application** and engineering showcase, not a fully complete production product. The repository explicitly defines its own boundary: the data is synthetic, the documents are placeholders, and several workflows (like the mobile foreman offline sync) are in the active implementation backlog or exist only as foundational architecture (WP2/WP3/WP5).
 
-While the application *is* responsive, unified in one GitHub repository, and successfully deployed with a working database, it is missing critical operational infrastructure and several user-facing features required for a true production release.
+While the application _is_ responsive, unified in one GitHub repository, and successfully deployed with a working database, it is missing critical operational infrastructure and several user-facing features required for a true production release.
 
 ## 2. Verified Functioning Areas (What Works)
 
@@ -23,7 +23,7 @@ While the application *is* responsive, unified in one GitHub repository, and suc
 
 ## 3. Product Gaps (What is Missing or Incomplete)
 
-- **Foreman Mobile Workflow:** While the UI exists, it is not offline-capable. The IndexedDB write-ahead queue and idempotency handler (WP3/WP5) were merged as *foundation*, but are not yet wired to the React UI or the blob storage system.
+- **Foreman Mobile Workflow:** While the UI exists, it is not offline-capable. The IndexedDB write-ahead queue and idempotency handler (WP3/WP5) were merged as _foundation_, but are not yet wired to the React UI or the blob storage system.
 - **Document Storage:** Document uploads are partially implemented. The system relies on a placeholder `storagePut` implementation; it lacks a true production S3/R2 integration for heavy binary files.
 - **Historical Rate Application:** The WP2 domain schema added temporal call-out rates, but the UI and backend logic to snapshot these rates at the time of job creation is not fully implemented.
 - **External Integrations:** The "QuickBooks link" is a database row, not a real API integration.
@@ -32,7 +32,7 @@ While the application *is* responsive, unified in one GitHub repository, and suc
 
 The user specifically requested SEO, Google Search Console, and SNTP servers. These are fundamentally incompatible with or missing from the current architecture:
 
-- **SEO & Google Search Console:** Elegex is a **private, authenticated, multi-tenant web application** (a B2B SaaS dashboard), not a public content website. 
+- **SEO & Google Search Console:** Elegex is a **private, authenticated, multi-tenant web application** (a B2B SaaS dashboard), not a public content website.
   - There is only one public page (the login screen).
   - The application is an SPA (Single Page Application) behind a login wall.
   - SEO and Google Search Console are **irrelevant and ineffective** for authenticated SaaS dashboards because Googlebot cannot log in to index tenant data.

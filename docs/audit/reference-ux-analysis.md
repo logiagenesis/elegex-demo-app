@@ -10,13 +10,13 @@ Its presentation uses a mobile foreman flow and a desktop office flow. The mocke
 
 Elegex is implemented as a global, authenticated, multi-tenant operations application, not as a regional mock deck. The reference’s former regional label, locale, and provincial identity are intentionally not inherited. The working product uses global identity, UTC defaults, neutral locations, generic USD display, and the user-supplied metallic E mark with its baked background removed.
 
-| Reference capability | Reference state | Current Elegex state | Audit disposition |
-|---|---|---|---|
-| Office dashboard and job register | Static presentation | Tenant-scoped Recharts dashboard, job register, dispatch, reporting, invoices, documents, and administration | Implemented and verified |
-| QuickBooks invoice link | Static screen | Protected invoice-link mutation with tenant validation, idempotent external reference constraint, and activity record | Implemented and hardened |
-| Quotes and six-month history | Static content | Database-seeded global synthetic jobs, quotes, invoices, snapshots, evidence, and reporting | Implemented and verified |
-| Foreman today and job execution | Static mobile screen sequence | Job detail, evidence visibility, materials, and dispatch exist; dedicated foreman workflow is incomplete | In active implementation backlog |
-| Consent, check-in/out, signature, completion, sync | Static mobile screen sequence | Database supports selected timestamps/evidence states but no complete interactive foreman route yet | In active implementation backlog |
+| Reference capability                               | Reference state               | Current Elegex state                                                                                                  | Audit disposition                |
+| -------------------------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| Office dashboard and job register                  | Static presentation           | Tenant-scoped Recharts dashboard, job register, dispatch, reporting, invoices, documents, and administration          | Implemented and verified         |
+| QuickBooks invoice link                            | Static screen                 | Protected invoice-link mutation with tenant validation, idempotent external reference constraint, and activity record | Implemented and hardened         |
+| Quotes and six-month history                       | Static content                | Database-seeded global synthetic jobs, quotes, invoices, snapshots, evidence, and reporting                           | Implemented and verified         |
+| Foreman today and job execution                    | Static mobile screen sequence | Job detail, evidence visibility, materials, and dispatch exist; dedicated foreman workflow is incomplete              | In active implementation backlog |
+| Consent, check-in/out, signature, completion, sync | Static mobile screen sequence | Database supports selected timestamps/evidence states but no complete interactive foreman route yet                   | In active implementation backlog |
 
 ## Implementation principle
 

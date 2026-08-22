@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { formatOrganizationDateTime, formatOrganizationMoney, normalizeOrganizationFormat } from "./organizationFormat";
+import {
+  formatOrganizationDateTime,
+  formatOrganizationMoney,
+  normalizeOrganizationFormat,
+} from "./organizationFormat";
 
 describe("organization formatting", () => {
   it("defaults safely to the South African organisation presentation contract", () => {
-    expect(normalizeOrganizationFormat()).toEqual({ locale: "en-ZA", currency: "ZAR", timezone: "Africa/Johannesburg" });
+    expect(normalizeOrganizationFormat()).toEqual({
+      locale: "en-ZA",
+      currency: "ZAR",
+      timezone: "Africa/Johannesburg",
+    });
     expect(formatOrganizationMoney(1234.5)).toContain("R");
   });
 
@@ -13,6 +21,12 @@ describe("organization formatting", () => {
   });
 
   it("honours an alternative per-organisation currency without changing stored values", () => {
-    expect(formatOrganizationMoney(99, { locale: "en-US", currency: "USD", timezone: "UTC" })).toContain("$");
+    expect(
+      formatOrganizationMoney(99, {
+        locale: "en-US",
+        currency: "USD",
+        timezone: "UTC",
+      })
+    ).toContain("$");
   });
 });

@@ -1,57 +1,165 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Acceptance Retracted</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    .slide-container { width: 1280px; min-height: 720px; background: #FFFFFF; color: #000000; font-family: Arial, Helvetica, sans-serif; display: grid; grid-template-columns: 390px 1fr; }
-    .title-panel { padding-top: 66px; padding-left: 70px; padding-right: 40px; }
-    .section-number { color: #EA580C; font-size: 15px; line-height: 1; font-weight: 800; letter-spacing: 2px; }
-    .title-panel h1 { margin-top: 24px; font-size: 55px; line-height: .94; letter-spacing: -3px; font-weight: 800; }
-    .title-panel p { margin-top: 36px; border-top: 4px solid #000000; padding-top: 15px; font-size: 17px; line-height: 1.38; color: #404040; }
-    .main-panel { padding-top: 66px; padding-left: 35px; padding-right: 75px; }
-    .main-rule { border-top: 4px solid #000000; }
-    .retraction { padding-top: 27px; font-size: 43px; line-height: 1.03; font-weight: 800; letter-spacing: -2px; max-width: 700px; }
-    .retraction strong { color: #EA580C; }
-    .chain { display: grid; grid-template-columns: 1fr 1fr 1fr; column-gap: 24px; margin-top: 57px; }
-    .chain-item { border-top: 4px solid #EA580C; padding-top: 15px; }
-    .chain-label { font-size: 13px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; color: #EA580C; }
-    .chain-text { margin-top: 12px; font-size: 20px; line-height: 1.2; font-weight: 700; }
-    .chain-detail { margin-top: 13px; font-size: 15px; line-height: 1.36; color: #404040; }
-    .status { margin-top: 47px; border-top: 4px solid #000000; padding-top: 14px; font-size: 20px; line-height: 1.28; font-weight: 700; }
-    .status span { color: #EA580C; }
-  </style>
-</head>
-<body>
-  <div class="slide-container">
-    <section class="title-panel">
-      <div class="section-number">03 / GOVERNANCE CORRECTION</div>
-      <h1>ACCEPTANCE RETRACTED</h1>
-      <p>The final acceptance report was reissued after the audit established that its foreman claim lacked functional evidence.</p>
-    </section>
-    <section class="main-panel">
-      <div class="main-rule"></div>
-      <div class="retraction">The prior decision treated a rendered route as <strong>acceptance evidence.</strong> That was not sufficient.</div>
-      <div class="chain">
-        <div class="chain-item">
-          <div class="chain-label">What happened</div>
-          <div class="chain-text">Manual route observation stood in for execution.</div>
-          <div class="chain-detail">No complete authenticated foreman journey was recorded with procedures and resulting table writes.</div>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Acceptance Retracted</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #ffffff;
+        color: #000000;
+        font-family: Arial, Helvetica, sans-serif;
+        display: grid;
+        grid-template-columns: 390px 1fr;
+      }
+      .title-panel {
+        padding-top: 66px;
+        padding-left: 70px;
+        padding-right: 40px;
+      }
+      .section-number {
+        color: #ea580c;
+        font-size: 15px;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: 2px;
+      }
+      .title-panel h1 {
+        margin-top: 24px;
+        font-size: 55px;
+        line-height: 0.94;
+        letter-spacing: -3px;
+        font-weight: 800;
+      }
+      .title-panel p {
+        margin-top: 36px;
+        border-top: 4px solid #000000;
+        padding-top: 15px;
+        font-size: 17px;
+        line-height: 1.38;
+        color: #404040;
+      }
+      .main-panel {
+        padding-top: 66px;
+        padding-left: 35px;
+        padding-right: 75px;
+      }
+      .main-rule {
+        border-top: 4px solid #000000;
+      }
+      .retraction {
+        padding-top: 27px;
+        font-size: 43px;
+        line-height: 1.03;
+        font-weight: 800;
+        letter-spacing: -2px;
+        max-width: 700px;
+      }
+      .retraction strong {
+        color: #ea580c;
+      }
+      .chain {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        column-gap: 24px;
+        margin-top: 57px;
+      }
+      .chain-item {
+        border-top: 4px solid #ea580c;
+        padding-top: 15px;
+      }
+      .chain-label {
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 1.3px;
+        text-transform: uppercase;
+        color: #ea580c;
+      }
+      .chain-text {
+        margin-top: 12px;
+        font-size: 20px;
+        line-height: 1.2;
+        font-weight: 700;
+      }
+      .chain-detail {
+        margin-top: 13px;
+        font-size: 15px;
+        line-height: 1.36;
+        color: #404040;
+      }
+      .status {
+        margin-top: 47px;
+        border-top: 4px solid #000000;
+        padding-top: 14px;
+        font-size: 20px;
+        line-height: 1.28;
+        font-weight: 700;
+      }
+      .status span {
+        color: #ea580c;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <section class="title-panel">
+        <div class="section-number">03 / GOVERNANCE CORRECTION</div>
+        <h1>ACCEPTANCE RETRACTED</h1>
+        <p>
+          The final acceptance report was reissued after the audit established
+          that its foreman claim lacked functional evidence.
+        </p>
+      </section>
+      <section class="main-panel">
+        <div class="main-rule"></div>
+        <div class="retraction">
+          The prior decision treated a rendered route as
+          <strong>acceptance evidence.</strong> That was not sufficient.
         </div>
-        <div class="chain-item">
-          <div class="chain-label">Why it failed</div>
-          <div class="chain-text">The foreman flow could not substantiate its accepted status.</div>
-          <div class="chain-detail">Consent, location capture, evidence, signature, completion-with-gaps, and queue drain were not functionally verified.</div>
+        <div class="chain">
+          <div class="chain-item">
+            <div class="chain-label">What happened</div>
+            <div class="chain-text">
+              Manual route observation stood in for execution.
+            </div>
+            <div class="chain-detail">
+              No complete authenticated foreman journey was recorded with
+              procedures and resulting table writes.
+            </div>
+          </div>
+          <div class="chain-item">
+            <div class="chain-label">Why it failed</div>
+            <div class="chain-text">
+              The foreman flow could not substantiate its accepted status.
+            </div>
+            <div class="chain-detail">
+              Consent, location capture, evidence, signature,
+              completion-with-gaps, and queue drain were not functionally
+              verified.
+            </div>
+          </div>
+          <div class="chain-item">
+            <div class="chain-label">Corrective action</div>
+            <div class="chain-text">
+              The report now records the workflow as incomplete.
+            </div>
+            <div class="chain-detail">
+              The ground-truth execution log becomes the definitive evidence for
+              the current foreman state.
+            </div>
+          </div>
         </div>
-        <div class="chain-item">
-          <div class="chain-label">Corrective action</div>
-          <div class="chain-text">The report now records the workflow as incomplete.</div>
-          <div class="chain-detail">The ground-truth execution log becomes the definitive evidence for the current foreman state.</div>
+        <div class="status">
+          <span>Current posture:</span> the foreman workflow remains in the
+          active implementation backlog until end-to-end evidence exists.
         </div>
-      </div>
-      <div class="status"><span>Current posture:</span> the foreman workflow remains in the active implementation backlog until end-to-end evidence exists.</div>
-    </section>
-  </div>
-</body>
+      </section>
+    </div>
+  </body>
 </html>

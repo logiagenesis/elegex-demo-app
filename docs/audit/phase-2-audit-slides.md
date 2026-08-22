@@ -20,17 +20,17 @@ Ground truth, domain restoration, and the offline-first path
 
 # Foreman workflow ground truth: mostly absent
 
-| Journey step | Verified status |
-|---|---|
-| Consent | Absent |
-| Today list | Absent |
-| Foreman job card | Partial |
-| Check-in with geolocation | Absent |
-| Before photos | Absent |
-| Materials capture | Absent |
-| Signature | Absent |
-| Completion with gaps | Absent |
-| Sync queue drain | Absent |
+| Journey step              | Verified status |
+| ------------------------- | --------------- |
+| Consent                   | Absent          |
+| Today list                | Absent          |
+| Foreman job card          | Partial         |
+| Check-in with geolocation | Absent          |
+| Before photos             | Absent          |
+| Materials capture         | Absent          |
+| Signature                 | Absent          |
+| Completion with gaps      | Absent          |
+| Sync queue drain          | Absent          |
 
 ## Slide 3
 
@@ -54,13 +54,13 @@ Ground truth, domain restoration, and the offline-first path
 
 # Domain schema enables the right commercial relationships
 
-| Domain need | Schema response |
-|---|---|
-| Temporal call-out rates | `callOutTypes` with active dates and rate fields |
-| Billing differs from site contact | `clients.billingEntityId` and `sites.contactId` |
-| Contracting locations | Tenant-scoped `sites` with Western Cape seed geography |
-| Job-specific rate history | `jobs.callOutTypeId` |
-| South African locale controls | `appSettings.locale`, `currency`, and `timezone` |
+| Domain need                       | Schema response                                        |
+| --------------------------------- | ------------------------------------------------------ |
+| Temporal call-out rates           | `callOutTypes` with active dates and rate fields       |
+| Billing differs from site contact | `clients.billingEntityId` and `sites.contactId`        |
+| Contracting locations             | Tenant-scoped `sites` with Western Cape seed geography |
+| Job-specific rate history         | `jobs.callOutTypeId`                                   |
+| South African locale controls     | `appSettings.locale`, `currency`, and `timezone`       |
 
 ## Slide 6
 
@@ -94,13 +94,13 @@ Ground truth, domain restoration, and the offline-first path
 
 # Safe queue draining protects field work
 
-| Queue capability | Required control |
-|---|---|
-| Interrupted network | Exponential backoff with jitter |
-| Replayed operations | Idempotent server response, no duplicate rows |
-| Ordered job lifecycle | Explicit dependency graph |
-| Large visual evidence | Blob storage in IndexedDB |
-| Permanent failure | Actionable item; never silently dropped |
+| Queue capability      | Required control                              |
+| --------------------- | --------------------------------------------- |
+| Interrupted network   | Exponential backoff with jitter               |
+| Replayed operations   | Idempotent server response, no duplicate rows |
+| Ordered job lifecycle | Explicit dependency graph                     |
+| Large visual evidence | Blob storage in IndexedDB                     |
+| Permanent failure     | Actionable item; never silently dropped       |
 
 ## Slide 10
 
@@ -115,13 +115,13 @@ Ground truth, domain restoration, and the offline-first path
 
 # Phase 2 posture: transparent and evidence-led
 
-| Area | Status |
-|---|---|
-| Acceptance contradiction | Resolved and documented |
-| WP2 schema foundation | Implemented; migration generated |
-| Offline-first engine | Architecture reviewed; implementation pending |
-| Foreman workflow | Incomplete; ground truth documented |
-| Full Phase 2 verification | Pending further work packages |
+| Area                      | Status                                        |
+| ------------------------- | --------------------------------------------- |
+| Acceptance contradiction  | Resolved and documented                       |
+| WP2 schema foundation     | Implemented; migration generated              |
+| Offline-first engine      | Architecture reviewed; implementation pending |
+| Foreman workflow          | Incomplete; ground truth documented           |
+| Full Phase 2 verification | Pending further work packages                 |
 
 ## Slide 12
 

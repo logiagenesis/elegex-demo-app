@@ -4,12 +4,12 @@ The database connector layer is intentionally small, explicit, and dependency-fr
 
 ## Connector responsibilities
 
-| Module | Guarantee | Primary API |
-|---|---|---|
-| `database.ts` | One lazy client per process, explicit transaction boundary, readiness probe. | `getDatabase`, `withTransaction`, `checkDatabaseHealth` |
-| `audit.ts` | Durable, tenant-scoped evidence for business mutations. | `writeAuditEvent` |
-| `outbox.ts` | Idempotent connection configuration and durable event scheduling. | `upsertIntegrationConnection`, `enqueueIntegrationEvent` |
-| `storage.ts` | Object-storage adapter with sanitized keys and signed access. | `storagePut`, `storageGet` |
+| Module        | Guarantee                                                                    | Primary API                                              |
+| ------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `database.ts` | One lazy client per process, explicit transaction boundary, readiness probe. | `getDatabase`, `withTransaction`, `checkDatabaseHealth`  |
+| `audit.ts`    | Durable, tenant-scoped evidence for business mutations.                      | `writeAuditEvent`                                        |
+| `outbox.ts`   | Idempotent connection configuration and durable event scheduling.            | `upsertIntegrationConnection`, `enqueueIntegrationEvent` |
+| `storage.ts`  | Object-storage adapter with sanitized keys and signed access.                | `storagePut`, `storageGet`                               |
 
 ## Integration model
 

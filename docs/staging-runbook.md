@@ -4,11 +4,11 @@ This runbook describes the repository workflow for an external staging deploymen
 
 ## Environment contract
 
-| Environment | Purpose | Data rule | Promotion rule |
-|---|---|---|---|
-| Development | Local feature work | Local or disposable tenant data only | Unit tests and type checks pass |
-| Staging | Candidate verification | Synthetic or approved non-production data only | Migration reviewed; smoke paths complete |
-| Production | Live customer workload | Real data; backups and least privilege required | Change approved and rollback reference recorded |
+| Environment | Purpose                | Data rule                                       | Promotion rule                                  |
+| ----------- | ---------------------- | ----------------------------------------------- | ----------------------------------------------- |
+| Development | Local feature work     | Local or disposable tenant data only            | Unit tests and type checks pass                 |
+| Staging     | Candidate verification | Synthetic or approved non-production data only  | Migration reviewed; smoke paths complete        |
+| Production  | Live customer workload | Real data; backups and least privilege required | Change approved and rollback reference recorded |
 
 ## Release sequence
 
@@ -21,14 +21,14 @@ This runbook describes the repository workflow for an external staging deploymen
 
 ## Minimum staging checks
 
-| Category | Check | Evidence |
-|---|---|---|
-| Database | Migration is additive and schema matches application types | Reviewed SQL and successful migration output |
-| API | Tenant-scoped procedure calls reject unauthenticated or unauthorized requests | Automated authorization suite |
-| UI | Dashboard, jobs, dispatch, reports, documents, and admin routes render | Browser smoke record |
-| Security | No credential has been committed; secrets remain in host configuration | Secret-manager review |
-| Storage | Upload rules reject unsupported size/type and document URLs resolve | Scoped upload test |
-| Observability | Connector health and application logs have no release-blocking errors | Health probe and deployment logs |
+| Category      | Check                                                                         | Evidence                                     |
+| ------------- | ----------------------------------------------------------------------------- | -------------------------------------------- |
+| Database      | Migration is additive and schema matches application types                    | Reviewed SQL and successful migration output |
+| API           | Tenant-scoped procedure calls reject unauthenticated or unauthorized requests | Automated authorization suite                |
+| UI            | Dashboard, jobs, dispatch, reports, documents, and admin routes render        | Browser smoke record                         |
+| Security      | No credential has been committed; secrets remain in host configuration        | Secret-manager review                        |
+| Storage       | Upload rules reject unsupported size/type and document URLs resolve           | Scoped upload test                           |
+| Observability | Connector health and application logs have no release-blocking errors         | Health probe and deployment logs             |
 
 ## Rollback
 

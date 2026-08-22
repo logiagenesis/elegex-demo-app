@@ -1,10 +1,136 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8"><title>Evidence Standards Reset</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}.slide-container{width:1280px;min-height:720px;background:#FFF;color:#000;font-family:Arial,Helvetica,sans-serif;display:grid;grid-template-columns:390px 1fr}.title{padding-top:66px;padding-left:70px;padding-right:40px}.num{color:#EA580C;font-weight:800;letter-spacing:2px;font-size:15px}.title h1{font-size:54px;line-height:.96;letter-spacing:-3px;font-weight:800;margin-top:28px}.title p{border-top:4px solid #000;margin-top:34px;padding-top:15px;color:#404040;font-size:17px;line-height:1.35}.content{padding-top:78px;padding-left:34px;padding-right:75px}.topline{border-top:4px solid #000}.evidence{display:grid;grid-template-columns:1fr 1fr;column-gap:38px;margin-top:30px}.label{color:#EA580C;font-size:14px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase}.claim{font-size:25px;line-height:1.14;font-weight:700;margin-top:14px}.detail{font-size:16px;line-height:1.38;color:#404040;margin-top:18px}.verdict{margin-top:55px;border-top:4px solid #EA580C;padding-top:20px;font-size:27px;line-height:1.2;font-weight:800;max-width:690px}.verdict span{color:#EA580C}</style>
-</head>
-<body>
-<div class="slide-container"><section class="title"><div class="num">01 / AUDIT FINDING</div><h1>THE AUDIT REQUIRED A RESET</h1><p>Two documents made mutually exclusive claims about the same foreman workflow.</p></section><section class="content"><div class="topline"></div><div class="evidence"><div><div class="label">Prior acceptance report</div><div class="claim">“Field-service lifecycle and foreman workflow” was marked accepted.</div><div class="detail">It cited consent, check-in/out, materials, evidence, completion, and sync as persistence-backed flows.</div></div><div><div class="label">Reference UX analysis</div><div class="claim">Dedicated foreman workflow was described as incomplete.</div><div class="detail">It explicitly stated that no complete interactive foreman route had been implemented.</div></div></div><div class="verdict"><span>New release rule:</span> implementation without execution evidence is incomplete.</div></section></div>
-</body></html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Evidence Standards Reset</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #fff;
+        color: #000;
+        font-family: Arial, Helvetica, sans-serif;
+        display: grid;
+        grid-template-columns: 390px 1fr;
+      }
+      .title {
+        padding-top: 66px;
+        padding-left: 70px;
+        padding-right: 40px;
+      }
+      .num {
+        color: #ea580c;
+        font-weight: 800;
+        letter-spacing: 2px;
+        font-size: 15px;
+      }
+      .title h1 {
+        font-size: 54px;
+        line-height: 0.96;
+        letter-spacing: -3px;
+        font-weight: 800;
+        margin-top: 28px;
+      }
+      .title p {
+        border-top: 4px solid #000;
+        margin-top: 34px;
+        padding-top: 15px;
+        color: #404040;
+        font-size: 17px;
+        line-height: 1.35;
+      }
+      .content {
+        padding-top: 78px;
+        padding-left: 34px;
+        padding-right: 75px;
+      }
+      .topline {
+        border-top: 4px solid #000;
+      }
+      .evidence {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 38px;
+        margin-top: 30px;
+      }
+      .label {
+        color: #ea580c;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+      }
+      .claim {
+        font-size: 25px;
+        line-height: 1.14;
+        font-weight: 700;
+        margin-top: 14px;
+      }
+      .detail {
+        font-size: 16px;
+        line-height: 1.38;
+        color: #404040;
+        margin-top: 18px;
+      }
+      .verdict {
+        margin-top: 55px;
+        border-top: 4px solid #ea580c;
+        padding-top: 20px;
+        font-size: 27px;
+        line-height: 1.2;
+        font-weight: 800;
+        max-width: 690px;
+      }
+      .verdict span {
+        color: #ea580c;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <section class="title">
+        <div class="num">01 / AUDIT FINDING</div>
+        <h1>THE AUDIT REQUIRED A RESET</h1>
+        <p>
+          Two documents made mutually exclusive claims about the same foreman
+          workflow.
+        </p>
+      </section>
+      <section class="content">
+        <div class="topline"></div>
+        <div class="evidence">
+          <div>
+            <div class="label">Prior acceptance report</div>
+            <div class="claim">
+              “Field-service lifecycle and foreman workflow” was marked
+              accepted.
+            </div>
+            <div class="detail">
+              It cited consent, check-in/out, materials, evidence, completion,
+              and sync as persistence-backed flows.
+            </div>
+          </div>
+          <div>
+            <div class="label">Reference UX analysis</div>
+            <div class="claim">
+              Dedicated foreman workflow was described as incomplete.
+            </div>
+            <div class="detail">
+              It explicitly stated that no complete interactive foreman route
+              had been implemented.
+            </div>
+          </div>
+        </div>
+        <div class="verdict">
+          <span>New release rule:</span> implementation without execution
+          evidence is incomplete.
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

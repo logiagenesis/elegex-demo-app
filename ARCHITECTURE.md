@@ -19,15 +19,15 @@ flowchart LR
 
 ## Layers
 
-| Layer | Location | Responsibility |
-|---|---|---|
-| API contract | `server/routers/` | Input validation, protected tRPC procedures, and role gates. |
-| Workflow service | `server/db.ts` | Tenant-scoped business operations and lifecycle orchestration. |
+| Layer              | Location                        | Responsibility                                                      |
+| ------------------ | ------------------------------- | ------------------------------------------------------------------- |
+| API contract       | `server/routers/`               | Input validation, protected tRPC procedures, and role gates.        |
+| Workflow service   | `server/db.ts`                  | Tenant-scoped business operations and lifecycle orchestration.      |
 | Database connector | `server/connectors/database.ts` | Shared client lifecycle, transaction boundary, and readiness check. |
-| Audit connector | `server/connectors/audit.ts` | Immutable organization-scoped activity evidence. |
-| Outbox connector | `server/connectors/outbox.ts` | Idempotent integration connection and event-queue persistence. |
-| Storage adapter | `server/storage.ts` | File validation, key construction, upload, and signed retrieval. |
-| Data model | `drizzle/schema.ts` | Tenant-bearing tables, indexes, enums, and migrations. |
+| Audit connector    | `server/connectors/audit.ts`    | Immutable organization-scoped activity evidence.                    |
+| Outbox connector   | `server/connectors/outbox.ts`   | Idempotent integration connection and event-queue persistence.      |
+| Storage adapter    | `server/storage.ts`             | File validation, key construction, upload, and signed retrieval.    |
+| Data model         | `drizzle/schema.ts`             | Tenant-bearing tables, indexes, enums, and migrations.              |
 
 ## Multi-tenant boundaries
 

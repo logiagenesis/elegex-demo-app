@@ -2,7 +2,9 @@ import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 
 export type DatabaseClient = ReturnType<typeof drizzle>;
-export type TransactionClient = Parameters<Parameters<DatabaseClient["transaction"]>[0]>[0];
+export type TransactionClient = Parameters<
+  Parameters<DatabaseClient["transaction"]>[0]
+>[0];
 
 let databaseClient: DatabaseClient | undefined;
 
@@ -12,13 +14,16 @@ let databaseClient: DatabaseClient | undefined;
  * health checks, and transactions remain consistent across domains.
  */
 export async function getDatabase(): Promise<DatabaseClient> {
-  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required for database access");
+  if (!process.env.DATABASE_URL)
+    throw new Error("DATABASE_URL is required for database access");
   databaseClient ??= drizzle(process.env.DATABASE_URL);
   return databaseClient;
 }
 
 /** Executes a business workflow atomically and rolls it back if any operation fails. */
-export async function withTransaction<T>(work: (tx: TransactionClient) => Promise<T>): Promise<T> {
+export async function withTransaction<T>(
+  work: (tx: TransactionClient) => Promise<T>
+): Promise<T> {
   const database = await getDatabase();
   return database.transaction(async tx => work(tx));
 }
@@ -27,7 +32,11 @@ export async function withTransaction<T>(work: (tx: TransactionClient) => Promis
 export async function checkDatabaseHealth() {
   const database = await getDatabase();
   await database.execute(sql`SELECT 1 AS healthy`);
-  return { healthy: true as const, dialect: "mysql" as const, checkedAt: new Date().toISOString() };
+  return {
+    healthy: true as const,
+    dialect: "mysql" as const,
+    checkedAt: new Date().toISOString(),
+  };
 }
 
 const fieldServiceSchemaColumns = [
@@ -47,8 +56,10 @@ const fieldServiceSchemaColumns = [
  * additive migrations. This prevents the dashboard from presenting an endless
  * loading state while a query fails on a missing selected column.
  */
-export async function assertFieldServiceSchema(database?: Pick<DatabaseClient, "execute">) {
-  const activeDatabase = database ?? await getDatabase();
+export async function assertFieldServiceSchema(
+  database?: Pick<DatabaseClient, "execute">
+) {
+  const activeDatabase = database ?? (await getDatabase());
   const result = await activeDatabase.execute(sql`
     SELECT TABLE_NAME, COLUMN_NAME
     FROM INFORMATION_SCHEMA.COLUMNS
@@ -57,13 +68,19 @@ export async function assertFieldServiceSchema(database?: Pick<DatabaseClient, "
         OR (TABLE_NAME = 'appSettings' AND COLUMN_NAME IN ('locale', 'currency', 'timezone'))
         OR (TABLE_NAME = 'documents' AND COLUMN_NAME IN ('documentType', 'retentionYears', 'classificationLevel')))
   `);
-  const rows = (Array.isArray(result) && Array.isArray(result[0]) ? result[0] : result) as Array<{ TABLE_NAME: string; COLUMN_NAME: string }>;
-  const present = new Set(rows.map(row => `${row.TABLE_NAME}.${row.COLUMN_NAME}`));
+  const rows = (
+    Array.isArray(result) && Array.isArray(result[0]) ? result[0] : result
+  ) as Array<{ TABLE_NAME: string; COLUMN_NAME: string }>;
+  const present = new Set(
+    rows.map(row => `${row.TABLE_NAME}.${row.COLUMN_NAME}`)
+  );
   const missing = fieldServiceSchemaColumns
     .map(([table, column]) => `${table}.${column}`)
     .filter(column => !present.has(column));
   if (missing.length) {
-    throw new Error(`Database schema is behind the field-service application code. Apply migrations 0008–0011; missing: ${missing.join(", ")}`);
+    throw new Error(
+      `Database schema is behind the field-service application code. Apply migrations 0008–0011; missing: ${missing.join(", ")}`
+    );
   }
   return { verifiedColumns: fieldServiceSchemaColumns.length };
 }

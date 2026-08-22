@@ -16,11 +16,15 @@ const requiredRows = [
 describe("field-service schema guard", () => {
   it("accepts a database with every dashboard-required migration column", async () => {
     const execute = vi.fn().mockResolvedValue([requiredRows]);
-    await expect(assertFieldServiceSchema({ execute } as any)).resolves.toEqual({ verifiedColumns: requiredRows.length });
+    await expect(assertFieldServiceSchema({ execute } as any)).resolves.toEqual(
+      { verifiedColumns: requiredRows.length }
+    );
   });
 
   it("fails before serving requests when application code expects a missing migration column", async () => {
     const execute = vi.fn().mockResolvedValue([[...requiredRows.slice(0, -1)]]);
-    await expect(assertFieldServiceSchema({ execute } as any)).rejects.toThrow("documents.classificationLevel");
+    await expect(assertFieldServiceSchema({ execute } as any)).rejects.toThrow(
+      "documents.classificationLevel"
+    );
   });
 });

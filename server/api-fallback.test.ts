@@ -9,6 +9,9 @@ describe("API fallback", () => {
     apiNotFoundHandler({} as any, { status } as any);
     expect(status).toHaveBeenCalledWith(404);
     expect(type).toHaveBeenCalledWith("application/json");
-    expect(send).toHaveBeenCalledWith({ error: "API_ROUTE_NOT_FOUND", message: "The requested API route is not registered." });
+    expect(send).toHaveBeenCalledWith({
+      error: "API_ROUTE_NOT_FOUND",
+      message: "The requested API route is not registered.",
+    });
   });
 });

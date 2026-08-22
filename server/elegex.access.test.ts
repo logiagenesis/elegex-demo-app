@@ -1,7 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { canEditRecords, canManageRecords, canManageWorkspace, dedupeAdminMembers, dedupeWorkspaceMembers, DEMO_DATA_EXPECTATIONS, DEMO_RESET_RELATIONSHIPS, getDocumentHealth, hasDeterministicDemoReseed, resetDemoData } from "./db";
+import {
+  canEditRecords,
+  canManageRecords,
+  canManageWorkspace,
+  dedupeAdminMembers,
+  dedupeWorkspaceMembers,
+  DEMO_DATA_EXPECTATIONS,
+  DEMO_RESET_RELATIONSHIPS,
+  getDocumentHealth,
+  hasDeterministicDemoReseed,
+  resetDemoData,
+} from "./db";
 import { vi } from "vitest";
-import { canAccessWorkspaceAdministration, canAccessWorkspaceRoute, canEditWorkspaceRecords, canManageOperationalControls, workspaceRoutePolicy } from "../client/src/lib/access";
+import {
+  canAccessWorkspaceAdministration,
+  canAccessWorkspaceRoute,
+  canEditWorkspaceRecords,
+  canManageOperationalControls,
+  workspaceRoutePolicy,
+} from "../client/src/lib/access";
 
 describe("Elegex role capabilities", () => {
   it("makes viewers read-only", () => {
@@ -34,9 +51,24 @@ describe("Elegex role capabilities", () => {
   });
 
   it("classifies only managed storage references with a key as available documents", () => {
-    expect(getDocumentHealth({ storageKey: "elegex/7/documents/brief.pdf", storageUrl: "/manus-storage/brief.pdf" })).toBe("available");
-    expect(getDocumentHealth({ storageKey: "", storageUrl: "/manus-storage/brief.pdf" })).toBe("unavailable");
-    expect(getDocumentHealth({ storageKey: "legacy/file.pdf", storageUrl: "https://example.invalid/file.pdf" })).toBe("unavailable");
+    expect(
+      getDocumentHealth({
+        storageKey: "elegex/7/documents/brief.pdf",
+        storageUrl: "/manus-storage/brief.pdf",
+      })
+    ).toBe("available");
+    expect(
+      getDocumentHealth({
+        storageKey: "",
+        storageUrl: "/manus-storage/brief.pdf",
+      })
+    ).toBe("unavailable");
+    expect(
+      getDocumentHealth({
+        storageKey: "legacy/file.pdf",
+        storageUrl: "https://example.invalid/file.pdf",
+      })
+    ).toBe("unavailable");
   });
 
   it("collapses duplicate workspace-member display identities by normalized email without hiding address-less members", () => {
@@ -46,7 +78,9 @@ describe("Elegex role capabilities", () => {
       { id: 3, email: null },
       { id: 4, email: null },
     ];
-    expect(dedupeWorkspaceMembers(members).map(member => member.id)).toEqual([1, 3, 4]);
+    expect(dedupeWorkspaceMembers(members).map(member => member.id)).toEqual([
+      1, 3, 4,
+    ]);
   });
 
   it("collapses duplicate administration membership rows by the nested user email", () => {
@@ -55,11 +89,23 @@ describe("Elegex role capabilities", () => {
       { membership: { id: 2 }, user: { email: "MILA.PETERSEN@elegex.demo" } },
       { membership: { id: 3 }, user: { email: "jordan.okoro@elegex.demo" } },
     ];
-    expect(dedupeAdminMembers(members).map(member => member.membership.id)).toEqual([1, 3]);
+    expect(
+      dedupeAdminMembers(members).map(member => member.membership.id)
+    ).toEqual([1, 3]);
   });
 
   it("keeps the published six-month synthetic dataset at its documented relationship coverage", () => {
-    expect(DEMO_DATA_EXPECTATIONS).toEqual({ months: 6, jobs: 36, visits: 36, materials: 72, evidence: 72, quotes: 12, invoices: 23, snapshots: 6, releaseRecords: 3 });
+    expect(DEMO_DATA_EXPECTATIONS).toEqual({
+      months: 6,
+      jobs: 36,
+      visits: 36,
+      materials: 72,
+      evidence: 72,
+      quotes: 12,
+      invoices: 23,
+      snapshots: 6,
+      releaseRecords: 3,
+    });
   });
 
   it("accepts only a complete same-tenant reset/reseed snapshot with every expected relationship restored", () => {
@@ -80,28 +126,91 @@ describe("Elegex role capabilities", () => {
       invoices: DEMO_DATA_EXPECTATIONS.invoices,
       snapshots: DEMO_DATA_EXPECTATIONS.snapshots,
       releaseRecords: DEMO_DATA_EXPECTATIONS.releaseRecords,
-      quoteItems: DEMO_DATA_EXPECTATIONS.quotes * DEMO_RESET_RELATIONSHIPS.quoteItemsPerQuote,
-      releaseChecks: DEMO_DATA_EXPECTATIONS.releaseRecords * DEMO_RESET_RELATIONSHIPS.releaseChecksPerRelease,
+      quoteItems:
+        DEMO_DATA_EXPECTATIONS.quotes *
+        DEMO_RESET_RELATIONSHIPS.quoteItemsPerQuote,
+      releaseChecks:
+        DEMO_DATA_EXPECTATIONS.releaseRecords *
+        DEMO_RESET_RELATIONSHIPS.releaseChecksPerRelease,
       tenantIds: [7, 7, 7, 7],
     };
     expect(hasDeterministicDemoReseed(snapshot)).toBe(true);
-    expect(hasDeterministicDemoReseed({ ...snapshot, materials: snapshot.materials - 1 })).toBe(false);
-    expect(hasDeterministicDemoReseed({ ...snapshot, tenantIds: [7, 99] })).toBe(false);
+    expect(
+      hasDeterministicDemoReseed({
+        ...snapshot,
+        materials: snapshot.materials - 1,
+      })
+    ).toBe(false);
+    expect(
+      hasDeterministicDemoReseed({ ...snapshot, tenantIds: [7, 99] })
+    ).toBe(false);
   });
 
   it("executes the reset path against one tenant only before invoking both reseeders", async () => {
     const deletedWhereClauses: unknown[] = [];
     let selectCall = 0;
     const restored = {
-      organizationId: 7, contacts: 0, projects: 0, cases: 0, tasks: 0, documents: 0, notifications: 0, savedViews: 0,
-      jobs: 0, visits: 0, materials: 0, evidence: 0, quotes: 0, invoices: 0, snapshots: 0, releaseRecords: 0, quoteItems: 0, releaseChecks: 0, tenantIds: [] as number[],
+      organizationId: 7,
+      contacts: 0,
+      projects: 0,
+      cases: 0,
+      tasks: 0,
+      documents: 0,
+      notifications: 0,
+      savedViews: 0,
+      jobs: 0,
+      visits: 0,
+      materials: 0,
+      evidence: 0,
+      quotes: 0,
+      invoices: 0,
+      snapshots: 0,
+      releaseRecords: 0,
+      quoteItems: 0,
+      releaseChecks: 0,
+      tenantIds: [] as number[],
     };
     const database = {
-      select: () => ({ from: () => ({ where: async () => selectCall++ === 0 ? [{ id: 11 }, { id: 12 }] : [{ id: 21 }] }) }),
-      delete: vi.fn(() => ({ where: async (clause: unknown) => { deletedWhereClauses.push(clause); } })),
+      select: () => ({
+        from: () => ({
+          where: async () =>
+            selectCall++ === 0 ? [{ id: 11 }, { id: 12 }] : [{ id: 21 }],
+        }),
+      }),
+      delete: vi.fn(() => ({
+        where: async (clause: unknown) => {
+          deletedWhereClauses.push(clause);
+        },
+      })),
     };
-    const seedWorkspace = vi.fn(async (tenantId: number) => { Object.assign(restored, { contacts: 4, projects: 4, cases: 3, tasks: 5, documents: 0, notifications: 3, savedViews: 1, tenantIds: [tenantId, tenantId, tenantId] }); });
-    const seedFieldService = vi.fn(async (tenantId: number) => { Object.assign(restored, { documents: 36, jobs: 36, visits: 36, materials: 72, evidence: 72, quotes: 12, invoices: 23, snapshots: 6, releaseRecords: 3, quoteItems: 24, releaseChecks: 15, tenantIds: [...restored.tenantIds, tenantId, tenantId] }); });
+    const seedWorkspace = vi.fn(async (tenantId: number) => {
+      Object.assign(restored, {
+        contacts: 4,
+        projects: 4,
+        cases: 3,
+        tasks: 5,
+        documents: 0,
+        notifications: 3,
+        savedViews: 1,
+        tenantIds: [tenantId, tenantId, tenantId],
+      });
+    });
+    const seedFieldService = vi.fn(async (tenantId: number) => {
+      Object.assign(restored, {
+        documents: 36,
+        jobs: 36,
+        visits: 36,
+        materials: 72,
+        evidence: 72,
+        quotes: 12,
+        invoices: 23,
+        snapshots: 6,
+        releaseRecords: 3,
+        quoteItems: 24,
+        releaseChecks: 15,
+        tenantIds: [...restored.tenantIds, tenantId, tenantId],
+      });
+    });
     await resetDemoData(7, 42, { database, seedWorkspace, seedFieldService });
     expect(seedWorkspace).toHaveBeenCalledWith(7, 42);
     expect(seedFieldService).toHaveBeenCalledWith(7, 42);
@@ -115,10 +224,19 @@ describe("Elegex role capabilities", () => {
     const database = {
       select: () => ({ from: () => ({ where: async () => [] }) }),
       delete: vi.fn(() => ({ where: async () => undefined })),
-      transaction: vi.fn(async (work: (tx: unknown) => Promise<unknown>) => work(database)),
+      transaction: vi.fn(async (work: (tx: unknown) => Promise<unknown>) =>
+        work(database)
+      ),
     };
     const failure = new Error("synthetic reseed failure");
-    await expect(resetDemoData(7, 42, { database, seedWorkspace: async () => { throw failure; } })).rejects.toBe(failure);
+    await expect(
+      resetDemoData(7, 42, {
+        database,
+        seedWorkspace: async () => {
+          throw failure;
+        },
+      })
+    ).rejects.toBe(failure);
     expect(database.transaction).toHaveBeenCalledTimes(1);
   });
 
@@ -142,14 +260,39 @@ describe("Elegex role capabilities", () => {
   });
 
   it("maps every declared workspace destination to a tested minimum role", () => {
-    expect(workspaceRoutePolicy.map(entry => entry.path)).toEqual(["/", "/jobs", "/jobs/:id", "/field", "/dispatch", "/contacts", "/contacts/:id", "/projects", "/projects/:id", "/cases", "/cases/:id", "/tasks", "/documents", "/reports", "/notifications", "/staging", "/admin", "/settings"]);
+    expect(workspaceRoutePolicy.map(entry => entry.path)).toEqual([
+      "/",
+      "/jobs",
+      "/jobs/:id",
+      "/field",
+      "/dispatch",
+      "/contacts",
+      "/contacts/:id",
+      "/projects",
+      "/projects/:id",
+      "/cases",
+      "/cases/:id",
+      "/tasks",
+      "/documents",
+      "/reports",
+      "/notifications",
+      "/staging",
+      "/admin",
+      "/settings",
+    ]);
     for (const route of workspaceRoutePolicy) {
       expect(canAccessWorkspaceRoute(route.path, undefined)).toBe(false);
       expect(canAccessWorkspaceRoute(route.path, "owner")).toBe(true);
       expect(canAccessWorkspaceRoute(route.path, "admin")).toBe(true);
-      expect(canAccessWorkspaceRoute(route.path, "manager")).toBe(route.minimumRole !== "admin");
-      expect(canAccessWorkspaceRoute(route.path, "member")).toBe(route.minimumRole === "viewer" || route.minimumRole === "member");
-      expect(canAccessWorkspaceRoute(route.path, "viewer")).toBe(route.minimumRole === "viewer");
+      expect(canAccessWorkspaceRoute(route.path, "manager")).toBe(
+        route.minimumRole !== "admin"
+      );
+      expect(canAccessWorkspaceRoute(route.path, "member")).toBe(
+        route.minimumRole === "viewer" || route.minimumRole === "member"
+      );
+      expect(canAccessWorkspaceRoute(route.path, "viewer")).toBe(
+        route.minimumRole === "viewer"
+      );
     }
     expect(canAccessWorkspaceRoute("/unknown", "owner")).toBe(false);
   });

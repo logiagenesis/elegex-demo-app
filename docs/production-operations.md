@@ -4,13 +4,13 @@
 
 ## Readiness and liveness
 
-| Signal | Expected result | Response if it fails |
-|---|---|---|
-| Public entry | The global sign-in shell renders without tenant or OAuth data. | Check deployed HTML/assets and the client recovery identifier. |
-| OAuth callback | A signed-in user returns to the tenant workspace. | Confirm callback configuration and session-cookie domain settings. |
-| Database readiness | The privileged connector health check returns `{ healthy: true }`. | Inspect database connectivity, credentials, and migration state. |
-| Core routes | Dashboard, jobs, field visits, records, documents, reports, staging, and administration show typed loading, empty, error, or recovery states. | Review route-specific chunk/load errors and server logs. |
-| Storage metadata | Documents have a managed key and `/manus-storage/` reference before download is enabled. | Mark the file unavailable; do not imply a broken link works. |
+| Signal             | Expected result                                                                                                                               | Response if it fails                                               |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Public entry       | The global sign-in shell renders without tenant or OAuth data.                                                                                | Check deployed HTML/assets and the client recovery identifier.     |
+| OAuth callback     | A signed-in user returns to the tenant workspace.                                                                                             | Confirm callback configuration and session-cookie domain settings. |
+| Database readiness | The privileged connector health check returns `{ healthy: true }`.                                                                            | Inspect database connectivity, credentials, and migration state.   |
+| Core routes        | Dashboard, jobs, field visits, records, documents, reports, staging, and administration show typed loading, empty, error, or recovery states. | Review route-specific chunk/load errors and server logs.           |
+| Storage metadata   | Documents have a managed key and `/manus-storage/` reference before download is enabled.                                                      | Mark the file unavailable; do not imply a broken link works.       |
 
 ## Client recovery capture
 

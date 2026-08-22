@@ -1,6 +1,17 @@
-export type ForemanMutationType = "consent" | "checkIn" | "material" | "evidence" | "quote" | "complete";
+export type ForemanMutationType =
+  | "consent"
+  | "checkIn"
+  | "material"
+  | "evidence"
+  | "quote"
+  | "complete";
 
-export type QueueStatus = "queued" | "syncing" | "retrying" | "succeeded" | "failed";
+export type QueueStatus =
+  | "queued"
+  | "syncing"
+  | "retrying"
+  | "succeeded"
+  | "failed";
 
 export type SyncPayload = Record<string, unknown>;
 
@@ -54,7 +65,8 @@ export class SyncQueue {
   constructor(options: SyncQueueOptions) {
     this.databaseName = options.databaseName ?? "elegex-foreman-sync";
     this.maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
-    this.baseRetryDelayMs = options.baseRetryDelayMs ?? DEFAULT_BASE_RETRY_DELAY_MS;
+    this.baseRetryDelayMs =
+      options.baseRetryDelayMs ?? DEFAULT_BASE_RETRY_DELAY_MS;
     this.transport = options.transport;
     this.now = options.now ?? (() => Date.now());
     this.database = this.openDatabase();
@@ -82,10 +94,16 @@ export class SyncQueue {
       throw new Error("A queued mutation cannot depend on itself.");
     }
 
-    const knownMutations = new Set((await this.getAll()).map(queued => queued.id));
-    const missingDependency = mutation.dependencies.find(dependencyId => !knownMutations.has(dependencyId));
+    const knownMutations = new Set(
+      (await this.getAll()).map(queued => queued.id)
+    );
+    const missingDependency = mutation.dependencies.find(
+      dependencyId => !knownMutations.has(dependencyId)
+    );
     if (missingDependency) {
-      throw new Error(`A queued mutation cannot depend on an unknown action (${missingDependency}).`);
+      throw new Error(
+        `A queued mutation cannot depend on an unknown action (${missingDependency}).`
+      );
     }
 
     await this.put(mutation);
@@ -100,25 +118,31 @@ export class SyncQueue {
     await Promise.all(
       all
         .filter(mutation => mutation.status === "syncing")
-        .map(mutation => this.put({
-          ...mutation,
-          status: "retrying",
-          nextAttemptAt: timestamp,
-          updatedAt: timestamp,
-          lastError: "Interrupted before sync acknowledgement; retrying idempotently.",
-        })),
+        .map(mutation =>
+          this.put({
+            ...mutation,
+            status: "retrying",
+            nextAttemptAt: timestamp,
+            updatedAt: timestamp,
+            lastError:
+              "Interrupted before sync acknowledgement; retrying idempotently.",
+          })
+        )
     );
     void this.drain();
   }
 
   async list(): Promise<SyncMutation[]> {
-    return (await this.getAll()).sort((left, right) => left.createdAt - right.createdAt);
+    return (await this.getAll()).sort(
+      (left, right) => left.createdAt - right.createdAt
+    );
   }
 
   async retryFailed(id: string): Promise<void> {
     const mutation = await this.get(id);
     if (!mutation) throw new Error(`Queued mutation ${id} was not found.`);
-    if (mutation.status !== "failed") throw new Error(`Queued mutation ${id} is not permanently failed.`);
+    if (mutation.status !== "failed")
+      throw new Error(`Queued mutation ${id} is not permanently failed.`);
     await this.put({
       ...mutation,
       status: "retrying",
@@ -154,18 +178,29 @@ export class SyncQueue {
   }
 
   private async process(mutation: SyncMutation): Promise<void> {
-    const syncing: SyncMutation = { ...mutation, status: "syncing", updatedAt: this.now() };
+    const syncing: SyncMutation = {
+      ...mutation,
+      status: "syncing",
+      updatedAt: this.now(),
+    };
     await this.put(syncing);
 
     try {
       // The transport must submit `mutation.id` as the server idempotencyKey.
       await this.transport(syncing);
-      await this.put({ ...syncing, status: "succeeded", updatedAt: this.now(), lastError: undefined });
+      await this.put({
+        ...syncing,
+        status: "succeeded",
+        updatedAt: this.now(),
+        lastError: undefined,
+      });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       const attemptCount = syncing.attemptCount + 1;
       const permanentlyFailed = attemptCount >= this.maxAttempts;
-      const nextAttemptAt = permanentlyFailed ? Number.MAX_SAFE_INTEGER : this.now() + this.backoffDelay(attemptCount);
+      const nextAttemptAt = permanentlyFailed
+        ? Number.MAX_SAFE_INTEGER
+        : this.now() + this.backoffDelay(attemptCount);
 
       await this.put({
         ...syncing,
@@ -185,24 +220,33 @@ export class SyncQueue {
 
     // A child of a permanently failed parent can never become ready. Mark it
     // actionable instead of scheduling an immediate, CPU-spinning empty drain.
-    const blocked = mutations.filter(mutation =>
-      (mutation.status === "queued" || mutation.status === "retrying")
-      && mutation.dependencies.some(dependencyId => {
-        const dependency = byId.get(dependencyId);
-        return !dependency || dependency.status === "failed";
-      }),
+    const blocked = mutations.filter(
+      mutation =>
+        (mutation.status === "queued" || mutation.status === "retrying") &&
+        mutation.dependencies.some(dependencyId => {
+          const dependency = byId.get(dependencyId);
+          return !dependency || dependency.status === "failed";
+        })
     );
-    await Promise.all(blocked.map(mutation => this.put({
-      ...mutation,
-      status: "failed",
-      updatedAt: timestamp,
-        lastError: "A required earlier action is unavailable or failed permanently; resolve or retry the dependency first.",
-    })));
+    await Promise.all(
+      blocked.map(mutation =>
+        this.put({
+          ...mutation,
+          status: "failed",
+          updatedAt: timestamp,
+          lastError:
+            "A required earlier action is unavailable or failed permanently; resolve or retry the dependency first.",
+        })
+      )
+    );
 
     return mutations.find(mutation => {
-      if (mutation.status !== "queued" && mutation.status !== "retrying") return false;
+      if (mutation.status !== "queued" && mutation.status !== "retrying")
+        return false;
       if (mutation.nextAttemptAt > timestamp) return false;
-      return mutation.dependencies.every(dependencyId => byId.get(dependencyId)?.status === "succeeded");
+      return mutation.dependencies.every(
+        dependencyId => byId.get(dependencyId)?.status === "succeeded"
+      );
     });
   }
 
@@ -218,11 +262,14 @@ export class SyncQueue {
     const mutations = await this.getAll();
     const byId = new Map(mutations.map(mutation => [mutation.id, mutation]));
     const retrying = mutations
-      .filter(mutation => (mutation.status === "queued" || mutation.status === "retrying")
-        && mutation.dependencies.every(dependencyId => {
-          const dependency = byId.get(dependencyId);
-          return dependency !== undefined && dependency.status !== "failed";
-        }))
+      .filter(
+        mutation =>
+          (mutation.status === "queued" || mutation.status === "retrying") &&
+          mutation.dependencies.every(dependencyId => {
+            const dependency = byId.get(dependencyId);
+            return dependency !== undefined && dependency.status !== "failed";
+          })
+      )
       .sort((left, right) => left.nextAttemptAt - right.nextAttemptAt)[0];
     if (!retrying) return;
 
@@ -233,11 +280,14 @@ export class SyncQueue {
   private openDatabase(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.databaseName, DATABASE_VERSION);
-      request.onerror = () => reject(request.error ?? new Error("Unable to open IndexedDB."));
+      request.onerror = () =>
+        reject(request.error ?? new Error("Unable to open IndexedDB."));
       request.onupgradeneeded = () => {
         const database = request.result;
         if (!database.objectStoreNames.contains(STORE_NAME)) {
-          const store = database.createObjectStore(STORE_NAME, { keyPath: "id" });
+          const store = database.createObjectStore(STORE_NAME, {
+            keyPath: "id",
+          });
           store.createIndex("createdAt", "createdAt");
           store.createIndex("status", "status");
         }
@@ -248,20 +298,30 @@ export class SyncQueue {
 
   private async get(id: string): Promise<SyncMutation | undefined> {
     const database = await this.database;
-    return this.withStore(database, "readonly", store => requestAsPromise(store.get(id))) as Promise<SyncMutation | undefined>;
+    return this.withStore(database, "readonly", store =>
+      requestAsPromise(store.get(id))
+    ) as Promise<SyncMutation | undefined>;
   }
 
   private async getAll(): Promise<SyncMutation[]> {
     const database = await this.database;
-    return this.withStore(database, "readonly", store => requestAsPromise(store.getAll())) as Promise<SyncMutation[]>;
+    return this.withStore(database, "readonly", store =>
+      requestAsPromise(store.getAll())
+    ) as Promise<SyncMutation[]>;
   }
 
   private async put(mutation: SyncMutation): Promise<void> {
     const database = await this.database;
-    await this.withStore(database, "readwrite", store => requestAsPromise(store.put(mutation)));
+    await this.withStore(database, "readwrite", store =>
+      requestAsPromise(store.put(mutation))
+    );
   }
 
-  private async withStore<T>(database: IDBDatabase, mode: IDBTransactionMode, operation: (store: IDBObjectStore) => Promise<T>): Promise<T> {
+  private async withStore<T>(
+    database: IDBDatabase,
+    mode: IDBTransactionMode,
+    operation: (store: IDBObjectStore) => Promise<T>
+  ): Promise<T> {
     const transaction = database.transaction(STORE_NAME, mode);
     const result = await operation(transaction.objectStore(STORE_NAME));
     await transactionAsPromise(transaction);
@@ -272,14 +332,17 @@ export class SyncQueue {
 function requestAsPromise<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("IndexedDB operation failed."));
+    request.onerror = () =>
+      reject(request.error ?? new Error("IndexedDB operation failed."));
   });
 }
 
 function transactionAsPromise(transaction: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("IndexedDB transaction failed."));
-    transaction.onabort = () => reject(transaction.error ?? new Error("IndexedDB transaction aborted."));
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error("IndexedDB transaction failed."));
+    transaction.onabort = () =>
+      reject(transaction.error ?? new Error("IndexedDB transaction aborted."));
   });
 }

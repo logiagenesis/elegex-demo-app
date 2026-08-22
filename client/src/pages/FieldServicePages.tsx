@@ -1,116 +1,1472 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatOrganizationDate, formatOrganizationDateTime, formatOrganizationMoney } from "@/lib/organizationFormat";
+import {
+  formatOrganizationDate,
+  formatOrganizationDateTime,
+  formatOrganizationMoney,
+} from "@/lib/organizationFormat";
 import { trpc } from "@/lib/trpc";
 import { format, formatDistanceToNowStrict } from "date-fns";
-import { AlertTriangle, ArrowDownToLine, ArrowUpRight, CalendarDays, CheckCircle2, CircleDollarSign, Clock3, FileCheck2, FileText, Gauge, MapPin, Plus, Route, Search, ShieldCheck, Sparkles, UsersRound, Wrench } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowDownToLine,
+  ArrowUpRight,
+  CalendarDays,
+  CheckCircle2,
+  CircleDollarSign,
+  Clock3,
+  FileCheck2,
+  FileText,
+  Gauge,
+  MapPin,
+  Plus,
+  Route,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  UsersRound,
+  Wrench,
+} from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
-import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
 const stageStyle: Record<string, string> = {
-  scheduled: "bg-[#E9F0FF] text-[#1D56C9]", in_progress: "bg-[#E5F7F7] text-[#067A79]", on_hold: "bg-[#FFF4D6] text-[#9A5C00]", ready_for_invoicing: "bg-[#FFF0F2] text-[#B42342]", invoiced: "bg-[#E7F8EF] text-[#167244]", cancelled: "bg-[#F0F2F5] text-[#667085]",
-  needs_pricing: "bg-[#FFF4D6] text-[#9A5C00]", draft: "bg-[#F0F2F5] text-[#667085]", sent: "bg-[#E9F0FF] text-[#1D56C9]", accepted: "bg-[#E7F8EF] text-[#167244]", declined: "bg-[#FFF0F2] text-[#B42342]",
+  scheduled: "bg-[#E9F0FF] text-[#1D56C9]",
+  in_progress: "bg-[#E5F7F7] text-[#067A79]",
+  on_hold: "bg-[#FFF4D6] text-[#9A5C00]",
+  ready_for_invoicing: "bg-[#FFF0F2] text-[#B42342]",
+  invoiced: "bg-[#E7F8EF] text-[#167244]",
+  cancelled: "bg-[#F0F2F5] text-[#667085]",
+  needs_pricing: "bg-[#FFF4D6] text-[#9A5C00]",
+  draft: "bg-[#F0F2F5] text-[#667085]",
+  sent: "bg-[#E9F0FF] text-[#1D56C9]",
+  accepted: "bg-[#E7F8EF] text-[#167244]",
+  declined: "bg-[#FFF0F2] text-[#B42342]",
 };
-const priorityStyle: Record<string, string> = { routine: "text-[#667085]", standard: "text-[#1D56C9]", urgent: "text-[#B54708]", critical: "text-[#B42342]" };
-const pretty = (value?: string | null) => (value || "—").replace(/_/g, " ").replace(/\b\w/g, character => character.toUpperCase());
-const dateTime = (value?: Date | string | null, settings?: any) => value ? formatOrganizationDateTime(value, settings) : "Not scheduled";
-const dateOnly = (value?: Date | string | null, settings?: any) => value ? formatOrganizationDate(value, settings) : "—";
-const money = (value?: number | null, settings?: any) => formatOrganizationMoney(value, settings, { maximumFractionDigits: 0 });
+const priorityStyle: Record<string, string> = {
+  routine: "text-[#667085]",
+  standard: "text-[#1D56C9]",
+  urgent: "text-[#B54708]",
+  critical: "text-[#B42342]",
+};
+const pretty = (value?: string | null) =>
+  (value || "—")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, character => character.toUpperCase());
+const dateTime = (value?: Date | string | null, settings?: any) =>
+  value ? formatOrganizationDateTime(value, settings) : "Not scheduled";
+const dateOnly = (value?: Date | string | null, settings?: any) =>
+  value ? formatOrganizationDate(value, settings) : "—";
+const money = (value?: number | null, settings?: any) =>
+  formatOrganizationMoney(value, settings, { maximumFractionDigits: 0 });
 
-function FieldHeading({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: ReactNode }) {
-  return <div className="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between"><div><p className="elegex-eyebrow">{eyebrow}</p><h1 className="elegex-page-title mt-2">{title}</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-[#667085]">{description}</p></div>{action}</div>;
+function FieldHeading({
+  eyebrow,
+  title,
+  description,
+  action,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div>
+        <p className="elegex-eyebrow">{eyebrow}</p>
+        <h1 className="elegex-page-title mt-2">{title}</h1>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-[#667085]">
+          {description}
+        </p>
+      </div>
+      {action}
+    </div>
+  );
 }
 
-function MetricCard({ label, value, detail, icon: Icon, tone = "blue" }: { label: string; value: string | number; detail: string; icon: any; tone?: "blue" | "green" | "amber" | "rose" }) {
-  const toneMap = { blue: "bg-[#E9F0FF] text-[#195FE6]", green: "bg-[#E7F8EF] text-[#167244]", amber: "bg-[#FFF4D6] text-[#9A5C00]", rose: "bg-[#FFF0F2] text-[#B42342]" };
-  return <section className="elegex-card relative overflow-hidden p-5"><div className="absolute right-0 top-0 h-16 w-16 -translate-y-7 translate-x-7 rounded-full bg-[#195FE6]/5" /><div className="flex items-start justify-between"><p className="elegex-eyebrow">{label}</p><span className={`grid h-9 w-9 place-items-center rounded-xl ${toneMap[tone]}`}><Icon className="h-4 w-4" /></span></div><p className="mt-5 text-3xl font-semibold tracking-[-0.04em] text-[#14213D]">{value}</p><p className="mt-2 text-xs leading-5 text-[#7A879E]">{detail}</p></section>;
+function MetricCard({
+  label,
+  value,
+  detail,
+  icon: Icon,
+  tone = "blue",
+}: {
+  label: string;
+  value: string | number;
+  detail: string;
+  icon: any;
+  tone?: "blue" | "green" | "amber" | "rose";
+}) {
+  const toneMap = {
+    blue: "bg-[#E9F0FF] text-[#195FE6]",
+    green: "bg-[#E7F8EF] text-[#167244]",
+    amber: "bg-[#FFF4D6] text-[#9A5C00]",
+    rose: "bg-[#FFF0F2] text-[#B42342]",
+  };
+  return (
+    <section className="elegex-card relative overflow-hidden p-5">
+      <div className="absolute right-0 top-0 h-16 w-16 -translate-y-7 translate-x-7 rounded-full bg-[#195FE6]/5" />
+      <div className="flex items-start justify-between">
+        <p className="elegex-eyebrow">{label}</p>
+        <span
+          className={`grid h-9 w-9 place-items-center rounded-xl ${toneMap[tone]}`}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+      <p className="mt-5 text-3xl font-semibold tracking-[-0.04em] text-[#14213D]">
+        {value}
+      </p>
+      <p className="mt-2 text-xs leading-5 text-[#7A879E]">{detail}</p>
+    </section>
+  );
 }
 
 export function FieldCommandCentre() {
   const dashboard = trpc.elegex.fieldService.dashboard.useQuery();
   const [, setLocation] = useLocation();
-  if (dashboard.isLoading) return <div className="grid min-h-96 place-items-center text-sm font-medium text-[#667085]">Loading live office controls…</div>;
+  if (dashboard.isLoading)
+    return (
+      <div className="grid min-h-96 place-items-center text-sm font-medium text-[#667085]">
+        Loading live office controls…
+      </div>
+    );
   const data = dashboard.data as any;
   const settings = data.settings;
-  const dateOnly = (value?: Date | string | null) => value ? formatOrganizationDate(value, settings) : "—";
-  const count = (stage: string) => Number((data.stageRows as any[]).find(row => row.stage === stage)?.total || 0);
+  const dateOnly = (value?: Date | string | null) =>
+    value ? formatOrganizationDate(value, settings) : "—";
+  const count = (stage: string) =>
+    Number(
+      (data.stageRows as any[]).find(row => row.stage === stage)?.total || 0
+    );
   const lastSnapshot = (data.snapshots as any[]).at(-1);
-  const conversion = (() => { const rows = data.quoteRows as any[]; const sent = rows.filter(row => ["sent", "accepted", "declined"].includes(row.status)).reduce((sum, row) => sum + Number(row.total), 0); const accepted = rows.find(row => row.status === "accepted")?.total || 0; return sent ? Math.round(Number(accepted) / sent * 100) : 0; })();
-  const chartRows = (data.snapshots as any[]).map(snapshot => ({ month: formatOrganizationDate(snapshot.periodStart, settings, { month: "short" }), completed: snapshot.jobsCompleted, invoiced: Math.round(Number(snapshot.invoicedValue) / 1000), fvr: snapshot.firstVisitResolutionRate }));
-  return <>
-    <FieldHeading eyebrow="ELEGEX · OPERATIONS CONTROL" title="Field operations, under control." description="Six months of synthetic demonstration history show the live job pipeline—from dispatch and field evidence to quote acceptance and external invoice links." action={<span className="rounded-full border border-[#CFE0FF] bg-white px-3 py-2 text-xs font-semibold text-[#195FE6]">DEMO DATA · SIX MONTHS</span>} />
-    <section className="mb-5 flex flex-col gap-4 rounded-2xl border border-[#CFE0FF] bg-[linear-gradient(100deg,#EDF4FF,#FBFDFF)] p-5 lg:flex-row lg:items-center lg:justify-between"><div className="flex gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#14213D] text-white"><Sparkles className="h-5 w-5" /></span><div><p className="text-sm font-semibold text-[#14213D]">Demonstration workspace: synthetic operational history</p><p className="mt-1 text-sm leading-6 text-[#50617F]">{settings?.locale || "en-ZA"} · {settings?.currency || "ZAR"} · {settings?.timezone || "Africa/Johannesburg"}. Jobs, field evidence, client information, quote values, and invoice references are realistic demonstration fixtures—not live customer or financial records.</p></div></div><Button variant="outline" onClick={() => setLocation("/jobs")} className="shrink-0 rounded-xl bg-white">Review job register <ArrowUpRight className="ml-2 h-4 w-4" /></Button></section>
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><MetricCard label="Completed this month" value={lastSnapshot?.jobsCompleted || 0} detail={`${lastSnapshot?.firstVisitResolutionRate || 0}% first-visit resolution`} icon={CheckCircle2} tone="green" /><MetricCard label="In progress" value={count("in_progress")} detail={`${count("scheduled")} visits scheduled next`} icon={Route} /><MetricCard label="Ready for invoicing" value={count("ready_for_invoicing")} detail="Ageing queue needs office action" icon={CircleDollarSign} tone="rose" /><MetricCard label="Quote conversion" value={`${conversion}%`} detail={`${lastSnapshot?.quotesSent || 0} quote opportunities this period`} icon={FileCheck2} tone="amber" /></div>
-    <div className="mt-5 grid gap-5 xl:grid-cols-[1.35fr_0.85fr]"><section className="elegex-card p-6"><div className="flex items-start justify-between"><div><p className="elegex-eyebrow">SIX-MONTH OPERATING TREND</p><h2 className="mt-2 text-lg font-semibold text-[#14213D]">Jobs completed vs. invoiced value</h2></div><span className="rounded-full bg-[#F2F6FF] px-3 py-1 text-xs font-semibold text-[#195FE6]">{settings?.currency || "ZAR"} ’000</span></div><div className="mt-6 h-[260px]"><ResponsiveContainer width="100%" height="100%"><BarChart data={chartRows} margin={{ left: -20, right: 8 }}><CartesianGrid vertical={false} stroke="#EDF1F7" /><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#7A879E", fontSize: 11 }} /><YAxis axisLine={false} tickLine={false} tick={{ fill: "#98A2B3", fontSize: 11 }} /><Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #E5ECF7", fontSize: 12 }} /><Bar dataKey="completed" name="Jobs completed" fill="#195FE6" radius={[7, 7, 2, 2]} /><Bar dataKey="invoiced" name={`Invoiced value (${settings?.currency || "ZAR"} ’000)`} fill="#A4B8DD" radius={[7, 7, 2, 2]} /></BarChart></ResponsiveContainer></div></section>
-      <section className="elegex-card overflow-hidden"><div className="flex items-center justify-between border-b border-[#EEF2F7] px-6 py-5"><div><p className="elegex-eyebrow">INVOICE CONTROL</p><h2 className="mt-1 text-lg font-semibold text-[#14213D]">Ready for office action</h2></div><Button variant="ghost" onClick={() => setLocation("/reports")} className="text-[#195FE6]">Open report</Button></div><div className="divide-y divide-[#F0F3F8]">{(data.invoiceReadyRows as any[]).slice(0, 5).map(row => <button key={row.job.id} onClick={() => setLocation(`/jobs/${row.job.id}`)} className="flex w-full items-center gap-3 px-6 py-4 text-left hover:bg-[#FBFCFF]"><span className="grid h-8 w-8 place-items-center rounded-xl bg-[#FFF0F2] text-[#B42342]"><AlertTriangle className="h-4 w-4" /></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-[#34435F]">{row.job.jobNumber} · {row.job.title}</span><span className="mt-1 block text-xs text-[#7A879E]">{row.contact.name} · waiting since {dateOnly(row.job.readyForInvoiceAt)}</span></span><ArrowUpRight className="h-4 w-4 text-[#98A2B3]" /></button>)}</div></section></div>
-    <div className="mt-5 grid gap-5 xl:grid-cols-[1.2fr_0.8fr]"><section className="elegex-card overflow-hidden"><div className="flex items-center justify-between border-b border-[#EEF2F7] px-6 py-5"><div><p className="elegex-eyebrow">LIVE JOB PIPELINE</p><h2 className="mt-1 text-lg font-semibold text-[#14213D]">Latest dispatch movement</h2></div><Button variant="ghost" onClick={() => setLocation("/jobs")} className="text-[#195FE6]">All jobs</Button></div><div className="divide-y divide-[#F0F3F8]">{(data.currentJobs as any[]).slice(0, 6).map(row => <button key={row.job.id} onClick={() => setLocation(`/jobs/${row.job.id}`)} className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-3 px-6 py-4 text-left hover:bg-[#FBFCFF]"><span className={`h-2.5 w-2.5 rounded-full ${row.job.stage === "ready_for_invoicing" ? "bg-[#EA526F]" : row.job.stage === "on_hold" ? "bg-[#F5A524]" : "bg-[#195FE6]"}`} /><span className="min-w-0"><span className="block truncate text-sm font-semibold text-[#34435F]">{row.job.jobNumber} · {row.job.title}</span><span className="mt-1 block truncate text-xs text-[#7A879E]">{row.contact.name} · {row.job.serviceAddress}</span></span><Badge className={`${stageStyle[row.job.stage]} border-0 text-[10px] font-bold`}>{pretty(row.job.stage)}</Badge></button>)}</div></section>
-      <section className="elegex-card overflow-hidden"><div className="border-b border-[#EEF2F7] px-6 py-5"><p className="elegex-eyebrow">AUDIT SIGNALS</p><h2 className="mt-1 text-lg font-semibold text-[#14213D]">What changed most recently</h2></div><div className="divide-y divide-[#F0F3F8]">{(data.recentActivity as any[]).slice(0, 6).map(item => <div key={item.id} className="px-6 py-4"><p className="text-sm font-medium text-[#34435F]">{item.summary}</p><p className="mt-1 text-xs text-[#98A2B3]">{formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}</p></div>)}</div></section></div>
-  </>;
+  const conversion = (() => {
+    const rows = data.quoteRows as any[];
+    const sent = rows
+      .filter(row => ["sent", "accepted", "declined"].includes(row.status))
+      .reduce((sum, row) => sum + Number(row.total), 0);
+    const accepted = rows.find(row => row.status === "accepted")?.total || 0;
+    return sent ? Math.round((Number(accepted) / sent) * 100) : 0;
+  })();
+  const chartRows = (data.snapshots as any[]).map(snapshot => ({
+    month: formatOrganizationDate(snapshot.periodStart, settings, {
+      month: "short",
+    }),
+    completed: snapshot.jobsCompleted,
+    invoiced: Math.round(Number(snapshot.invoicedValue) / 1000),
+    fvr: snapshot.firstVisitResolutionRate,
+  }));
+  return (
+    <>
+      <FieldHeading
+        eyebrow="ELEGEX · OPERATIONS CONTROL"
+        title="Field operations, under control."
+        description="Six months of synthetic demonstration history show the live job pipeline—from dispatch and field evidence to quote acceptance and external invoice links."
+        action={
+          <span className="rounded-full border border-[#CFE0FF] bg-white px-3 py-2 text-xs font-semibold text-[#195FE6]">
+            DEMO DATA · SIX MONTHS
+          </span>
+        }
+      />
+      <section className="mb-5 flex flex-col gap-4 rounded-2xl border border-[#CFE0FF] bg-[linear-gradient(100deg,#EDF4FF,#FBFDFF)] p-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#14213D] text-white">
+            <Sparkles className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-[#14213D]">
+              Demonstration workspace: synthetic operational history
+            </p>
+            <p className="mt-1 text-sm leading-6 text-[#50617F]">
+              {settings?.locale || "en-ZA"} · {settings?.currency || "ZAR"} ·{" "}
+              {settings?.timezone || "Africa/Johannesburg"}. Jobs, field
+              evidence, client information, quote values, and invoice references
+              are realistic demonstration fixtures—not live customer or
+              financial records.
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => setLocation("/jobs")}
+          className="shrink-0 rounded-xl bg-white"
+        >
+          Review job register <ArrowUpRight className="ml-2 h-4 w-4" />
+        </Button>
+      </section>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Completed this month"
+          value={lastSnapshot?.jobsCompleted || 0}
+          detail={`${lastSnapshot?.firstVisitResolutionRate || 0}% first-visit resolution`}
+          icon={CheckCircle2}
+          tone="green"
+        />
+        <MetricCard
+          label="In progress"
+          value={count("in_progress")}
+          detail={`${count("scheduled")} visits scheduled next`}
+          icon={Route}
+        />
+        <MetricCard
+          label="Ready for invoicing"
+          value={count("ready_for_invoicing")}
+          detail="Ageing queue needs office action"
+          icon={CircleDollarSign}
+          tone="rose"
+        />
+        <MetricCard
+          label="Quote conversion"
+          value={`${conversion}%`}
+          detail={`${lastSnapshot?.quotesSent || 0} quote opportunities this period`}
+          icon={FileCheck2}
+          tone="amber"
+        />
+      </div>
+      <div className="mt-5 grid gap-5 xl:grid-cols-[1.35fr_0.85fr]">
+        <section className="elegex-card p-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="elegex-eyebrow">SIX-MONTH OPERATING TREND</p>
+              <h2 className="mt-2 text-lg font-semibold text-[#14213D]">
+                Jobs completed vs. invoiced value
+              </h2>
+            </div>
+            <span className="rounded-full bg-[#F2F6FF] px-3 py-1 text-xs font-semibold text-[#195FE6]">
+              {settings?.currency || "ZAR"} ’000
+            </span>
+          </div>
+          <div className="mt-6 h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartRows} margin={{ left: -20, right: 8 }}>
+                <CartesianGrid vertical={false} stroke="#EDF1F7" />
+                <XAxis
+                  dataKey="month"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#7A879E", fontSize: 11 }}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#98A2B3", fontSize: 11 }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 12,
+                    border: "1px solid #E5ECF7",
+                    fontSize: 12,
+                  }}
+                />
+                <Bar
+                  dataKey="completed"
+                  name="Jobs completed"
+                  fill="#195FE6"
+                  radius={[7, 7, 2, 2]}
+                />
+                <Bar
+                  dataKey="invoiced"
+                  name={`Invoiced value (${settings?.currency || "ZAR"} ’000)`}
+                  fill="#A4B8DD"
+                  radius={[7, 7, 2, 2]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+        <section className="elegex-card overflow-hidden">
+          <div className="flex items-center justify-between border-b border-[#EEF2F7] px-6 py-5">
+            <div>
+              <p className="elegex-eyebrow">INVOICE CONTROL</p>
+              <h2 className="mt-1 text-lg font-semibold text-[#14213D]">
+                Ready for office action
+              </h2>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => setLocation("/reports")}
+              className="text-[#195FE6]"
+            >
+              Open report
+            </Button>
+          </div>
+          <div className="divide-y divide-[#F0F3F8]">
+            {(data.invoiceReadyRows as any[]).slice(0, 5).map(row => (
+              <button
+                key={row.job.id}
+                onClick={() => setLocation(`/jobs/${row.job.id}`)}
+                className="flex w-full items-center gap-3 px-6 py-4 text-left hover:bg-[#FBFCFF]"
+              >
+                <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#FFF0F2] text-[#B42342]">
+                  <AlertTriangle className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-[#34435F]">
+                    {row.job.jobNumber} · {row.job.title}
+                  </span>
+                  <span className="mt-1 block text-xs text-[#7A879E]">
+                    {row.contact.name} · waiting since{" "}
+                    {dateOnly(row.job.readyForInvoiceAt)}
+                  </span>
+                </span>
+                <ArrowUpRight className="h-4 w-4 text-[#98A2B3]" />
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
+      <div className="mt-5 grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+        <section className="elegex-card overflow-hidden">
+          <div className="flex items-center justify-between border-b border-[#EEF2F7] px-6 py-5">
+            <div>
+              <p className="elegex-eyebrow">LIVE JOB PIPELINE</p>
+              <h2 className="mt-1 text-lg font-semibold text-[#14213D]">
+                Latest dispatch movement
+              </h2>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => setLocation("/jobs")}
+              className="text-[#195FE6]"
+            >
+              All jobs
+            </Button>
+          </div>
+          <div className="divide-y divide-[#F0F3F8]">
+            {(data.currentJobs as any[]).slice(0, 6).map(row => (
+              <button
+                key={row.job.id}
+                onClick={() => setLocation(`/jobs/${row.job.id}`)}
+                className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-3 px-6 py-4 text-left hover:bg-[#FBFCFF]"
+              >
+                <span
+                  className={`h-2.5 w-2.5 rounded-full ${row.job.stage === "ready_for_invoicing" ? "bg-[#EA526F]" : row.job.stage === "on_hold" ? "bg-[#F5A524]" : "bg-[#195FE6]"}`}
+                />
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-[#34435F]">
+                    {row.job.jobNumber} · {row.job.title}
+                  </span>
+                  <span className="mt-1 block truncate text-xs text-[#7A879E]">
+                    {row.contact.name} · {row.job.serviceAddress}
+                  </span>
+                </span>
+                <Badge
+                  className={`${stageStyle[row.job.stage]} border-0 text-[10px] font-bold`}
+                >
+                  {pretty(row.job.stage)}
+                </Badge>
+              </button>
+            ))}
+          </div>
+        </section>
+        <section className="elegex-card overflow-hidden">
+          <div className="border-b border-[#EEF2F7] px-6 py-5">
+            <p className="elegex-eyebrow">AUDIT SIGNALS</p>
+            <h2 className="mt-1 text-lg font-semibold text-[#14213D]">
+              What changed most recently
+            </h2>
+          </div>
+          <div className="divide-y divide-[#F0F3F8]">
+            {(data.recentActivity as any[]).slice(0, 6).map(item => (
+              <div key={item.id} className="px-6 py-4">
+                <p className="text-sm font-medium text-[#34435F]">
+                  {item.summary}
+                </p>
+                <p className="mt-1 text-xs text-[#98A2B3]">
+                  {formatDistanceToNowStrict(new Date(item.createdAt), {
+                    addSuffix: true,
+                  })}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </>
+  );
 }
 
 export function JobsPage() {
-  const [, setLocation] = useLocation(); const [query, setQuery] = useState(""); const [stage, setStage] = useState("all"); const [open, setOpen] = useState(false);
+  const [, setLocation] = useLocation();
+  const [query, setQuery] = useState("");
+  const [stage, setStage] = useState("all");
+  const [open, setOpen] = useState(false);
   const operational = trpc.elegex.workspace.operationalSettings.useQuery();
-  const dateTime = (value?: Date | string | null) => value ? formatOrganizationDateTime(value, operational.data?.settings) : "Not scheduled";
-  const jobs = trpc.elegex.fieldService.jobs.list.useQuery({ query, stage: stage === "all" ? undefined : stage as any, page: 1, pageSize: 50 });
+  const dateTime = (value?: Date | string | null) =>
+    value
+      ? formatOrganizationDateTime(value, operational.data?.settings)
+      : "Not scheduled";
+  const jobs = trpc.elegex.fieldService.jobs.list.useQuery({
+    query,
+    stage: stage === "all" ? undefined : (stage as any),
+    page: 1,
+    pageSize: 50,
+  });
   const rows = (jobs.data?.rows || []) as any[];
-  return <><FieldHeading eyebrow="JOB REGISTER" title="Jobs from booking to invoice." description="The job register is the operational source of truth. Cancellation always records a reason; a job is never silently removed." action={<Button onClick={() => setOpen(true)} className="rounded-xl bg-[#195FE6] hover:bg-[#124FC3]"><Plus className="mr-2 h-4 w-4" />New job</Button>} /><div className="elegex-card overflow-hidden"><div className="flex flex-col gap-3 border-b border-[#EEF2F7] p-4 lg:flex-row"><div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#98A2B3]" /><Input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search job number, client address, or description" className="h-10 border-[#DFE7F3] bg-[#FBFCFE] pl-9" /></div><select value={stage} onChange={event => setStage(event.target.value)} className="h-10 rounded-xl border border-[#DFE7F3] bg-white px-3 text-sm text-[#50617F]"><option value="all">All stages</option>{["scheduled", "in_progress", "on_hold", "ready_for_invoicing", "invoiced", "cancelled"].map(value => <option key={value} value={value}>{pretty(value)}</option>)}</select></div><div className="hidden overflow-x-auto md:block"><table className="min-w-full"><thead className="bg-[#FAFBFD]"><tr>{["Job / client", "Foreman", "Schedule", "Stage", ""].map(label => <th key={label} className="px-5 py-3 text-left text-[10px] font-bold tracking-[0.14em] text-[#7A879E]">{label}</th>)}</tr></thead><tbody className="divide-y divide-[#F0F3F8]">{rows.map(row => <tr key={row.job.id} className="cursor-pointer hover:bg-[#FBFCFF]" onClick={() => setLocation(`/jobs/${row.job.id}`)}><td className="px-5 py-4"><p className="font-semibold text-[#24324D]">{row.job.jobNumber} · {row.job.title}</p><p className="mt-1 text-xs text-[#7A879E]">{row.contact.name} · {row.job.serviceAddress}</p></td><td className="px-5 py-4 text-sm text-[#50617F]">{row.foreman?.name || "Unassigned"}</td><td className="px-5 py-4 text-sm text-[#50617F]">{dateTime(row.job.scheduledStart)}</td><td className="px-5 py-4"><Badge className={`${stageStyle[row.job.stage]} border-0 text-[10px] font-bold`}>{pretty(row.job.stage)}</Badge></td><td className="px-5 py-4 text-right"><ArrowUpRight className="ml-auto h-4 w-4 text-[#98A2B3]" /></td></tr>)}</tbody></table></div><div className="divide-y divide-[#F0F3F8] md:hidden">{rows.map(row => <button key={row.job.id} onClick={() => setLocation(`/jobs/${row.job.id}`)} className="block w-full px-4 py-4 text-left hover:bg-[#FBFCFF]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-sm font-semibold text-[#24324D]">{row.job.jobNumber} · {row.job.title}</p><p className="mt-1 text-xs leading-5 text-[#7A879E]">{row.contact.name} · {row.job.serviceAddress}</p></div><Badge className={`${stageStyle[row.job.stage]} shrink-0 border-0 text-[9px] font-bold`}>{pretty(row.job.stage)}</Badge></div><div className="mt-3 flex items-center justify-between text-xs text-[#50617F]"><span>{row.foreman?.name || "Unassigned"}</span><span>{dateTime(row.job.scheduledStart)}</span></div></button>)}</div></div><NewJobDialog open={open} onOpenChange={setOpen} /> </>;
+  return (
+    <>
+      <FieldHeading
+        eyebrow="JOB REGISTER"
+        title="Jobs from booking to invoice."
+        description="The job register is the operational source of truth. Cancellation always records a reason; a job is never silently removed."
+        action={
+          <Button
+            onClick={() => setOpen(true)}
+            className="rounded-xl bg-[#195FE6] hover:bg-[#124FC3]"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            New job
+          </Button>
+        }
+      />
+      <div className="elegex-card overflow-hidden">
+        <div className="flex flex-col gap-3 border-b border-[#EEF2F7] p-4 lg:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#98A2B3]" />
+            <Input
+              value={query}
+              onChange={event => setQuery(event.target.value)}
+              placeholder="Search job number, client address, or description"
+              className="h-10 border-[#DFE7F3] bg-[#FBFCFE] pl-9"
+            />
+          </div>
+          <select
+            value={stage}
+            onChange={event => setStage(event.target.value)}
+            className="h-10 rounded-xl border border-[#DFE7F3] bg-white px-3 text-sm text-[#50617F]"
+          >
+            <option value="all">All stages</option>
+            {[
+              "scheduled",
+              "in_progress",
+              "on_hold",
+              "ready_for_invoicing",
+              "invoiced",
+              "cancelled",
+            ].map(value => (
+              <option key={value} value={value}>
+                {pretty(value)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="hidden overflow-x-auto md:block">
+          <table className="min-w-full">
+            <thead className="bg-[#FAFBFD]">
+              <tr>
+                {["Job / client", "Foreman", "Schedule", "Stage", ""].map(
+                  label => (
+                    <th
+                      key={label}
+                      className="px-5 py-3 text-left text-[10px] font-bold tracking-[0.14em] text-[#7A879E]"
+                    >
+                      {label}
+                    </th>
+                  )
+                )}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#F0F3F8]">
+              {rows.map(row => (
+                <tr
+                  key={row.job.id}
+                  className="cursor-pointer hover:bg-[#FBFCFF]"
+                  onClick={() => setLocation(`/jobs/${row.job.id}`)}
+                >
+                  <td className="px-5 py-4">
+                    <p className="font-semibold text-[#24324D]">
+                      {row.job.jobNumber} · {row.job.title}
+                    </p>
+                    <p className="mt-1 text-xs text-[#7A879E]">
+                      {row.contact.name} · {row.job.serviceAddress}
+                    </p>
+                  </td>
+                  <td className="px-5 py-4 text-sm text-[#50617F]">
+                    {row.foreman?.name || "Unassigned"}
+                  </td>
+                  <td className="px-5 py-4 text-sm text-[#50617F]">
+                    {dateTime(row.job.scheduledStart)}
+                  </td>
+                  <td className="px-5 py-4">
+                    <Badge
+                      className={`${stageStyle[row.job.stage]} border-0 text-[10px] font-bold`}
+                    >
+                      {pretty(row.job.stage)}
+                    </Badge>
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <ArrowUpRight className="ml-auto h-4 w-4 text-[#98A2B3]" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="divide-y divide-[#F0F3F8] md:hidden">
+          {rows.map(row => (
+            <button
+              key={row.job.id}
+              onClick={() => setLocation(`/jobs/${row.job.id}`)}
+              className="block w-full px-4 py-4 text-left hover:bg-[#FBFCFF]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[#24324D]">
+                    {row.job.jobNumber} · {row.job.title}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-[#7A879E]">
+                    {row.contact.name} · {row.job.serviceAddress}
+                  </p>
+                </div>
+                <Badge
+                  className={`${stageStyle[row.job.stage]} shrink-0 border-0 text-[9px] font-bold`}
+                >
+                  {pretty(row.job.stage)}
+                </Badge>
+              </div>
+              <div className="mt-3 flex items-center justify-between text-xs text-[#50617F]">
+                <span>{row.foreman?.name || "Unassigned"}</span>
+                <span>{dateTime(row.job.scheduledStart)}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+      <NewJobDialog open={open} onOpenChange={setOpen} />{" "}
+    </>
+  );
 }
 
-function NewJobDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const contacts = trpc.elegex.contacts.list.useQuery({ page: 1, pageSize: 50 }); const members = trpc.elegex.workspace.members.useQuery(); const utils = trpc.useUtils();
-  const [form, setForm] = useState({ jobNumber: "", title: "", description: "", contactId: "", serviceAddress: "", priority: "standard", foremanId: "", scheduledStart: "", scheduledEnd: "" });
-  const create = trpc.elegex.fieldService.jobs.create.useMutation({ onSuccess: () => { toast.success("Job added to the office register"); void utils.elegex.invalidate(); onOpenChange(false); } });
-  const set = (key: string, value: string) => setForm(current => ({ ...current, [key]: value }));
-  const submit = () => { if (!form.jobNumber || !form.title || !form.description || !form.contactId || !form.serviceAddress) return toast.error("Job number, title, client, address, and description are required"); create.mutate({ ...form, jobNumber: form.jobNumber.startsWith("#") ? form.jobNumber : `#${form.jobNumber}`, contactId: Number(form.contactId), foremanId: form.foremanId ? Number(form.foremanId) : undefined, scheduledStart: form.scheduledStart ? new Date(form.scheduledStart) : undefined, scheduledEnd: form.scheduledEnd ? new Date(form.scheduledEnd) : undefined, priority: form.priority as any }); };
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-w-2xl rounded-2xl"><DialogHeader><DialogTitle>New field-service job</DialogTitle><DialogDescription>Book the office record, client context, and first dispatch visit in one controlled workflow.</DialogDescription></DialogHeader><div className="grid gap-4 md:grid-cols-2"><Field label="Job number" value={form.jobNumber} onChange={value => set("jobNumber", value)} placeholder="2048" /><Field label="Job title" value={form.title} onChange={value => set("title", value)} placeholder="Kitchen circuit assessment" /><div className="grid gap-2"><Label>Client</Label><select value={form.contactId} onChange={event => set("contactId", event.target.value)} className="h-10 rounded-md border border-[#DFE7F3] bg-white px-3 text-sm"><option value="">Choose client</option>{((contacts.data?.rows || []) as any[]).map(contact => <option key={contact.id} value={contact.id}>{contact.name} · {contact.company || "Independent"}</option>)}</select></div><Field label="Service address" value={form.serviceAddress} onChange={value => set("serviceAddress", value)} placeholder="14 Summit Avenue, North District" /><div className="grid gap-2"><Label>Assigned foreman</Label><select value={form.foremanId} onChange={event => set("foremanId", event.target.value)} className="h-10 rounded-md border border-[#DFE7F3] bg-white px-3 text-sm"><option value="">Assign later</option>{((members.data || []) as any[]).filter(member => member.role !== "viewer").map(member => <option key={member.id} value={member.id}>{member.name}</option>)}</select></div><div className="grid gap-2"><Label>Priority</Label><select value={form.priority} onChange={event => set("priority", event.target.value)} className="h-10 rounded-md border border-[#DFE7F3] bg-white px-3 text-sm">{["routine", "standard", "urgent", "critical"].map(value => <option key={value} value={value}>{pretty(value)}</option>)}</select></div><Field label="Scheduled start" type="datetime-local" value={form.scheduledStart} onChange={value => set("scheduledStart", value)} /><Field label="Scheduled end" type="datetime-local" value={form.scheduledEnd} onChange={value => set("scheduledEnd", value)} /><div className="md:col-span-2"><Field label="Work description" value={form.description} onChange={value => set("description", value)} placeholder="Describe the service request, safety context, and expected outcome." multiline /></div></div><div className="flex justify-end gap-3"><Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button disabled={create.isPending} onClick={submit} className="bg-[#195FE6]">Create job</Button></div></DialogContent></Dialog>;
+function NewJobDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const contacts = trpc.elegex.contacts.list.useQuery({
+    page: 1,
+    pageSize: 50,
+  });
+  const members = trpc.elegex.workspace.members.useQuery();
+  const utils = trpc.useUtils();
+  const [form, setForm] = useState({
+    jobNumber: "",
+    title: "",
+    description: "",
+    contactId: "",
+    serviceAddress: "",
+    priority: "standard",
+    foremanId: "",
+    scheduledStart: "",
+    scheduledEnd: "",
+  });
+  const create = trpc.elegex.fieldService.jobs.create.useMutation({
+    onSuccess: () => {
+      toast.success("Job added to the office register");
+      void utils.elegex.invalidate();
+      onOpenChange(false);
+    },
+  });
+  const set = (key: string, value: string) =>
+    setForm(current => ({ ...current, [key]: value }));
+  const submit = () => {
+    if (
+      !form.jobNumber ||
+      !form.title ||
+      !form.description ||
+      !form.contactId ||
+      !form.serviceAddress
+    )
+      return toast.error(
+        "Job number, title, client, address, and description are required"
+      );
+    create.mutate({
+      ...form,
+      jobNumber: form.jobNumber.startsWith("#")
+        ? form.jobNumber
+        : `#${form.jobNumber}`,
+      contactId: Number(form.contactId),
+      foremanId: form.foremanId ? Number(form.foremanId) : undefined,
+      scheduledStart: form.scheduledStart
+        ? new Date(form.scheduledStart)
+        : undefined,
+      scheduledEnd: form.scheduledEnd ? new Date(form.scheduledEnd) : undefined,
+      priority: form.priority as any,
+    });
+  };
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl rounded-2xl">
+        <DialogHeader>
+          <DialogTitle>New field-service job</DialogTitle>
+          <DialogDescription>
+            Book the office record, client context, and first dispatch visit in
+            one controlled workflow.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field
+            label="Job number"
+            value={form.jobNumber}
+            onChange={value => set("jobNumber", value)}
+            placeholder="2048"
+          />
+          <Field
+            label="Job title"
+            value={form.title}
+            onChange={value => set("title", value)}
+            placeholder="Kitchen circuit assessment"
+          />
+          <div className="grid gap-2">
+            <Label>Client</Label>
+            <select
+              value={form.contactId}
+              onChange={event => set("contactId", event.target.value)}
+              className="h-10 rounded-md border border-[#DFE7F3] bg-white px-3 text-sm"
+            >
+              <option value="">Choose client</option>
+              {((contacts.data?.rows || []) as any[]).map(contact => (
+                <option key={contact.id} value={contact.id}>
+                  {contact.name} · {contact.company || "Independent"}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Field
+            label="Service address"
+            value={form.serviceAddress}
+            onChange={value => set("serviceAddress", value)}
+            placeholder="14 Summit Avenue, North District"
+          />
+          <div className="grid gap-2">
+            <Label>Assigned foreman</Label>
+            <select
+              value={form.foremanId}
+              onChange={event => set("foremanId", event.target.value)}
+              className="h-10 rounded-md border border-[#DFE7F3] bg-white px-3 text-sm"
+            >
+              <option value="">Assign later</option>
+              {((members.data || []) as any[])
+                .filter(member => member.role !== "viewer")
+                .map(member => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div className="grid gap-2">
+            <Label>Priority</Label>
+            <select
+              value={form.priority}
+              onChange={event => set("priority", event.target.value)}
+              className="h-10 rounded-md border border-[#DFE7F3] bg-white px-3 text-sm"
+            >
+              {["routine", "standard", "urgent", "critical"].map(value => (
+                <option key={value} value={value}>
+                  {pretty(value)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Field
+            label="Scheduled start"
+            type="datetime-local"
+            value={form.scheduledStart}
+            onChange={value => set("scheduledStart", value)}
+          />
+          <Field
+            label="Scheduled end"
+            type="datetime-local"
+            value={form.scheduledEnd}
+            onChange={value => set("scheduledEnd", value)}
+          />
+          <div className="md:col-span-2">
+            <Field
+              label="Work description"
+              value={form.description}
+              onChange={value => set("description", value)}
+              placeholder="Describe the service request, safety context, and expected outcome."
+              multiline
+            />
+          </div>
+        </div>
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            disabled={create.isPending}
+            onClick={submit}
+            className="bg-[#195FE6]"
+          >
+            Create job
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export function JobDetailPage({ id }: { id: number }) {
-  const [, setLocation] = useLocation(); const detail = trpc.elegex.fieldService.jobs.detail.useQuery({ id }); const operational = trpc.elegex.workspace.operationalSettings.useQuery(); const utils = trpc.useUtils(); const [target, setTarget] = useState(""); const [reason, setReason] = useState(""); const [invoice, setInvoice] = useState("");
-  const transition = trpc.elegex.fieldService.jobs.transition.useMutation({ onSuccess: () => { toast.success("Job stage recorded in the audit trail"); void utils.elegex.invalidate(); setTarget(""); setReason(""); } }); const linkInvoice = trpc.elegex.fieldService.jobs.linkInvoice.useMutation({ onSuccess: () => { toast.success("External invoice link saved"); void utils.elegex.invalidate(); setInvoice(""); } });
-  if (detail.isLoading) return <div className="grid min-h-96 place-items-center text-sm text-[#667085]">Loading controlled job record…</div>;
-  if (!detail.data) return <div className="elegex-card p-8"><p className="text-lg font-semibold text-[#14213D]">Job unavailable</p><Button onClick={() => setLocation("/jobs")} className="mt-4">Back to jobs</Button></div>;
-  const data = detail.data as any; const job = data.job; const settings = operational.data?.settings; const dateTime = (value?: Date | string | null) => value ? formatOrganizationDateTime(value, settings) : "Not scheduled"; const dateOnly = (value?: Date | string | null) => value ? formatOrganizationDate(value, settings) : "—"; const money = (value?: number | null) => formatOrganizationMoney(value, settings, { maximumFractionDigits: 0 });
-  const transitions: Record<string, string[]> = { scheduled: ["in_progress", "on_hold", "cancelled"], in_progress: ["ready_for_invoicing", "on_hold", "cancelled"], on_hold: ["scheduled", "in_progress", "cancelled"], ready_for_invoicing: ["invoiced", "in_progress", "cancelled"], invoiced: [], cancelled: [] };
-  return <><button onClick={() => setLocation("/jobs")} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#50617F] hover:text-[#195FE6]">← Back to job register</button><FieldHeading eyebrow={`${job.jobNumber} · FIELD-SERVICE RECORD`} title={job.title} description={`${data.contact.name} · ${job.serviceAddress}`} action={<Badge className={`${stageStyle[job.stage]} border-0 px-3 py-2 text-xs font-bold`}>{pretty(job.stage)}</Badge>} />
-    <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]"><div className="space-y-5"><section className="elegex-card p-6"><div className="flex flex-wrap items-center gap-3"><span className={`text-sm font-semibold ${priorityStyle[job.priority]}`}>{pretty(job.priority)} priority</span><span className="text-sm text-[#667085]">Foreman: <strong className="text-[#34435F]">{data.foreman?.name || "Unassigned"}</strong></span><span className="text-sm text-[#667085]">Scheduled: <strong className="text-[#34435F]">{dateTime(job.scheduledStart)}</strong></span></div><p className="mt-5 text-sm leading-7 text-[#50617F]">{job.description}</p><div className="mt-6 grid gap-3 sm:grid-cols-3"><MiniInfo label="Check-in" value={dateTime(job.checkInAt)} /><MiniInfo label="Geo status" value={pretty(job.geoStatus)} /><MiniInfo label="Invoice-ready" value={dateOnly(job.readyForInvoiceAt)} /></div></section>
-      <section className="elegex-card overflow-hidden"><div className="border-b border-[#EEF2F7] px-6 py-5"><p className="elegex-eyebrow">FIELD EVIDENCE</p><h2 className="mt-1 text-lg font-semibold text-[#14213D]">Photos, signatures, and job-card signals</h2></div><div className="grid divide-y divide-[#F0F3F8]">{data.evidence.map((evidence: any) => <div key={evidence.id} className="flex items-center gap-3 px-6 py-4"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#EEF4FF] text-[#195FE6]"><FileText className="h-4 w-4" /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-[#34435F]">{evidence.title}</span><span className="mt-1 block text-xs text-[#7A879E]">{pretty(evidence.evidenceType)} · {dateTime(evidence.capturedAt)}</span></span><Badge className={`${evidence.syncStatus === "synced" ? "bg-[#E7F8EF] text-[#167244]" : "bg-[#FFF4D6] text-[#9A5C00]"} border-0 text-[10px]`}>{pretty(evidence.syncStatus)}</Badge></div>)}</div></section>
-      <section className="elegex-card overflow-hidden"><div className="border-b border-[#EEF2F7] px-6 py-5"><p className="elegex-eyebrow">MATERIALS & COMMERCIALS</p><h2 className="mt-1 text-lg font-semibold text-[#14213D]">Office pricing record</h2></div><div className="divide-y divide-[#F0F3F8]">{data.materials.map((material: any) => <div key={material.id} className="flex items-center justify-between px-6 py-4"><span><span className="block text-sm font-semibold text-[#34435F]">{material.description}</span><span className="mt-1 block text-xs text-[#7A879E]">{material.quantity} × {material.unit} · {pretty(material.source)}</span></span><span className="text-sm font-semibold text-[#34435F]">{money(material.unitPrice * material.quantity)}</span></div>)}</div></section></div>
-      <aside className="space-y-5"><section className="elegex-card p-5"><p className="elegex-eyebrow">CONTROLLED STAGE CHANGE</p><h2 className="mt-2 text-lg font-semibold text-[#14213D]">Move job forward</h2>{transitions[job.stage].length ? <><select value={target} onChange={event => setTarget(event.target.value)} className="mt-4 h-10 w-full rounded-md border border-[#DFE7F3] bg-white px-3 text-sm"><option value="">Choose next stage</option>{transitions[job.stage].map(value => <option key={value} value={value}>{pretty(value)}</option>)}</select>{["on_hold", "cancelled"].includes(target) ? <Input value={reason} onChange={event => setReason(event.target.value)} placeholder="Reason required" className="mt-3" /> : null}<Button onClick={() => target ? transition.mutate({ id, stage: target as any, reason: reason || undefined }) : toast.error("Choose a valid next stage")} disabled={transition.isPending} className="mt-3 w-full bg-[#195FE6]">Record stage change</Button></> : <p className="mt-3 text-sm leading-6 text-[#667085]">This job is closed to additional stage changes.</p>}</section>
-        <section className="elegex-card p-5"><p className="elegex-eyebrow">EXTERNAL INVOICE LINK</p><h2 className="mt-2 text-lg font-semibold text-[#14213D]">QuickBooks reference</h2><p className="mt-2 text-sm leading-6 text-[#667085]">Invoices remain in the accounting system. Elegex only records the auditable link.</p><Input value={invoice} onChange={event => setInvoice(event.target.value)} placeholder="INV-0881" className="mt-4" /><Button onClick={() => invoice ? linkInvoice.mutate({ id, invoiceNumber: invoice }) : toast.error("Enter the external invoice number")} disabled={linkInvoice.isPending} variant="outline" className="mt-3 w-full">Link invoice</Button>{data.invoices.map((link: any) => <p key={link.id} className="mt-3 rounded-lg bg-[#F5F8FF] p-3 text-xs font-semibold text-[#195FE6]">{link.externalSystem} · {link.externalInvoiceNumber}</p>)}</section>
-        <section className="elegex-card overflow-hidden"><div className="border-b border-[#EEF2F7] px-5 py-4"><p className="elegex-eyebrow">AUDIT TRAIL</p></div>{data.activity.slice(0, 6).map((item: any) => <div key={item.id} className="border-b border-[#F0F3F8] px-5 py-4 last:border-0"><p className="text-sm font-medium text-[#34435F]">{item.summary}</p><p className="mt-1 text-xs text-[#98A2B3]">{dateTime(item.createdAt)}</p></div>)}</section></aside></div>
-  </>;
+  const [, setLocation] = useLocation();
+  const detail = trpc.elegex.fieldService.jobs.detail.useQuery({ id });
+  const operational = trpc.elegex.workspace.operationalSettings.useQuery();
+  const utils = trpc.useUtils();
+  const [target, setTarget] = useState("");
+  const [reason, setReason] = useState("");
+  const [invoice, setInvoice] = useState("");
+  const transition = trpc.elegex.fieldService.jobs.transition.useMutation({
+    onSuccess: () => {
+      toast.success("Job stage recorded in the audit trail");
+      void utils.elegex.invalidate();
+      setTarget("");
+      setReason("");
+    },
+  });
+  const linkInvoice = trpc.elegex.fieldService.jobs.linkInvoice.useMutation({
+    onSuccess: () => {
+      toast.success("External invoice link saved");
+      void utils.elegex.invalidate();
+      setInvoice("");
+    },
+  });
+  if (detail.isLoading)
+    return (
+      <div className="grid min-h-96 place-items-center text-sm text-[#667085]">
+        Loading controlled job record…
+      </div>
+    );
+  if (!detail.data)
+    return (
+      <div className="elegex-card p-8">
+        <p className="text-lg font-semibold text-[#14213D]">Job unavailable</p>
+        <Button onClick={() => setLocation("/jobs")} className="mt-4">
+          Back to jobs
+        </Button>
+      </div>
+    );
+  const data = detail.data as any;
+  const job = data.job;
+  const settings = operational.data?.settings;
+  const dateTime = (value?: Date | string | null) =>
+    value ? formatOrganizationDateTime(value, settings) : "Not scheduled";
+  const dateOnly = (value?: Date | string | null) =>
+    value ? formatOrganizationDate(value, settings) : "—";
+  const money = (value?: number | null) =>
+    formatOrganizationMoney(value, settings, { maximumFractionDigits: 0 });
+  const transitions: Record<string, string[]> = {
+    scheduled: ["in_progress", "on_hold", "cancelled"],
+    in_progress: ["ready_for_invoicing", "on_hold", "cancelled"],
+    on_hold: ["scheduled", "in_progress", "cancelled"],
+    ready_for_invoicing: ["invoiced", "in_progress", "cancelled"],
+    invoiced: [],
+    cancelled: [],
+  };
+  return (
+    <>
+      <button
+        onClick={() => setLocation("/jobs")}
+        className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#50617F] hover:text-[#195FE6]"
+      >
+        ← Back to job register
+      </button>
+      <FieldHeading
+        eyebrow={`${job.jobNumber} · FIELD-SERVICE RECORD`}
+        title={job.title}
+        description={`${data.contact.name} · ${job.serviceAddress}`}
+        action={
+          <Badge
+            className={`${stageStyle[job.stage]} border-0 px-3 py-2 text-xs font-bold`}
+          >
+            {pretty(job.stage)}
+          </Badge>
+        }
+      />
+      <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
+        <div className="space-y-5">
+          <section className="elegex-card p-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <span
+                className={`text-sm font-semibold ${priorityStyle[job.priority]}`}
+              >
+                {pretty(job.priority)} priority
+              </span>
+              <span className="text-sm text-[#667085]">
+                Foreman:{" "}
+                <strong className="text-[#34435F]">
+                  {data.foreman?.name || "Unassigned"}
+                </strong>
+              </span>
+              <span className="text-sm text-[#667085]">
+                Scheduled:{" "}
+                <strong className="text-[#34435F]">
+                  {dateTime(job.scheduledStart)}
+                </strong>
+              </span>
+            </div>
+            <p className="mt-5 text-sm leading-7 text-[#50617F]">
+              {job.description}
+            </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <MiniInfo label="Check-in" value={dateTime(job.checkInAt)} />
+              <MiniInfo label="Geo status" value={pretty(job.geoStatus)} />
+              <MiniInfo
+                label="Invoice-ready"
+                value={dateOnly(job.readyForInvoiceAt)}
+              />
+            </div>
+          </section>
+          <section className="elegex-card overflow-hidden">
+            <div className="border-b border-[#EEF2F7] px-6 py-5">
+              <p className="elegex-eyebrow">FIELD EVIDENCE</p>
+              <h2 className="mt-1 text-lg font-semibold text-[#14213D]">
+                Photos, signatures, and job-card signals
+              </h2>
+            </div>
+            <div className="grid divide-y divide-[#F0F3F8]">
+              {data.evidence.map((evidence: any) => (
+                <div
+                  key={evidence.id}
+                  className="flex items-center gap-3 px-6 py-4"
+                >
+                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#EEF4FF] text-[#195FE6]">
+                    <FileText className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-[#34435F]">
+                      {evidence.title}
+                    </span>
+                    <span className="mt-1 block text-xs text-[#7A879E]">
+                      {pretty(evidence.evidenceType)} ·{" "}
+                      {dateTime(evidence.capturedAt)}
+                    </span>
+                  </span>
+                  <Badge
+                    className={`${evidence.syncStatus === "synced" ? "bg-[#E7F8EF] text-[#167244]" : "bg-[#FFF4D6] text-[#9A5C00]"} border-0 text-[10px]`}
+                  >
+                    {pretty(evidence.syncStatus)}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </section>
+          <section className="elegex-card overflow-hidden">
+            <div className="border-b border-[#EEF2F7] px-6 py-5">
+              <p className="elegex-eyebrow">MATERIALS & COMMERCIALS</p>
+              <h2 className="mt-1 text-lg font-semibold text-[#14213D]">
+                Office pricing record
+              </h2>
+            </div>
+            <div className="divide-y divide-[#F0F3F8]">
+              {data.materials.map((material: any) => (
+                <div
+                  key={material.id}
+                  className="flex items-center justify-between px-6 py-4"
+                >
+                  <span>
+                    <span className="block text-sm font-semibold text-[#34435F]">
+                      {material.description}
+                    </span>
+                    <span className="mt-1 block text-xs text-[#7A879E]">
+                      {material.quantity} × {material.unit} ·{" "}
+                      {pretty(material.source)}
+                    </span>
+                  </span>
+                  <span className="text-sm font-semibold text-[#34435F]">
+                    {money(material.unitPrice * material.quantity)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+        <aside className="space-y-5">
+          <section className="elegex-card p-5">
+            <p className="elegex-eyebrow">CONTROLLED STAGE CHANGE</p>
+            <h2 className="mt-2 text-lg font-semibold text-[#14213D]">
+              Move job forward
+            </h2>
+            {transitions[job.stage].length ? (
+              <>
+                <select
+                  value={target}
+                  onChange={event => setTarget(event.target.value)}
+                  className="mt-4 h-10 w-full rounded-md border border-[#DFE7F3] bg-white px-3 text-sm"
+                >
+                  <option value="">Choose next stage</option>
+                  {transitions[job.stage].map(value => (
+                    <option key={value} value={value}>
+                      {pretty(value)}
+                    </option>
+                  ))}
+                </select>
+                {["on_hold", "cancelled"].includes(target) ? (
+                  <Input
+                    value={reason}
+                    onChange={event => setReason(event.target.value)}
+                    placeholder="Reason required"
+                    className="mt-3"
+                  />
+                ) : null}
+                <Button
+                  onClick={() =>
+                    target
+                      ? transition.mutate({
+                          id,
+                          stage: target as any,
+                          reason: reason || undefined,
+                        })
+                      : toast.error("Choose a valid next stage")
+                  }
+                  disabled={transition.isPending}
+                  className="mt-3 w-full bg-[#195FE6]"
+                >
+                  Record stage change
+                </Button>
+              </>
+            ) : (
+              <p className="mt-3 text-sm leading-6 text-[#667085]">
+                This job is closed to additional stage changes.
+              </p>
+            )}
+          </section>
+          <section className="elegex-card p-5">
+            <p className="elegex-eyebrow">EXTERNAL INVOICE LINK</p>
+            <h2 className="mt-2 text-lg font-semibold text-[#14213D]">
+              QuickBooks reference
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[#667085]">
+              Invoices remain in the accounting system. Elegex only records the
+              auditable link.
+            </p>
+            <Input
+              value={invoice}
+              onChange={event => setInvoice(event.target.value)}
+              placeholder="INV-0881"
+              className="mt-4"
+            />
+            <Button
+              onClick={() =>
+                invoice
+                  ? linkInvoice.mutate({ id, invoiceNumber: invoice })
+                  : toast.error("Enter the external invoice number")
+              }
+              disabled={linkInvoice.isPending}
+              variant="outline"
+              className="mt-3 w-full"
+            >
+              Link invoice
+            </Button>
+            {data.invoices.map((link: any) => (
+              <p
+                key={link.id}
+                className="mt-3 rounded-lg bg-[#F5F8FF] p-3 text-xs font-semibold text-[#195FE6]"
+              >
+                {link.externalSystem} · {link.externalInvoiceNumber}
+              </p>
+            ))}
+          </section>
+          <section className="elegex-card overflow-hidden">
+            <div className="border-b border-[#EEF2F7] px-5 py-4">
+              <p className="elegex-eyebrow">AUDIT TRAIL</p>
+            </div>
+            {data.activity.slice(0, 6).map((item: any) => (
+              <div
+                key={item.id}
+                className="border-b border-[#F0F3F8] px-5 py-4 last:border-0"
+              >
+                <p className="text-sm font-medium text-[#34435F]">
+                  {item.summary}
+                </p>
+                <p className="mt-1 text-xs text-[#98A2B3]">
+                  {dateTime(item.createdAt)}
+                </p>
+              </div>
+            ))}
+          </section>
+        </aside>
+      </div>
+    </>
+  );
 }
 
 export function DispatchPage() {
   const dispatch = trpc.elegex.fieldService.dispatch.useQuery();
   const operational = trpc.elegex.workspace.operationalSettings.useQuery();
-  const dateTime = (value?: Date | string | null) => value ? formatOrganizationDateTime(value, operational.data?.settings) : "Not scheduled";
-  const grouped = useMemo(() => { const rows = (dispatch.data || []) as any[]; return rows.reduce((map: Record<string, any[]>, row) => { const name = row.foreman?.name || "Unassigned"; map[name] ||= []; map[name].push(row); return map; }, {}); }, [dispatch.data]);
-  return <><FieldHeading eyebrow="DISPATCH CONTROL" title="Foreman schedule and field signal board." description="Every scheduled visit carries assigned ownership, travel allowance, and an explicit geo-status signal. This demo uses synthetic dispatch activity." /><div className="grid gap-5 xl:grid-cols-3">{Object.entries(grouped).map(([foreman, rows]) => <section key={foreman} className="elegex-card overflow-hidden"><div className="flex items-center justify-between border-b border-[#EEF2F7] px-5 py-4"><div><p className="elegex-eyebrow">FOREMAN</p><h2 className="mt-1 text-lg font-semibold text-[#14213D]">{foreman}</h2></div><UsersRound className="h-5 w-5 text-[#195FE6]" /></div><div className="divide-y divide-[#F0F3F8]">{(rows as any[]).slice(0, 8).map(row => <div key={row.visit.id} className="px-5 py-4"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold text-[#34435F]">{row.job.jobNumber} · {row.job.title}</p><p className="mt-1 text-xs text-[#7A879E]">{dateTime(row.visit.scheduledStart)} · {row.contact.name}</p></div><Badge className={`${row.visit.geoStatus === "verified" ? "bg-[#E7F8EF] text-[#167244]" : row.visit.geoStatus === "flagged" ? "bg-[#FFF0F2] text-[#B42342]" : "bg-[#E9F0FF] text-[#1D56C9]"} border-0 text-[10px]`}>{pretty(row.visit.geoStatus)}</Badge></div><p className="mt-2 flex items-center gap-2 text-xs text-[#50617F]"><MapPin className="h-3.5 w-3.5 text-[#195FE6]" />{row.job.serviceAddress} · {row.visit.travelMinutes} min travel</p></div>)}</div></section>)}</div></>;
+  const dateTime = (value?: Date | string | null) =>
+    value
+      ? formatOrganizationDateTime(value, operational.data?.settings)
+      : "Not scheduled";
+  const grouped = useMemo(() => {
+    const rows = (dispatch.data || []) as any[];
+    return rows.reduce((map: Record<string, any[]>, row) => {
+      const name = row.foreman?.name || "Unassigned";
+      map[name] ||= [];
+      map[name].push(row);
+      return map;
+    }, {});
+  }, [dispatch.data]);
+  return (
+    <>
+      <FieldHeading
+        eyebrow="DISPATCH CONTROL"
+        title="Foreman schedule and field signal board."
+        description="Every scheduled visit carries assigned ownership, travel allowance, and an explicit geo-status signal. This demo uses synthetic dispatch activity."
+      />
+      <div className="grid gap-5 xl:grid-cols-3">
+        {Object.entries(grouped).map(([foreman, rows]) => (
+          <section key={foreman} className="elegex-card overflow-hidden">
+            <div className="flex items-center justify-between border-b border-[#EEF2F7] px-5 py-4">
+              <div>
+                <p className="elegex-eyebrow">FOREMAN</p>
+                <h2 className="mt-1 text-lg font-semibold text-[#14213D]">
+                  {foreman}
+                </h2>
+              </div>
+              <UsersRound className="h-5 w-5 text-[#195FE6]" />
+            </div>
+            <div className="divide-y divide-[#F0F3F8]">
+              {(rows as any[]).slice(0, 8).map(row => (
+                <div key={row.visit.id} className="px-5 py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[#34435F]">
+                        {row.job.jobNumber} · {row.job.title}
+                      </p>
+                      <p className="mt-1 text-xs text-[#7A879E]">
+                        {dateTime(row.visit.scheduledStart)} ·{" "}
+                        {row.contact.name}
+                      </p>
+                    </div>
+                    <Badge
+                      className={`${row.visit.geoStatus === "verified" ? "bg-[#E7F8EF] text-[#167244]" : row.visit.geoStatus === "flagged" ? "bg-[#FFF0F2] text-[#B42342]" : "bg-[#E9F0FF] text-[#1D56C9]"} border-0 text-[10px]`}
+                    >
+                      {pretty(row.visit.geoStatus)}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 flex items-center gap-2 text-xs text-[#50617F]">
+                    <MapPin className="h-3.5 w-3.5 text-[#195FE6]" />
+                    {row.job.serviceAddress} · {row.visit.travelMinutes} min
+                    travel
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </>
+  );
 }
 
 export function FieldReportsPage() {
-  const reports = trpc.elegex.fieldService.reports.useQuery(); const [, setLocation] = useLocation();
-  if (reports.isLoading) return <div className="grid min-h-96 place-items-center text-sm text-[#667085]">Loading six-month operating report…</div>;
-  const data = reports.data as any; const settings = data.settings; const money = (value?: number | null) => formatOrganizationMoney(value, settings, { maximumFractionDigits: 0 }); const dateOnly = (value?: Date | string | null) => value ? formatOrganizationDate(value, settings) : "—"; const snapshots = data.snapshots as any[]; const totalInvoiced = snapshots.reduce((sum, snapshot) => sum + Number(snapshot.invoicedValue), 0); const accepted = (data.quoteRows as any[]).find(row => row.status === "accepted")?.total || 0; const totalQuoted = (data.quoteRows as any[]).reduce((sum, row) => sum + Number(row.total), 0);
-  const csv = () => { const rows = ["Period,Jobs completed,Jobs in progress,Jobs on hold,Quotes sent,Quotes accepted,Invoices linked,Invoiced value,First-visit resolution,Customer satisfaction", ...snapshots.map(snapshot => [formatOrganizationDate(snapshot.periodStart, settings, { year: "numeric", month: "2-digit" }), snapshot.jobsCompleted, snapshot.jobsInProgress, snapshot.jobsOnHold, snapshot.quotesSent, snapshot.quotesAccepted, snapshot.invoicesLinked, snapshot.invoicedValue, snapshot.firstVisitResolutionRate, snapshot.customerSatisfactionIndex].join(","))]; const url = URL.createObjectURL(new Blob([rows.join("\n")], { type: "text/csv" })); const anchor = document.createElement("a"); anchor.href = url; anchor.download = `elegex-six-month-${settings?.currency || "ZAR"}-demo-report.csv`; anchor.click(); URL.revokeObjectURL(url); };
-  return <><FieldHeading eyebrow="COMMERCIAL & OPERATIONS REPORTING" title="Six months of accountable delivery." description={`Synthetic demonstration reporting in ${settings?.currency || "ZAR"} with ${settings?.timezone || "Africa/Johannesburg"} operating time.`} action={<Button onClick={csv} className="rounded-xl bg-[#195FE6]"><ArrowDownToLine className="mr-2 h-4 w-4" />Export CSV</Button>} /><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><MetricCard label="Invoiced value" value={money(totalInvoiced)} detail="Six-month linked invoice total" icon={CircleDollarSign} tone="green" /><MetricCard label="Quote acceptance" value={`${totalQuoted ? Math.round(Number(accepted) / totalQuoted * 100) : 0}%`} detail="Accepted quotes of commercial pipeline" icon={FileCheck2} tone="blue" /><MetricCard label="First-visit resolution" value={`${snapshots.at(-1)?.firstVisitResolutionRate || 0}%`} detail="Latest monthly operating result" icon={Gauge} tone="amber" /><MetricCard label="Ready to invoice" value={(data.readyForInvoice as any[]).length} detail="Jobs currently awaiting office action" icon={Clock3} tone="rose" /></div><div className="mt-5 grid gap-5 xl:grid-cols-[1.35fr_0.85fr]"><section className="elegex-card p-6"><p className="elegex-eyebrow">SERVICE QUALITY TREND</p><h2 className="mt-2 text-lg font-semibold text-[#14213D]">First-visit resolution and client-service index</h2><div className="mt-6 h-[280px]"><ResponsiveContainer width="100%" height="100%"><LineChart data={snapshots.map(snapshot => ({ month: formatOrganizationDate(snapshot.periodStart, settings, { month: "short" }), resolution: snapshot.firstVisitResolutionRate, service: snapshot.customerSatisfactionIndex }))} margin={{ left: -24, right: 8 }}><CartesianGrid vertical={false} stroke="#EDF1F7" /><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#7A879E", fontSize: 11 }} /><YAxis domain={[70, 100]} axisLine={false} tickLine={false} tick={{ fill: "#98A2B3", fontSize: 11 }} /><Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #E5ECF7", fontSize: 12 }} /><Line type="monotone" dataKey="resolution" name="First visit resolution" stroke="#195FE6" strokeWidth={3} dot={{ r: 4 }} /><Line type="monotone" dataKey="service" name="Service index" stroke="#27A96B" strokeWidth={3} dot={{ r: 4 }} /></LineChart></ResponsiveContainer></div></section><section className="elegex-card overflow-hidden"><div className="border-b border-[#EEF2F7] px-6 py-5"><p className="elegex-eyebrow">AGED INVOICING QUEUE</p><h2 className="mt-1 text-lg font-semibold text-[#14213D]">No row falls off silently</h2></div>{(data.readyForInvoice as any[]).map(row => <button key={row.job.id} onClick={() => setLocation(`/jobs/${row.job.id}`)} className="flex w-full items-center gap-3 border-b border-[#F0F3F8] px-6 py-4 text-left hover:bg-[#FBFCFF]"><AlertTriangle className="h-4 w-4 text-[#B42342]" /><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-[#34435F]">{row.job.jobNumber} · {row.contact.name}</span><span className="mt-1 block text-xs text-[#7A879E]">Ready {dateOnly(row.job.readyForInvoiceAt)}</span></span><ArrowUpRight className="h-4 w-4 text-[#98A2B3]" /></button>)}</section></div></>;
+  const reports = trpc.elegex.fieldService.reports.useQuery();
+  const [, setLocation] = useLocation();
+  if (reports.isLoading)
+    return (
+      <div className="grid min-h-96 place-items-center text-sm text-[#667085]">
+        Loading six-month operating report…
+      </div>
+    );
+  const data = reports.data as any;
+  const settings = data.settings;
+  const money = (value?: number | null) =>
+    formatOrganizationMoney(value, settings, { maximumFractionDigits: 0 });
+  const dateOnly = (value?: Date | string | null) =>
+    value ? formatOrganizationDate(value, settings) : "—";
+  const snapshots = data.snapshots as any[];
+  const totalInvoiced = snapshots.reduce(
+    (sum, snapshot) => sum + Number(snapshot.invoicedValue),
+    0
+  );
+  const accepted =
+    (data.quoteRows as any[]).find(row => row.status === "accepted")?.total ||
+    0;
+  const totalQuoted = (data.quoteRows as any[]).reduce(
+    (sum, row) => sum + Number(row.total),
+    0
+  );
+  const csv = () => {
+    const rows = [
+      "Period,Jobs completed,Jobs in progress,Jobs on hold,Quotes sent,Quotes accepted,Invoices linked,Invoiced value,First-visit resolution,Customer satisfaction",
+      ...snapshots.map(snapshot =>
+        [
+          formatOrganizationDate(snapshot.periodStart, settings, {
+            year: "numeric",
+            month: "2-digit",
+          }),
+          snapshot.jobsCompleted,
+          snapshot.jobsInProgress,
+          snapshot.jobsOnHold,
+          snapshot.quotesSent,
+          snapshot.quotesAccepted,
+          snapshot.invoicesLinked,
+          snapshot.invoicedValue,
+          snapshot.firstVisitResolutionRate,
+          snapshot.customerSatisfactionIndex,
+        ].join(",")
+      ),
+    ];
+    const url = URL.createObjectURL(
+      new Blob([rows.join("\n")], { type: "text/csv" })
+    );
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `elegex-six-month-${settings?.currency || "ZAR"}-demo-report.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+  return (
+    <>
+      <FieldHeading
+        eyebrow="COMMERCIAL & OPERATIONS REPORTING"
+        title="Six months of accountable delivery."
+        description={`Synthetic demonstration reporting in ${settings?.currency || "ZAR"} with ${settings?.timezone || "Africa/Johannesburg"} operating time.`}
+        action={
+          <Button onClick={csv} className="rounded-xl bg-[#195FE6]">
+            <ArrowDownToLine className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+        }
+      />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Invoiced value"
+          value={money(totalInvoiced)}
+          detail="Six-month linked invoice total"
+          icon={CircleDollarSign}
+          tone="green"
+        />
+        <MetricCard
+          label="Quote acceptance"
+          value={`${totalQuoted ? Math.round((Number(accepted) / totalQuoted) * 100) : 0}%`}
+          detail="Accepted quotes of commercial pipeline"
+          icon={FileCheck2}
+          tone="blue"
+        />
+        <MetricCard
+          label="First-visit resolution"
+          value={`${snapshots.at(-1)?.firstVisitResolutionRate || 0}%`}
+          detail="Latest monthly operating result"
+          icon={Gauge}
+          tone="amber"
+        />
+        <MetricCard
+          label="Ready to invoice"
+          value={(data.readyForInvoice as any[]).length}
+          detail="Jobs currently awaiting office action"
+          icon={Clock3}
+          tone="rose"
+        />
+      </div>
+      <div className="mt-5 grid gap-5 xl:grid-cols-[1.35fr_0.85fr]">
+        <section className="elegex-card p-6">
+          <p className="elegex-eyebrow">SERVICE QUALITY TREND</p>
+          <h2 className="mt-2 text-lg font-semibold text-[#14213D]">
+            First-visit resolution and client-service index
+          </h2>
+          <div className="mt-6 h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={snapshots.map(snapshot => ({
+                  month: formatOrganizationDate(
+                    snapshot.periodStart,
+                    settings,
+                    { month: "short" }
+                  ),
+                  resolution: snapshot.firstVisitResolutionRate,
+                  service: snapshot.customerSatisfactionIndex,
+                }))}
+                margin={{ left: -24, right: 8 }}
+              >
+                <CartesianGrid vertical={false} stroke="#EDF1F7" />
+                <XAxis
+                  dataKey="month"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#7A879E", fontSize: 11 }}
+                />
+                <YAxis
+                  domain={[70, 100]}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#98A2B3", fontSize: 11 }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 12,
+                    border: "1px solid #E5ECF7",
+                    fontSize: 12,
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="resolution"
+                  name="First visit resolution"
+                  stroke="#195FE6"
+                  strokeWidth={3}
+                  dot={{ r: 4 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="service"
+                  name="Service index"
+                  stroke="#27A96B"
+                  strokeWidth={3}
+                  dot={{ r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+        <section className="elegex-card overflow-hidden">
+          <div className="border-b border-[#EEF2F7] px-6 py-5">
+            <p className="elegex-eyebrow">AGED INVOICING QUEUE</p>
+            <h2 className="mt-1 text-lg font-semibold text-[#14213D]">
+              No row falls off silently
+            </h2>
+          </div>
+          {(data.readyForInvoice as any[]).map(row => (
+            <button
+              key={row.job.id}
+              onClick={() => setLocation(`/jobs/${row.job.id}`)}
+              className="flex w-full items-center gap-3 border-b border-[#F0F3F8] px-6 py-4 text-left hover:bg-[#FBFCFF]"
+            >
+              <AlertTriangle className="h-4 w-4 text-[#B42342]" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold text-[#34435F]">
+                  {row.job.jobNumber} · {row.contact.name}
+                </span>
+                <span className="mt-1 block text-xs text-[#7A879E]">
+                  Ready {dateOnly(row.job.readyForInvoiceAt)}
+                </span>
+              </span>
+              <ArrowUpRight className="h-4 w-4 text-[#98A2B3]" />
+            </button>
+          ))}
+        </section>
+      </div>
+    </>
+  );
 }
 
 export function StagingReadinessPage() {
   const staging = trpc.elegex.staging.readiness.useQuery();
-  if (staging.isLoading) return <div className="grid min-h-96 place-items-center text-sm text-[#667085]">Loading staging release evidence…</div>;
-  if (staging.error) return <div className="elegex-card p-8"><ShieldCheck className="h-6 w-6 text-[#B42342]" /><h1 className="mt-4 text-xl font-semibold text-[#14213D]">Staging evidence is restricted</h1><p className="mt-2 text-sm leading-6 text-[#667085]">Only workspace owners and administrators can review release records and verification evidence.</p></div>;
-  const data = staging.data as any; const stagingRelease = (data.releases as any[]).find(release => release.environment === "staging") || data.releases[0];
-  return <><FieldHeading eyebrow="RELEASE CONTROL" title="Staging readiness and release evidence." description="This control surface models an accountable release process. The data shown here is synthetic demonstration evidence, while the repository contains the corresponding migration, test, and CI assets." action={<span className="rounded-full bg-[#E7F8EF] px-3 py-2 text-xs font-bold text-[#167244]">STAGING HEALTHY</span>} /><div className="grid gap-4 lg:grid-cols-3">{(data.releases as any[]).map(release => <section key={release.id} className="elegex-card p-5"><div className="flex items-start justify-between"><div><p className="elegex-eyebrow">{release.environment}</p><h2 className="mt-2 text-lg font-semibold text-[#14213D]">{release.version}</h2></div><Badge className={`${release.status === "healthy" ? "bg-[#E7F8EF] text-[#167244]" : "bg-[#FFF4D6] text-[#9A5C00]"} border-0 text-[10px] font-bold`}>{pretty(release.status)}</Badge></div><div className="mt-5 space-y-2 text-sm text-[#667085]"><p>Commit <span className="font-mono font-semibold text-[#34435F]">{release.commitSha || "—"}</span></p><p>Rollback <span className="font-semibold text-[#34435F]">{release.rollbackVersion || "Not set"}</span></p><p>Released <span className="font-semibold text-[#34435F]">{dateOnly(release.deployedAt)}</span></p></div><p className="mt-4 rounded-xl bg-[#F8FAFD] p-3 text-xs leading-5 text-[#50617F]">{release.notes}</p></section>)}</div><div className="mt-5 grid gap-5 xl:grid-cols-[1.1fr_0.9fr]"><section className="elegex-card overflow-hidden"><div className="border-b border-[#EEF2F7] px-6 py-5"><p className="elegex-eyebrow">STAGING VERIFICATION MATRIX</p><h2 className="mt-1 text-lg font-semibold text-[#14213D]">{stagingRelease?.version || "Current candidate"} release checks</h2></div><div className="divide-y divide-[#F0F3F8]">{(data.checks as any[]).map(check => <div key={check.id} className="flex items-start gap-3 px-6 py-4"><span className={`mt-0.5 grid h-7 w-7 place-items-center rounded-lg ${check.status === "passed" ? "bg-[#E7F8EF] text-[#167244]" : "bg-[#FFF4D6] text-[#9A5C00]"}`}><CheckCircle2 className="h-4 w-4" /></span><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><span className="text-sm font-semibold text-[#34435F]">{check.checkName}</span><Badge className="border-0 bg-[#F1F5FB] text-[10px] text-[#50617F]">{pretty(check.category)}</Badge></span><span className="mt-1 block text-xs leading-5 text-[#7A879E]">{check.evidence}</span></span><span className="text-xs font-semibold text-[#167244]">{pretty(check.status)}</span></div>)}</div></section><section className="elegex-card p-6"><p className="elegex-eyebrow">RELEASE DISCIPLINE</p><h2 className="mt-2 text-lg font-semibold text-[#14213D]">What this repository proves</h2><div className="mt-5 space-y-4 text-sm leading-6 text-[#50617F]"><p><strong className="text-[#34435F]">Database:</strong> Drizzle migrations are additive, reviewed, and tied to the tenant-scoped schema.</p><p><strong className="text-[#34435F]">API:</strong> protected procedures validate input and resolve membership server-side before accessing data.</p><p><strong className="text-[#34435F]">Quality:</strong> the GitHub workflow checks type safety, automated tests, and the production build on pull requests.</p><p><strong className="text-[#34435F]">Rollback:</strong> each release records a known predecessor; production changes should be restored through the platform version history rather than ad-hoc destructive commands.</p></div></section></div></>;
+  if (staging.isLoading)
+    return (
+      <div className="grid min-h-96 place-items-center text-sm text-[#667085]">
+        Loading staging release evidence…
+      </div>
+    );
+  if (staging.error)
+    return (
+      <div className="elegex-card p-8">
+        <ShieldCheck className="h-6 w-6 text-[#B42342]" />
+        <h1 className="mt-4 text-xl font-semibold text-[#14213D]">
+          Staging evidence is restricted
+        </h1>
+        <p className="mt-2 text-sm leading-6 text-[#667085]">
+          Only workspace owners and administrators can review release records
+          and verification evidence.
+        </p>
+      </div>
+    );
+  const data = staging.data as any;
+  const stagingRelease =
+    (data.releases as any[]).find(
+      release => release.environment === "staging"
+    ) || data.releases[0];
+  return (
+    <>
+      <FieldHeading
+        eyebrow="RELEASE CONTROL"
+        title="Staging readiness and release evidence."
+        description="This control surface models an accountable release process. The data shown here is synthetic demonstration evidence, while the repository contains the corresponding migration, test, and CI assets."
+        action={
+          <span className="rounded-full bg-[#E7F8EF] px-3 py-2 text-xs font-bold text-[#167244]">
+            STAGING HEALTHY
+          </span>
+        }
+      />
+      <div className="grid gap-4 lg:grid-cols-3">
+        {(data.releases as any[]).map(release => (
+          <section key={release.id} className="elegex-card p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="elegex-eyebrow">{release.environment}</p>
+                <h2 className="mt-2 text-lg font-semibold text-[#14213D]">
+                  {release.version}
+                </h2>
+              </div>
+              <Badge
+                className={`${release.status === "healthy" ? "bg-[#E7F8EF] text-[#167244]" : "bg-[#FFF4D6] text-[#9A5C00]"} border-0 text-[10px] font-bold`}
+              >
+                {pretty(release.status)}
+              </Badge>
+            </div>
+            <div className="mt-5 space-y-2 text-sm text-[#667085]">
+              <p>
+                Commit{" "}
+                <span className="font-mono font-semibold text-[#34435F]">
+                  {release.commitSha || "—"}
+                </span>
+              </p>
+              <p>
+                Rollback{" "}
+                <span className="font-semibold text-[#34435F]">
+                  {release.rollbackVersion || "Not set"}
+                </span>
+              </p>
+              <p>
+                Released{" "}
+                <span className="font-semibold text-[#34435F]">
+                  {dateOnly(release.deployedAt)}
+                </span>
+              </p>
+            </div>
+            <p className="mt-4 rounded-xl bg-[#F8FAFD] p-3 text-xs leading-5 text-[#50617F]">
+              {release.notes}
+            </p>
+          </section>
+        ))}
+      </div>
+      <div className="mt-5 grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+        <section className="elegex-card overflow-hidden">
+          <div className="border-b border-[#EEF2F7] px-6 py-5">
+            <p className="elegex-eyebrow">STAGING VERIFICATION MATRIX</p>
+            <h2 className="mt-1 text-lg font-semibold text-[#14213D]">
+              {stagingRelease?.version || "Current candidate"} release checks
+            </h2>
+          </div>
+          <div className="divide-y divide-[#F0F3F8]">
+            {(data.checks as any[]).map(check => (
+              <div key={check.id} className="flex items-start gap-3 px-6 py-4">
+                <span
+                  className={`mt-0.5 grid h-7 w-7 place-items-center rounded-lg ${check.status === "passed" ? "bg-[#E7F8EF] text-[#167244]" : "bg-[#FFF4D6] text-[#9A5C00]"}`}
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-[#34435F]">
+                      {check.checkName}
+                    </span>
+                    <Badge className="border-0 bg-[#F1F5FB] text-[10px] text-[#50617F]">
+                      {pretty(check.category)}
+                    </Badge>
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-[#7A879E]">
+                    {check.evidence}
+                  </span>
+                </span>
+                <span className="text-xs font-semibold text-[#167244]">
+                  {pretty(check.status)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="elegex-card p-6">
+          <p className="elegex-eyebrow">RELEASE DISCIPLINE</p>
+          <h2 className="mt-2 text-lg font-semibold text-[#14213D]">
+            What this repository proves
+          </h2>
+          <div className="mt-5 space-y-4 text-sm leading-6 text-[#50617F]">
+            <p>
+              <strong className="text-[#34435F]">Database:</strong> Drizzle
+              migrations are additive, reviewed, and tied to the tenant-scoped
+              schema.
+            </p>
+            <p>
+              <strong className="text-[#34435F]">API:</strong> protected
+              procedures validate input and resolve membership server-side
+              before accessing data.
+            </p>
+            <p>
+              <strong className="text-[#34435F]">Quality:</strong> the GitHub
+              workflow checks type safety, automated tests, and the production
+              build on pull requests.
+            </p>
+            <p>
+              <strong className="text-[#34435F]">Rollback:</strong> each release
+              records a known predecessor; production changes should be restored
+              through the platform version history rather than ad-hoc
+              destructive commands.
+            </p>
+          </div>
+        </section>
+      </div>
+    </>
+  );
 }
 
-function MiniInfo({ label, value }: { label: string; value: string }) { return <div className="rounded-xl bg-[#F8FAFD] p-3"><p className="text-[10px] font-bold tracking-[0.13em] text-[#7A879E]">{label}</p><p className="mt-1 text-sm font-semibold text-[#34435F]">{value}</p></div>; }
-function Field({ label, value, onChange, placeholder, type = "text", multiline = false }: { label: string; value?: string; onChange: (value: string) => void; placeholder?: string; type?: string; multiline?: boolean }) { return <div className="grid gap-2"><Label>{label}</Label>{multiline ? <textarea value={value || ""} onChange={event => onChange(event.target.value)} placeholder={placeholder} className="min-h-24 rounded-md border border-[#DFE7F3] p-3 text-sm" /> : <Input value={value || ""} onChange={event => onChange(event.target.value)} placeholder={placeholder} type={type} />}</div>; }
+function MiniInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-[#F8FAFD] p-3">
+      <p className="text-[10px] font-bold tracking-[0.13em] text-[#7A879E]">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-semibold text-[#34435F]">{value}</p>
+    </div>
+  );
+}
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  multiline = false,
+}: {
+  label: string;
+  value?: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+  multiline?: boolean;
+}) {
+  return (
+    <div className="grid gap-2">
+      <Label>{label}</Label>
+      {multiline ? (
+        <textarea
+          value={value || ""}
+          onChange={event => onChange(event.target.value)}
+          placeholder={placeholder}
+          className="min-h-24 rounded-md border border-[#DFE7F3] p-3 text-sm"
+        />
+      ) : (
+        <Input
+          value={value || ""}
+          onChange={event => onChange(event.target.value)}
+          placeholder={placeholder}
+          type={type}
+        />
+      )}
+    </div>
+  );
+}

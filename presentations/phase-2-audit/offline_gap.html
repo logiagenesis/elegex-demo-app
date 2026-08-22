@@ -1,43 +1,149 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Offline Gap</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    .slide-container { width: 1280px; min-height: 720px; background: #FFFFFF; color: #000000; font-family: Arial, Helvetica, sans-serif; display: grid; grid-template-columns: 390px 1fr; }
-    .title-area { padding-top: 66px; padding-left: 70px; padding-right: 40px; }
-    .kicker { color: #EA580C; font-size: 15px; font-weight: 800; letter-spacing: 2px; }
-    h1 { font-size: 56px; line-height: 0.93; letter-spacing: -3.5px; font-weight: 800; margin-top: 24px; }
-    .title-note { border-top: 4px solid #000000; margin-top: 34px; padding-top: 15px; font-size: 17px; line-height: 1.35; color: #404040; }
-    .content { padding-top: 68px; padding-left: 34px; padding-right: 75px; }
-    .intro { border-top: 4px solid #000000; padding-top: 18px; font-size: 25px; font-weight: 700; line-height: 1.18; max-width: 690px; }
-    .rows { margin-top: 34px; }
-    .row { display: grid; grid-template-columns: 190px 1fr; border-top: 1px solid #000000; min-height: 66px; align-items: center; }
-    .row:last-child { border-bottom: 1px solid #000000; }
-    .label { color: #EA580C; font-size: 14px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
-    .detail { font-size: 19px; font-weight: 400; line-height: 1.25; color: #404040; }
-    .consequence { margin-top: 38px; border-top: 4px solid #EA580C; padding-top: 17px; font-size: 23px; font-weight: 800; line-height: 1.2; max-width: 720px; }
-    .consequence span { color: #EA580C; }
-  </style>
-</head>
-<body>
-  <div class="slide-container">
-    <section class="title-area">
-      <div class="kicker">07 / WP5 READINESS</div>
-      <h1>OFFLINE IS NOT YET A PRODUCT CAPABILITY</h1>
-      <div class="title-note">The present foreman experience sends direct mutations to the server. UI optimism is not an offline guarantee.</div>
-    </section>
-    <section class="content">
-      <div class="intro">The existing implementation is a connected workflow with an optimistic interface—not a reboot-surviving write-ahead system.</div>
-      <div class="rows">
-        <div class="row"><div class="label">Current path</div><div class="detail">Foreman actions call server mutations directly.</div></div>
-        <div class="row"><div class="label">Missing persistence</div><div class="detail">No IndexedDB queue exists to survive an app kill or device reboot.</div></div>
-        <div class="row"><div class="label">Missing safety</div><div class="detail">No client-generated idempotency UUID prevents duplicated replay.</div></div>
-        <div class="row"><div class="label">Missing causality</div><div class="detail">No dependency graph enforces check-in before materials and completion.</div></div>
-      </div>
-      <div class="consequence"><span>Operational implication:</span> a network interruption can prevent field work from becoming a durable job artifact.</div>
-    </section>
-  </div>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Offline Gap</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #ffffff;
+        color: #000000;
+        font-family: Arial, Helvetica, sans-serif;
+        display: grid;
+        grid-template-columns: 390px 1fr;
+      }
+      .title-area {
+        padding-top: 66px;
+        padding-left: 70px;
+        padding-right: 40px;
+      }
+      .kicker {
+        color: #ea580c;
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: 2px;
+      }
+      h1 {
+        font-size: 56px;
+        line-height: 0.93;
+        letter-spacing: -3.5px;
+        font-weight: 800;
+        margin-top: 24px;
+      }
+      .title-note {
+        border-top: 4px solid #000000;
+        margin-top: 34px;
+        padding-top: 15px;
+        font-size: 17px;
+        line-height: 1.35;
+        color: #404040;
+      }
+      .content {
+        padding-top: 68px;
+        padding-left: 34px;
+        padding-right: 75px;
+      }
+      .intro {
+        border-top: 4px solid #000000;
+        padding-top: 18px;
+        font-size: 25px;
+        font-weight: 700;
+        line-height: 1.18;
+        max-width: 690px;
+      }
+      .rows {
+        margin-top: 34px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 190px 1fr;
+        border-top: 1px solid #000000;
+        min-height: 66px;
+        align-items: center;
+      }
+      .row:last-child {
+        border-bottom: 1px solid #000000;
+      }
+      .label {
+        color: #ea580c;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+      }
+      .detail {
+        font-size: 19px;
+        font-weight: 400;
+        line-height: 1.25;
+        color: #404040;
+      }
+      .consequence {
+        margin-top: 38px;
+        border-top: 4px solid #ea580c;
+        padding-top: 17px;
+        font-size: 23px;
+        font-weight: 800;
+        line-height: 1.2;
+        max-width: 720px;
+      }
+      .consequence span {
+        color: #ea580c;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <section class="title-area">
+        <div class="kicker">07 / WP5 READINESS</div>
+        <h1>OFFLINE IS NOT YET A PRODUCT CAPABILITY</h1>
+        <div class="title-note">
+          The present foreman experience sends direct mutations to the server.
+          UI optimism is not an offline guarantee.
+        </div>
+      </section>
+      <section class="content">
+        <div class="intro">
+          The existing implementation is a connected workflow with an optimistic
+          interface—not a reboot-surviving write-ahead system.
+        </div>
+        <div class="rows">
+          <div class="row">
+            <div class="label">Current path</div>
+            <div class="detail">
+              Foreman actions call server mutations directly.
+            </div>
+          </div>
+          <div class="row">
+            <div class="label">Missing persistence</div>
+            <div class="detail">
+              No IndexedDB queue exists to survive an app kill or device reboot.
+            </div>
+          </div>
+          <div class="row">
+            <div class="label">Missing safety</div>
+            <div class="detail">
+              No client-generated idempotency UUID prevents duplicated replay.
+            </div>
+          </div>
+          <div class="row">
+            <div class="label">Missing causality</div>
+            <div class="detail">
+              No dependency graph enforces check-in before materials and
+              completion.
+            </div>
+          </div>
+        </div>
+        <div class="consequence">
+          <span>Operational implication:</span> a network interruption can
+          prevent field work from becoming a durable job artifact.
+        </div>
+      </section>
+    </div>
+  </body>
 </html>

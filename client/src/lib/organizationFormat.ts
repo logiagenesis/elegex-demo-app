@@ -16,7 +16,9 @@ export const DEFAULT_ORGANIZATION_FORMAT: NormalizedOrganizationFormat = {
   timezone: "Africa/Johannesburg",
 };
 
-export function normalizeOrganizationFormat(settings?: OrganizationFormatSettings): NormalizedOrganizationFormat {
+export function normalizeOrganizationFormat(
+  settings?: OrganizationFormatSettings
+): NormalizedOrganizationFormat {
   return {
     locale: settings?.locale || DEFAULT_ORGANIZATION_FORMAT.locale,
     currency: settings?.currency || DEFAULT_ORGANIZATION_FORMAT.currency,
@@ -24,7 +26,11 @@ export function normalizeOrganizationFormat(settings?: OrganizationFormatSetting
   };
 }
 
-export function formatOrganizationMoney(value: number | null | undefined, settings?: OrganizationFormatSettings, options: Intl.NumberFormatOptions = {}) {
+export function formatOrganizationMoney(
+  value: number | null | undefined,
+  settings?: OrganizationFormatSettings,
+  options: Intl.NumberFormatOptions = {}
+) {
   const format = normalizeOrganizationFormat(settings);
   return new Intl.NumberFormat(format.locale, {
     style: "currency",
@@ -34,7 +40,11 @@ export function formatOrganizationMoney(value: number | null | undefined, settin
   }).format(Number(value ?? 0));
 }
 
-export function formatOrganizationDate(value: Date | string | null | undefined, settings?: OrganizationFormatSettings, options: Intl.DateTimeFormatOptions = {}) {
+export function formatOrganizationDate(
+  value: Date | string | null | undefined,
+  settings?: OrganizationFormatSettings,
+  options: Intl.DateTimeFormatOptions = {}
+) {
   if (!value) return "—";
   const format = normalizeOrganizationFormat(settings);
   return new Intl.DateTimeFormat(format.locale, {
@@ -46,7 +56,10 @@ export function formatOrganizationDate(value: Date | string | null | undefined, 
   }).format(new Date(value));
 }
 
-export function formatOrganizationDateTime(value: Date | string | null | undefined, settings?: OrganizationFormatSettings) {
+export function formatOrganizationDateTime(
+  value: Date | string | null | undefined,
+  settings?: OrganizationFormatSettings
+) {
   return formatOrganizationDate(value, settings, {
     day: "2-digit",
     month: "short",

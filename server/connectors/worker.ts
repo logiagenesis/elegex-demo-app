@@ -1,5 +1,8 @@
 import { eq, and, lte } from "drizzle-orm";
-import { integrationEvents, integrationConnections } from "../../drizzle/schema";
+import {
+  integrationEvents,
+  integrationConnections,
+} from "../../drizzle/schema";
 import { getDatabase } from "./database";
 
 // In a Python ecosystem, this would be a Celery or RQ worker.
@@ -9,9 +12,11 @@ let workerInterval: ReturnType<typeof setInterval> | null = null;
 
 export function startOutboxWorker(pollIntervalMs = 10000) {
   if (workerInterval) return;
-  
-  console.log(`[Worker] Starting integration outbox worker (polling every ${pollIntervalMs}ms)`);
-  
+
+  console.log(
+    `[Worker] Starting integration outbox worker (polling every ${pollIntervalMs}ms)`
+  );
+
   workerInterval = setInterval(async () => {
     try {
       await processOutbox();
@@ -35,7 +40,10 @@ async function processOutbox() {
 
   // Find active connections
   const activeConnections = await db
-    .select({ id: integrationConnections.id, provider: integrationConnections.provider })
+    .select({
+      id: integrationConnections.id,
+      provider: integrationConnections.provider,
+    })
     .from(integrationConnections)
     .where(eq(integrationConnections.status, "active"));
 
@@ -65,8 +73,10 @@ async function processOutbox() {
 
         // In a real app, this would dispatch to the specific provider (webhook, etc.)
         // For now, we just simulate successful delivery (This is a known limitation in the demo boundary)
-        console.log(`[Worker] Dispatching event ${event.id} (${event.eventType}) to ${connection.provider}`);
-        
+        console.log(
+          `[Worker] Dispatching event ${event.id} (${event.eventType}) to ${connection.provider}`
+        );
+
         // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -75,14 +85,13 @@ async function processOutbox() {
           .update(integrationEvents)
           .set({ status: "delivered", processedAt: new Date() })
           .where(eq(integrationEvents.id, event.id));
-          
       } catch (error: any) {
         console.error(`[Worker] Failed to dispatch event ${event.id}:`, error);
-        
+
         // Apply backoff and retry
         const attemptCount = event.attempts + 1;
         const maxAttempts = 5;
-        
+
         if (attemptCount >= maxAttempts) {
           await db
             .update(integrationEvents)
@@ -90,10 +99,16 @@ async function processOutbox() {
             .where(eq(integrationEvents.id, event.id));
         } else {
           // Exponential backoff
-          const nextAvailableAt = new Date(Date.now() + Math.pow(2, attemptCount) * 1000);
+          const nextAvailableAt = new Date(
+            Date.now() + Math.pow(2, attemptCount) * 1000
+          );
           await db
             .update(integrationEvents)
-            .set({ status: "pending", lastError: error.message, availableAt: nextAvailableAt })
+            .set({
+              status: "pending",
+              lastError: error.message,
+              availableAt: nextAvailableAt,
+            })
             .where(eq(integrationEvents.id, event.id));
         }
       }

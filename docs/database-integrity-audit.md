@@ -6,31 +6,31 @@
 
 The relational schema intentionally does **not** declare database foreign keys. This makes tenant resets and isolated demo provisioning portable across the managed TiDB/MySQL environment while avoiding cross-tenant cascade risks. The corresponding control is enforced in the database helper layer: any related identifier supplied to a write operation is re-queried using both its primary key and the active `organizationId` before the dependent record is written.
 
-| Relationship-bearing workflow | Required scoped validation | Write boundary |
-|---|---|---|
-| Project creation | Optional contact must be a live contact in the active tenant. | Transaction plus activity record. |
-| Case creation/update | Contact and project must be live tenant records; owner must be an active tenant member. | Transaction plus activity record. |
-| Task creation/update | Project and case must be live tenant records; assignee must be an active tenant member. | Transaction with notification and activity record. |
-| Job creation | Contact must be a live tenant contact; foreman must be an active tenant member; scheduling end must follow start. | Transaction with optional dispatch visit and activity record. |
-| Invoice link | Job must be a live tenant job already in `ready_for_invoicing`. | Transaction with job stage update and activity record. |
-| Document upload | Exactly one optional target; target must be a live tenant contact, project, or case before storage write. | Preflight validation, then transaction for metadata and activity record. |
-| Outbox enqueue/read | Connection must belong to the active tenant; enqueue requires active connection status; event read applies both tenant and connection predicates. | Connector-owned scoped query. |
+| Relationship-bearing workflow | Required scoped validation                                                                                                                        | Write boundary                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Project creation              | Optional contact must be a live contact in the active tenant.                                                                                     | Transaction plus activity record.                                        |
+| Case creation/update          | Contact and project must be live tenant records; owner must be an active tenant member.                                                           | Transaction plus activity record.                                        |
+| Task creation/update          | Project and case must be live tenant records; assignee must be an active tenant member.                                                           | Transaction with notification and activity record.                       |
+| Job creation                  | Contact must be a live tenant contact; foreman must be an active tenant member; scheduling end must follow start.                                 | Transaction with optional dispatch visit and activity record.            |
+| Invoice link                  | Job must be a live tenant job already in `ready_for_invoicing`.                                                                                   | Transaction with job stage update and activity record.                   |
+| Document upload               | Exactly one optional target; target must be a live tenant contact, project, or case before storage write.                                         | Preflight validation, then transaction for metadata and activity record. |
+| Outbox enqueue/read           | Connection must belong to the active tenant; enqueue requires active connection status; event read applies both tenant and connection predicates. | Connector-owned scoped query.                                            |
 
 ## Constraint and index inventory
 
-| Area | Constraint or index | Protection provided |
-|---|---|---|
-| Membership | `member_organization_user_unique` | Prevents duplicate memberships for the same user in one organization. |
-| Projects | `project_organization_code_unique` | Prevents duplicate active project codes within one tenant. |
-| Cases | `case_organization_reference_unique` | Prevents duplicate case references within one tenant. |
-| Jobs | `job_organization_number_unique` | Prevents duplicate job numbers within one tenant. |
-| Quotes | `quote_organization_number_unique` | Prevents duplicate quote numbers within one tenant. |
-| Invoice links | `invoice_link_external_reference_unique` | Prevents the same external invoice reference from being imported twice within one tenant. |
-| Documents | `document_organization_storage_key_unique` | Prevents a storage object from being referenced twice in the same tenant. |
-| Snapshots | `monthly_snapshot_organization_period_unique` | Enforces one operational snapshot per tenant and period. |
-| Connectors | `integration_connection_unique` | Prevents duplicate provider/name registrations within one tenant. |
-| Outbox | `integration_event_idempotency_unique` | Allows safe retry semantics per integration connection. |
-| Link traversal | `task_project_idx`, `task_case_idx`, `document_*_idx`, `job_visit_*_idx`, `job_*_idx` | Keeps tenant-scoped operational reads efficient and predictable. |
+| Area           | Constraint or index                                                                   | Protection provided                                                                       |
+| -------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Membership     | `member_organization_user_unique`                                                     | Prevents duplicate memberships for the same user in one organization.                     |
+| Projects       | `project_organization_code_unique`                                                    | Prevents duplicate active project codes within one tenant.                                |
+| Cases          | `case_organization_reference_unique`                                                  | Prevents duplicate case references within one tenant.                                     |
+| Jobs           | `job_organization_number_unique`                                                      | Prevents duplicate job numbers within one tenant.                                         |
+| Quotes         | `quote_organization_number_unique`                                                    | Prevents duplicate quote numbers within one tenant.                                       |
+| Invoice links  | `invoice_link_external_reference_unique`                                              | Prevents the same external invoice reference from being imported twice within one tenant. |
+| Documents      | `document_organization_storage_key_unique`                                            | Prevents a storage object from being referenced twice in the same tenant.                 |
+| Snapshots      | `monthly_snapshot_organization_period_unique`                                         | Enforces one operational snapshot per tenant and period.                                  |
+| Connectors     | `integration_connection_unique`                                                       | Prevents duplicate provider/name registrations within one tenant.                         |
+| Outbox         | `integration_event_idempotency_unique`                                                | Allows safe retry semantics per integration connection.                                   |
+| Link traversal | `task_project_idx`, `task_case_idx`, `document_*_idx`, `job_visit_*_idx`, `job_*_idx` | Keeps tenant-scoped operational reads efficient and predictable.                          |
 
 ## Soft-delete rules
 

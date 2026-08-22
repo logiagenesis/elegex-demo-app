@@ -8,14 +8,14 @@ Elegex is a full-stack **global job-management and field-service operations plat
 
 ## Why this repository stands out
 
-| Capability | Implementation |
-|---|---|
-| Multi-tenancy | The server derives the workspace from authenticated membership; business queries never accept a client-owned organization ID. |
-| Five-role RBAC | Owner, admin, manager, member, and viewer permissions are enforced in protected tRPC procedures and covered by authorization tests. |
-| Transaction integrity | Cross-table workflows use a dedicated `withTransaction` boundary to avoid partial task, notification, and audit writes. |
-| Connector architecture | Shared database, audit, storage, and idempotent integration-outbox adapters isolate infrastructure from feature contracts. |
+| Capability             | Implementation                                                                                                                          |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Multi-tenancy          | The server derives the workspace from authenticated membership; business queries never accept a client-owned organization ID.           |
+| Five-role RBAC         | Owner, admin, manager, member, and viewer permissions are enforced in protected tRPC procedures and covered by authorization tests.     |
+| Transaction integrity  | Cross-table workflows use a dedicated `withTransaction` boundary to avoid partial task, notification, and audit writes.                 |
+| Connector architecture | Shared database, audit, storage, and idempotent integration-outbox adapters isolate infrastructure from feature contracts.              |
 | Operational resilience | Integration connections use secret references rather than database credentials; the durable outbox supports future retry-safe delivery. |
-| Developer experience | TypeScript, Drizzle migrations, Vitest tests, a complete seed, CI quality gates, PR template, security policy, and repository docs. |
+| Developer experience   | TypeScript, Drizzle migrations, Vitest tests, a complete seed, CI quality gates, PR template, security policy, and repository docs.     |
 
 ## Product surface
 
@@ -80,16 +80,16 @@ GitHub Actions runs the same verification suite on pull requests and pushes to `
 
 ## Repository map
 
-| Path | Purpose |
-|---|---|
-| `client/` | React 19 user interface, Recharts dashboard, and typed tRPC hooks. |
-| `server/routers/` | Zod-validated protected tRPC contract surface. |
-| `server/connectors/` | Database lifecycle, transaction, audit, and integration-outbox adapters. |
-| `server/storage.ts` | Managed object-storage adapter for scoped documents. |
-| `drizzle/` | Drizzle schema, migration history, and snapshots. |
-| `scripts/seed-demo.mjs` | Repeatable realistic demo workspace seed. |
-| `docs/` | Architecture, connector, API-contract, staging, demo-data, and audit documentation. |
-| `.github/` | Pull-request template and CI quality workflow. |
+| Path                    | Purpose                                                                             |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| `client/`               | React 19 user interface, Recharts dashboard, and typed tRPC hooks.                  |
+| `server/routers/`       | Zod-validated protected tRPC contract surface.                                      |
+| `server/connectors/`    | Database lifecycle, transaction, audit, and integration-outbox adapters.            |
+| `server/storage.ts`     | Managed object-storage adapter for scoped documents.                                |
+| `drizzle/`              | Drizzle schema, migration history, and snapshots.                                   |
+| `scripts/seed-demo.mjs` | Repeatable realistic demo workspace seed.                                           |
+| `docs/`                 | Architecture, connector, API-contract, staging, demo-data, and audit documentation. |
+| `.github/`              | Pull-request template and CI quality workflow.                                      |
 
 ## Security principles
 

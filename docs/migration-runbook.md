@@ -16,10 +16,10 @@ The owner/admin **Reset demo data** control uses the same audited dependency ord
 
 ## Required evidence
 
-| Change type | Minimum verification |
-|---|---|
-| Tenant relationship | Cross-tenant rejection test and tenant-scoped positive test |
-| Unique key/index | Preflight duplicate check and post-migration index inspection |
-| State transition | Allowed and rejected transition tests plus activity/audit evidence |
-| Storage metadata | Safe managed key, MIME/size policy, and unavailable-file state |
+| Change type         | Minimum verification                                                      |
+| ------------------- | ------------------------------------------------------------------------- |
+| Tenant relationship | Cross-tenant rejection test and tenant-scoped positive test               |
+| Unique key/index    | Preflight duplicate check and post-migration index inspection             |
+| State transition    | Allowed and rejected transition tests plus activity/audit evidence        |
+| Storage metadata    | Safe managed key, MIME/size policy, and unavailable-file state            |
 | User-facing feature | Production build, route render, responsive check, and client-error review |

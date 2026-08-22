@@ -4,13 +4,13 @@
 
 The foreman job card persists each operational action to a browser-local IndexedDB queue before attempting a tenant-scoped tRPC replay. Every queue entry carries its generated UUID into the matching server procedure as the idempotency key. The supported operations are typed consent, check-in, material capture, evidence capture, quote capture, and completion handoff. Dependency links preserve the order between a newly queued consent and check-in, and between a newly queued check-in and downstream actions.
 
-| Concern | Implemented contract | Evidence |
-|---|---|---|
-| Local durability | A field action is saved in IndexedDB before dispatch. | `SyncQueue.enqueue()` regression coverage. |
-| Replay ordering | Child actions wait for dependency success. | Queue dependency-order and failed-parent tests. |
-| Procedure routing | Each queue type is routed to exactly one matching tRPC mutation. | `submitQueuedForemanMutation()` queue-drain regression. |
+| Concern              | Implemented contract                                                                            | Evidence                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Local durability     | A field action is saved in IndexedDB before dispatch.                                           | `SyncQueue.enqueue()` regression coverage.                             |
+| Replay ordering      | Child actions wait for dependency success.                                                      | Queue dependency-order and failed-parent tests.                        |
+| Procedure routing    | Each queue type is routed to exactly one matching tRPC mutation.                                | `submitQueuedForemanMutation()` queue-drain regression.                |
 | Duplicate protection | The queue UUID is submitted as an idempotency key and claimed tenant-scope first on the server. | Existing workflow idempotency checks plus consent idempotency support. |
-| Visibility | The job card shows queue depth, sync state, error text, and replay status. | `SyncPanel` on the foreman job card. |
+| Visibility           | The job card shows queue depth, sync state, error text, and replay status.                      | `SyncPanel` on the foreman job card.                                   |
 
 ## Explicit non-claims
 
