@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import express from "express";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { registerBodyParsers } from "./index";
+import { registerBodyParsers } from "./bodyParser";
 
 const servers: ReturnType<typeof createServer>[] = [];
 
