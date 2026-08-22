@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /jobs
+Disallow: /field
+Disallow: /dispatch
+Disallow: /projects
+Disallow: /cases
+Disallow: /contacts
+Disallow: /tasks
+Disallow: /documents
+Disallow: /reports
+Disallow: /staging
+Disallow: /notifications
+Disallow: /admin
+Disallow: /settings
+Disallow: /login
+
+Sitemap: /sitemap.xml

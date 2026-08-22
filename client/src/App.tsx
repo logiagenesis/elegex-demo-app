@@ -1,13 +1,17 @@
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import DashboardLayout from "@/components/DashboardLayout";
-import { canAccessWorkspaceRoute } from "@/lib/access";
-import { trpc } from "@/lib/trpc";
+import { Component, lazy, ReactNode, Suspense, useEffect } from "react";
 import { Route, Switch, useLocation } from "wouter";
-import { Component, lazy, ReactNode, Suspense } from "react";
+
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import DemoLoginPage from "./pages/DemoLoginPage";
 import NotFound from "./pages/NotFound";
+import PublicLandingPage from "./pages/PublicLandingPage";
+
+import DashboardLayout from "@/components/DashboardLayout";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { canAccessWorkspaceRoute } from "@/lib/access";
+import { trpc } from "@/lib/trpc";
 
 const AdminPage = lazy(() =>
   import("@/pages/ElegexPages").then(module => ({ default: module.AdminPage }))
@@ -111,11 +115,11 @@ class RouteLoadBoundary extends Component<
   { children: ReactNode },
   { failed: boolean }
 > {
-  state = { failed: false };
+  override state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
   }
-  render() {
+  override render() {
     if (this.state.failed)
       return (
         <section className="mx-auto grid min-h-[60vh] max-w-xl place-items-center text-center">
@@ -132,7 +136,7 @@ class RouteLoadBoundary extends Component<
             </p>
             <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
               <button
-                onClick={() => window.location.assign("/")}
+                onClick={() => window.location.assign("/app")}
                 className="rounded-xl bg-[#195FE6] px-4 py-2.5 text-sm font-semibold text-white"
               >
                 Command centre
@@ -153,12 +157,15 @@ class RouteLoadBoundary extends Component<
 
 function Router() {
   const [location] = useLocation();
+  if (location === "/") return <PublicLandingPage />;
+  if (location === "/login") return <DemoLoginPage />;
   return (
     <DashboardLayout>
+      <ProtectedAppRobots />
       <RouteLoadBoundary key={location}>
         <Suspense fallback={<RouteLoading />}>
           <Switch>
-            <Route path="/" component={FieldCommandCentre} />
+            <Route path="/app" component={FieldCommandCentre} />
             <Route path="/jobs/:id">
               {params => <JobDetailPage id={Number(params.id)} />}
             </Route>
@@ -220,6 +227,19 @@ function Router() {
       </RouteLoadBoundary>
     </DashboardLayout>
   );
+}
+
+function ProtectedAppRobots() {
+  useEffect(() => {
+    let tag = document.querySelector('meta[name="robots"]');
+    if (!tag) {
+      tag = document.createElement("meta");
+      tag.setAttribute("name", "robots");
+      document.head.appendChild(tag);
+    }
+    tag.setAttribute("content", "noindex,nofollow,noarchive");
+  }, []);
+  return null;
 }
 
 function App() {

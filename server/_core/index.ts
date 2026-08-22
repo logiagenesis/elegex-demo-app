@@ -1,20 +1,32 @@
 import "dotenv/config";
-import express from "express";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
-import { logger, httpLogger } from "./logger";
-import { createServer } from "http";
+import { createServer, type IncomingMessage, type ServerResponse } from "http";
 import net from "net";
+import { randomBytes } from "node:crypto";
+
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
-import { registerStorageProxy } from "./storageProxy";
-import { appRouter } from "../routers";
-import { createContext } from "./context";
-import { serveStatic, setupVite } from "./vite";
-import { apiNotFoundHandler } from "./apiFallback";
-import { assertFieldServiceSchema } from "../connectors/database";
+import express from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+
+import {
+  assertFieldServiceSchema,
+  checkDatabaseHealth,
+} from "../connectors/database";
 import { startOutboxWorker, stopOutboxWorker } from "../connectors/worker";
+import { appRouter } from "../routers";
+
+import { apiNotFoundHandler } from "./apiFallback";
+import { createContext } from "./context";
 import { ENV } from "./env";
+import { logger, httpLogger } from "./logger";
+import { registerOAuthRoutes } from "./oauth";
+import {
+  metricsMiddleware,
+  metricsText,
+  requestIdMiddleware,
+} from "./observability";
+import { registerStorageProxy } from "./storageProxy";
+import { serveStatic, setupVite } from "./vite";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -39,11 +51,24 @@ async function startServer() {
   await assertFieldServiceSchema();
   const app = express();
   const server = createServer(app);
+  app.set("trust proxy", ENV.trustProxyHops);
 
+  app.use(requestIdMiddleware);
+  app.use(metricsMiddleware);
   // 1. Structured logging
   app.use(httpLogger);
 
   // 2. HTTP Security Headers
+  app.use(
+    (
+      _req: express.Request,
+      res: express.Response,
+      next: express.NextFunction
+    ) => {
+      res.locals.cspNonce = randomBytes(16).toString("base64");
+      next();
+    }
+  );
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -51,15 +76,16 @@ async function startServer() {
           defaultSrc: ["'self'"],
           scriptSrc: [
             "'self'",
-            "'unsafe-inline'",
-            "'unsafe-eval'",
+            (_req: IncomingMessage, res: ServerResponse) =>
+              `'nonce-${(res as unknown as express.Response).locals.cspNonce as string}'`,
             "https://maps.googleapis.com",
           ],
           styleSrc: [
             "'self'",
-            "'unsafe-inline'",
+            ...(ENV.isDevelopment ? ["'unsafe-inline'"] : []),
             "https://fonts.googleapis.com",
           ],
+          styleSrcAttr: ["'unsafe-inline'"],
           fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
           imgSrc: [
             "'self'",
@@ -75,11 +101,23 @@ async function startServer() {
             "https://*.manuscdn.com",
             "https://maps.googleapis.com",
           ],
+          baseUri: ["'self'"],
+          formAction: ["'self'"],
+          frameAncestors: ["'none'"],
+          objectSrc: ["'none'"],
         },
       },
       crossOriginEmbedderPolicy: false, // Required for some third-party integrations
+      referrerPolicy: { policy: "no-referrer" },
     })
   );
+  app.use((_req, res, next) => {
+    res.setHeader(
+      "Permissions-Policy",
+      "camera=(), geolocation=(self), microphone=(), payment=()"
+    );
+    next();
+  });
 
   // 3. Rate Limiting
   const globalLimiter = rateLimit({
@@ -95,13 +133,105 @@ async function startServer() {
     max: 20, // strict limit for auth routes
     message: { error: "Too many authentication attempts." },
   });
+  const uploadLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    message: {
+      error: "Too many upload attempts. Please wait before retrying.",
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
 
   app.use(globalLimiter);
   app.use("/api/oauth", authLimiter);
+  app.use(
+    [
+      "/api/trpc/elegex.documents.upload",
+      "/api/trpc/elegex.fieldService.foreman.evidence",
+    ],
+    uploadLimiter
+  );
+
+  const healthHandler = (_req: express.Request, res: express.Response) => {
+    res.status(200).json({ status: "ok" });
+  };
+  const readinessHandler = async (
+    _req: express.Request,
+    res: express.Response
+  ) => {
+    try {
+      const readiness = await checkDatabaseHealth();
+      res.status(200).json({ status: "ready", database: readiness.healthy });
+    } catch (error) {
+      logger.warn({ err: error }, "Readiness probe failed");
+      res.status(503).json({ status: "not_ready" });
+    }
+  };
+  app.get(["/health", "/healthz"], healthHandler);
+  app.get(["/ready", "/readyz"], readinessHandler);
+  app.get("/metrics", (req, res) => {
+    if (
+      ENV.metricsBearerToken &&
+      req.get("authorization") !== `Bearer ${ENV.metricsBearerToken}`
+    ) {
+      res.status(401).json({ error: "metrics authorization required" });
+      return;
+    }
+    res.type("text/plain; version=0.0.4").send(metricsText());
+  });
 
   // 4. Payload sizing - strict 1MB limit for standard JSON to prevent DoS
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ limit: "1mb", extended: true }));
+  app.post("/api/client-errors", (req, res) => {
+    const body = req.body as {
+      errorId?: unknown;
+      message?: unknown;
+      path?: unknown;
+    };
+    const errorId =
+      typeof body.errorId === "string" ? body.errorId.slice(0, 80) : "unknown";
+    const message =
+      typeof body.message === "string" ? body.message.slice(0, 500) : "unknown";
+    const path =
+      typeof body.path === "string" ? body.path.slice(0, 240) : "unknown";
+    logger.error(
+      { errorId, message, path, requestId: req.id },
+      "Client recovery boundary captured an error"
+    );
+    res.status(202).json({ accepted: true, errorId });
+  });
+  app.get("/sitemap.xml", (req, res) => {
+    const origin = `${req.protocol}://${req.get("host")}`;
+    res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${origin}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+</urlset>`);
+  });
+  app.use(
+    [
+      "/app",
+      "/jobs",
+      "/field",
+      "/dispatch",
+      "/projects",
+      "/cases",
+      "/contacts",
+      "/tasks",
+      "/documents",
+      "/reports",
+      "/staging",
+      "/notifications",
+      "/admin",
+      "/settings",
+      "/login",
+    ],
+    (_req, res, next) => {
+      res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
+      next();
+    }
+  );
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   // tRPC API

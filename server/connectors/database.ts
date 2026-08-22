@@ -1,7 +1,9 @@
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
+
 import { ENV } from "../_core/env";
+import { logger } from "../_core/logger";
 
 function createDatabaseClient(pool: mysql.Pool) {
   return drizzle(pool, { mode: "default" });
@@ -70,7 +72,18 @@ export async function withTransaction<T>(
   work: (tx: TransactionClient) => Promise<T>
 ): Promise<T> {
   const database = await getDatabase();
-  return database.transaction(async tx => work(tx));
+  const startedAt = performance.now();
+  try {
+    return await database.transaction(async tx => work(tx));
+  } finally {
+    const elapsedMs = performance.now() - startedAt;
+    if (elapsedMs >= ENV.slowQueryMs) {
+      logger.warn(
+        { elapsedMs: Math.round(elapsedMs) },
+        "Slow database transaction"
+      );
+    }
+  }
 }
 
 /** Lightweight, deployment-safe database readiness probe used by operational tooling. */

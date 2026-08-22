@@ -1,21 +1,3 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  formatOrganizationDate,
-  formatOrganizationMoney,
-} from "@/lib/organizationFormat";
-import { Progress } from "@/components/ui/progress";
-import { Textarea } from "@/components/ui/textarea";
-import { trpc } from "@/lib/trpc";
 import { format, formatDistanceToNowStrict, isPast } from "date-fns";
 import {
   Activity,
@@ -66,6 +48,25 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  formatOrganizationDate,
+  formatOrganizationMoney,
+} from "@/lib/organizationFormat";
+import { trpc } from "@/lib/trpc";
 
 const statusStyles: Record<string, string> = {
   active: "bg-[#DCFCE7] text-[#197A46]",

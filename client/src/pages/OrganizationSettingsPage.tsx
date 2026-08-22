@@ -1,11 +1,12 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { trpc } from "@/lib/trpc";
-import { formatOrganizationMoney } from "@/lib/organizationFormat";
 import { Loader2, Settings2, Wrench } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { formatOrganizationMoney } from "@/lib/organizationFormat";
+import { trpc } from "@/lib/trpc";
 
 const defaultVocabulary = [
   "DB board",

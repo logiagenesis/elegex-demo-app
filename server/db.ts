@@ -1,6 +1,10 @@
+import { randomUUID } from "node:crypto";
+
 import { and, asc, count, desc, eq, isNull, like, or, sql } from "drizzle-orm";
+
 import {
   activityLogs,
+  aiUsage,
   appSettings,
   callOutTypes,
   cases,
@@ -29,10 +33,11 @@ import {
   type OrganizationRole,
   users,
 } from "../drizzle/schema";
-import { randomUUID } from "node:crypto";
+
 import { ENV } from "./_core/env";
 import { writeAuditEvent } from "./connectors/audit";
 import { getDatabase, withTransaction } from "./connectors/database";
+import { validateUpload } from "./providers/storage";
 import { storagePut } from "./storage";
 
 export async function getDb() {
@@ -1338,6 +1343,51 @@ export async function ensureTenantScope(userId: number): Promise<TenantScope> {
   return membership[0] as TenantScope;
 }
 
+export async function canUserReadStorageKey(
+  userId: number,
+  storageKey: string
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  const membership = await db
+    .select({ organizationId: organizationMembers.organizationId })
+    .from(organizationMembers)
+    .where(
+      and(
+        eq(organizationMembers.userId, userId),
+        eq(organizationMembers.isActive, true)
+      )
+    )
+    .limit(1);
+  const organizationId = membership[0]?.organizationId;
+  if (!organizationId) return false;
+
+  const document = await db
+    .select({ id: documents.id })
+    .from(documents)
+    .where(
+      and(
+        eq(documents.organizationId, organizationId),
+        eq(documents.storageKey, storageKey)
+      )
+    )
+    .limit(1);
+  if (document[0]) return true;
+
+  const evidence = await db
+    .select({ id: jobEvidence.id })
+    .from(jobEvidence)
+    .where(
+      and(
+        eq(jobEvidence.organizationId, organizationId),
+        sql`JSON_UNQUOTE(JSON_EXTRACT(${jobEvidence.metadata}, '$.storageKey')) = ${storageKey}`
+      )
+    )
+    .limit(1);
+  return Boolean(evidence[0]);
+}
+
 export function dedupeWorkspaceMembers<T extends { email?: string | null }>(
   members: T[]
 ) {
@@ -2172,6 +2222,7 @@ export async function updateSettings(
     tradeVocabulary?: string[];
     allowMemberInvites?: boolean;
     notificationDigest?: boolean;
+    aiOptIn?: boolean;
   }
 ) {
   const db = await getDb();
@@ -2942,7 +2993,27 @@ export async function getForemanToday(organizationId: number, userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
   const rows = await db
-    .select({ job: jobs, contact: contacts, visit: jobVisits })
+    .select({
+      job: {
+        id: jobs.id,
+        jobNumber: jobs.jobNumber,
+        title: jobs.title,
+        description: jobs.description,
+        serviceAddress: jobs.serviceAddress,
+        stage: jobs.stage,
+        priority: jobs.priority,
+        scheduledStart: jobs.scheduledStart,
+        scheduledEnd: jobs.scheduledEnd,
+        checkInAt: jobs.checkInAt,
+        checkOutAt: jobs.checkOutAt,
+        geoStatus: jobs.geoStatus,
+        holdReason: jobs.holdReason,
+        cancelReason: jobs.cancelReason,
+        completedAt: jobs.completedAt,
+      },
+      contact: { id: contacts.id, name: contacts.name, phone: contacts.phone },
+      visit: jobVisits,
+    })
     .from(jobs)
     .innerJoin(contacts, eq(jobs.contactId, contacts.id))
     .leftJoin(
@@ -3142,6 +3213,7 @@ export async function captureForemanEvidence(
       "before_photo" | "after_photo" | "note" | "job_card" | "signature";
     title: string;
     note?: string;
+    media?: { fileName: string; mimeType: string; bytes: Buffer };
     idempotencyKey?: string;
   }
 ) {
@@ -3165,14 +3237,34 @@ export async function captureForemanEvidence(
       throw new Error(
         "Evidence can only be recorded during an active field visit"
       );
+    const fieldMedia = input.media;
+    const artifact = fieldMedia
+      ? await (async () => {
+          await validateUpload(
+            fieldMedia.bytes,
+            fieldMedia.mimeType,
+            fieldMedia.fileName
+          );
+          return storagePut(
+            `elegex/${organizationId}/foreman-evidence/${job.id}-${randomUUID()}-${fieldMedia.fileName}`,
+            fieldMedia.bytes,
+            fieldMedia.mimeType
+          );
+        })()
+      : null;
     const result = await tx.insert(jobEvidence).values({
       organizationId,
       jobId: input.jobId,
       evidenceType: input.evidenceType,
       title: input.title,
+      storageUrl: artifact?.url,
       capturedBy: userId,
       syncStatus: "synced",
-      metadata: { workflow: "foreman_capture", note: input.note || null },
+      metadata: {
+        workflow: "foreman_capture",
+        note: input.note || null,
+        ...(artifact ? { storageKey: artifact.key, mediaUploaded: true } : {}),
+      },
     });
     await tx.insert(activityLogs).values({
       organizationId,
@@ -3192,7 +3284,6 @@ export async function captureForemanQuote(
   input: {
     jobId: number;
     quoteNumber: string;
-    total: number;
     idempotencyKey?: string;
   }
 ) {
@@ -3217,16 +3308,16 @@ export async function captureForemanQuote(
       quoteNumber: input.quoteNumber,
       status: "draft",
       assessedAt: new Date(),
-      total: input.total,
+      total: 0,
       createdBy: userId,
     });
     const quoteId = Number(result[0].insertId);
     await tx.insert(quoteItems).values({
       quoteId,
-      description: "Field assessment estimate",
+      description: "Field scope awaiting office commercial review",
       quantity: 1,
-      unitPrice: input.total,
-      total: input.total,
+      unitPrice: 0,
+      total: 0,
       source: "free_text",
     });
     await tx.insert(activityLogs).values({
@@ -3516,4 +3607,93 @@ export async function resetDemoData(
     return reset(dependencies.database);
   }
   return withTransaction(reset);
+}
+
+export type DemoPersonaSeed = {
+  openId: string;
+  name: string;
+  email: string;
+  role: OrganizationRole;
+  title: string;
+};
+
+/** Creates or restores a real, role-scoped user in the isolated synthetic demo tenant. */
+export async function ensureDemoPersona(persona: DemoPersonaSeed) {
+  await upsertUser({
+    openId: "demo:owner",
+    name: "Alex Morgan",
+    email: "owner@demo.elegex.app",
+    loginMethod: "demo",
+  });
+  const owner = await getUserByOpenId("demo:owner");
+  if (!owner) throw new Error("Demo owner could not be provisioned");
+  const tenant = await ensureTenantScope(owner.id);
+
+  await upsertUser({
+    openId: persona.openId,
+    name: persona.name,
+    email: persona.email,
+    loginMethod: "demo",
+  });
+  const user = await getUserByOpenId(persona.openId);
+  if (!user) throw new Error("Demo persona could not be provisioned");
+
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db
+    .insert(organizationMembers)
+    .values({
+      organizationId: tenant.organizationId,
+      userId: user.id,
+      role: persona.role,
+      title: persona.title,
+      isActive: true,
+    })
+    .onDuplicateKeyUpdate({
+      set: { role: persona.role, title: persona.title, isActive: true },
+    });
+  return user;
+}
+
+export type AiUsageRecord = {
+  organizationId: number;
+  userId: number;
+  feature: "job_summary" | "quote_draft" | "evidence_caption";
+  provider: string;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostMicros: number;
+  requestId?: string | null;
+};
+
+export async function recordAiUsage(record: AiUsageRecord) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db.insert(aiUsage).values(record);
+  await logActivity(
+    record.organizationId,
+    record.userId,
+    "generated",
+    "ai_draft",
+    null,
+    `Generated a human-review-required ${record.feature.replace("_", " ")} draft`
+  );
+}
+
+export async function getAiTokenUsageLast24Hours(organizationId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const rows = await db
+    .select({
+      tokens: sql<number>`coalesce(sum(${aiUsage.inputTokens} + ${aiUsage.outputTokens}), 0)`,
+    })
+    .from(aiUsage)
+    .where(
+      and(
+        eq(aiUsage.organizationId, organizationId),
+        sql`${aiUsage.createdAt} >= date_sub(now(), interval 1 day)`
+      )
+    );
+  return Number(rows[0]?.tokens ?? 0);
 }

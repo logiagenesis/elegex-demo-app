@@ -1,11 +1,13 @@
 import { eq, and, lte } from "drizzle-orm";
+
 import {
   integrationEvents,
   integrationConnections,
 } from "../../drizzle/schema";
-import { getDatabase } from "./database";
-import { logger } from "../_core/logger";
 import { ENV } from "../_core/env";
+import { logger } from "../_core/logger";
+
+import { getDatabase } from "./database";
 
 // In a Python ecosystem, this would be a Celery or RQ worker.
 // Here we implement a simple interval-based poller that drains the outbox.

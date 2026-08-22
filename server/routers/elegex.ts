@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
-import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import * as db from "../db";
+
+import { protectedProcedure, router } from "../_core/trpc";
 import { checkDatabaseHealth } from "../connectors/database";
 import {
   enqueueIntegrationEvent,
@@ -9,8 +9,10 @@ import {
   listIntegrationConnections,
   upsertIntegrationConnection,
 } from "../connectors/outbox";
+import * as db from "../db";
+import { generateReviewedDraft } from "../providers/ai";
+import { validateUpload } from "../providers/storage";
 import { storagePut } from "../storage";
-import { protectedProcedure, router } from "../_core/trpc";
 
 const listInput = z.object({
   query: z.string().max(120).optional(),
@@ -302,6 +304,23 @@ export const elegexRouter = router({
         db.markNotificationRead(ctx.scope.organizationId, ctx.user.id, input.id)
       ),
   }),
+  ai: router({
+    generateDraft: tenantProcedure
+      .input(
+        z.object({
+          feature: z.enum(["job_summary", "quote_draft", "evidence_caption"]),
+          sourceText: z.string().min(10).max(8_000),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        requireManage(ctx.scope.role);
+        return generateReviewedDraft({
+          organizationId: ctx.scope.organizationId,
+          userId: ctx.user.id,
+          ...input,
+        });
+      }),
+  }),
   fieldService: router({
     dashboard: tenantProcedure.query(({ ctx }) =>
       db.getFieldServiceDashboard(ctx.scope.organizationId)
@@ -367,26 +386,58 @@ export const elegexRouter = router({
         }),
       evidence: tenantProcedure
         .input(
-          z.object({
-            jobId: z.number().int().positive(),
-            evidenceType: z.enum([
-              "before_photo",
-              "after_photo",
-              "note",
-              "job_card",
-              "signature",
-            ]),
-            title: z.string().min(2).max(240),
-            note: z.string().max(4000).optional(),
-            idempotencyKey: z.string().uuid().optional(),
-          })
+          z
+            .object({
+              jobId: z.number().int().positive(),
+              evidenceType: z.enum([
+                "before_photo",
+                "after_photo",
+                "note",
+                "job_card",
+                "signature",
+              ]),
+              title: z.string().min(2).max(240),
+              note: z.string().max(4000).optional(),
+              fileName: z.string().min(1).max(255).optional(),
+              mimeType: z.string().min(1).max(120).optional(),
+              dataUrl: z.string().max(7_000_000).optional(),
+              idempotencyKey: z.string().uuid().optional(),
+            })
+            .refine(
+              value =>
+                Boolean(value.dataUrl) ===
+                Boolean(value.fileName && value.mimeType),
+              {
+                message:
+                  "Field media requires a file name, media type, and data payload together.",
+              }
+            )
         )
         .mutation(({ ctx, input }) => {
           requireEdit(ctx.scope.role);
+          const { dataUrl, fileName, mimeType, ...evidence } = input;
+          let media:
+            { fileName: string; mimeType: string; bytes: Buffer } | undefined;
+          if (dataUrl && fileName && mimeType) {
+            const match = dataUrl.match(
+              /^data:([^;,]+);base64,([A-Za-z0-9+/]+={0,2})$/
+            );
+            if (!match || match[1] !== mimeType) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: "Field media metadata does not match its payload.",
+              });
+            }
+            media = {
+              fileName,
+              mimeType,
+              bytes: Buffer.from(match[2], "base64"),
+            };
+          }
           return db.captureForemanEvidence(
             ctx.scope.organizationId,
             ctx.user.id,
-            input
+            { ...evidence, ...(media ? { media } : {}) }
           );
         }),
       quote: tenantProcedure
@@ -394,7 +445,6 @@ export const elegexRouter = router({
           z.object({
             jobId: z.number().int().positive(),
             quoteNumber: z.string().min(3).max(60),
-            total: z.number().nonnegative().max(10_000_000),
             idempotencyKey: z.string().uuid().optional(),
           })
         )
@@ -580,19 +630,6 @@ export const elegexRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         requireEdit(ctx.scope.role);
-        const allowed = [
-          "application/pdf",
-          "text/plain",
-          "text/csv",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          "image/jpeg",
-          "image/png",
-        ];
-        if (!allowed.includes(input.mimeType))
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "This file type is not permitted.",
-          });
         const match = input.dataUrl.match(
           /^data:([^;,]+);base64,([A-Za-z0-9+/]+={0,2})$/
         );
@@ -607,10 +644,20 @@ export const elegexRouter = router({
             code: "PAYLOAD_TOO_LARGE",
             message: "Files must be 5 MB or smaller.",
           });
+        try {
+          await validateUpload(bytes, input.mimeType, input.fileName);
+        } catch (error) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Invalid upload payload.",
+          });
+        }
         await db.validateDocumentTargets(ctx.scope.organizationId, input);
-        const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
         const uploaded = await storagePut(
-          `elegex/${ctx.scope.organizationId}/documents/${randomUUID()}-${safeName}`,
+          `elegex/${ctx.scope.organizationId}/documents/${input.fileName}`,
           bytes,
           input.mimeType
         );
@@ -753,6 +800,7 @@ export const elegexRouter = router({
             .optional(),
           allowMemberInvites: z.boolean().optional(),
           notificationDigest: z.boolean().optional(),
+          aiOptIn: z.boolean().optional(),
         })
       )
       .mutation(({ ctx, input }) => {

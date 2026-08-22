@@ -21,7 +21,7 @@ class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error, errorId: null };
   }
 
-  componentDidCatch(error: Error) {
+  override componentDidCatch(error: Error) {
     const errorId = `ELX-${Date.now().toString(36).toUpperCase()}`;
     const recoveryEvent = {
       errorId,
@@ -30,6 +30,14 @@ class ErrorBoundary extends Component<Props, State> {
       capturedAt: new Date().toISOString(),
     };
     console.error("[Elegex] Application recovery boundary", recoveryEvent);
+    void fetch("/api/client-errors", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(recoveryEvent),
+      keepalive: true,
+    }).catch(() => {
+      /* The local recovery UI remains available if telemetry cannot be sent. */
+    });
     try {
       window.sessionStorage.setItem(
         "elegex:last-client-recovery",
@@ -45,7 +53,7 @@ class ErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, error: null, errorId: null });
   };
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       return (
         <main className="grid min-h-screen place-items-center bg-[#F5F7FB] p-6 text-[#14213D]">
@@ -76,7 +84,7 @@ class ErrorBoundary extends Component<Props, State> {
                 Retry view
               </button>
               <button
-                onClick={() => window.location.assign("/")}
+                onClick={() => window.location.assign("/app")}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#195FE6] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#124FC3]"
               >
                 <Home className="h-4 w-4" />

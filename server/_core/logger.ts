@@ -1,5 +1,6 @@
 import pino from "pino";
 import pinoHttp from "pino-http";
+
 import { ENV } from "./env";
 
 export const logger = pino({
@@ -23,7 +24,7 @@ export const logger = pino({
 
 export const httpLogger = pinoHttp({
   logger,
-  customProps: (req, res) => {
+  customProps: (req, _res) => {
     return {
       correlationId: req.headers["x-correlation-id"] || req.id,
     };

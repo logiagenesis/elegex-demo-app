@@ -1,50 +1,44 @@
 # Elegex Deployment Guide
 
-This guide covers how to deploy the Elegex application using Docker.
+Elegex can run locally with the included Compose stack or as a non-root Node 22 container backed by a MySQL-compatible database. See [`docs/deployment.md`](docs/deployment.md) for the complete operating guide and [`docs/environment.md`](docs/environment.md) for the non-secret configuration reference.
 
-## Prerequisites
-
-- Docker and Docker Compose
-- A MySQL/MariaDB database (if not using the bundled compose database)
-- An OAuth provider (Manus OAuth or compatible)
-
-## Local Development & Testing
-
-To spin up the entire stack locally:
+## Local zero-account demonstration
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
-This will start MariaDB and the Elegex application on port 3000. Note that the application will start, but you will need valid OAuth credentials to log in.
+The local stack starts MariaDB, runs the committed Drizzle migrations through a dedicated `migrate` service, and starts the application with `AUTH_PROVIDER=demo`, local storage, and no-op external integrations. Open `http://localhost:3000`, select a demo persona, and explore the role-scoped synthetic workspace. No OAuth, S3, SMTP, notification, or AI account is required.
 
-## Production Deployment
+## Production container
 
-For production, you should use a managed database and inject secrets securely.
-
-1. Build the image:
-   ```bash
-   docker build -t elegex-app .
-   ```
-2. Run the container with required environment variables:
-   ```bash
-   docker run -p 3000:3000 \
-     -e NODE_ENV=production \
-     -e DATABASE_URL="mysql://user:pass@host:3306/db" \
-     -e JWT_SECRET="your-secure-secret" \
-     -e OAUTH_SERVER_URL="https://your-oauth-server.com" \
-     -e VITE_OAUTH_PORTAL_URL="https://your-oauth-portal.com" \
-     -e VITE_APP_ID="your-app-id" \
-     elegex-app
-   ```
-
-## Database Migrations
-
-Migrations are handled via Drizzle. For new environments, the docker-compose stack automatically runs `drizzle-kit push` before starting the application.
-
-For existing production databases, do **not** use `db:push` as it may result in data loss. Instead, generate and apply migrations explicitly:
+Build the default production stage and inject all configuration through an encrypted secret manager.
 
 ```bash
-pnpm run db:generate
-pnpm run db:migrate
+docker build -t elegex-app .
+docker run --rm -p 3000:3000 \
+  -e NODE_ENV=production \
+  -e DATABASE_URL='mysql://user:password@db:3306/elegex' \
+  -e JWT_SECRET='<long-random-session-secret>' \
+  -e VITE_APP_ID='<oauth-app-id>' \
+  -e OAUTH_SERVER_URL='https://api.manus.im' \
+  -e VITE_OAUTH_PORTAL_URL='https://manus.im' \
+  -e PUBLIC_APP_ORIGIN='https://app.example.com' \
+  -e METRICS_BEARER_TOKEN='<long-random-metrics-token>' \
+  elegex-app
 ```
+
+The production runtime refuses a development authentication provider, local file storage, an arbitrary OAuth callback origin, and an unprotected metrics endpoint. Probe `GET /health` or `GET /healthz` for liveness and `GET /ready` or `GET /readyz` for database readiness. Supply `Authorization: Bearer <METRICS_BEARER_TOKEN>` when scraping `/metrics`.
+
+## Database migrations
+
+The Compose `migrate` service executes `pnpm db:migrate`; it does **not** run schema push. For every persistent environment, generate and inspect an additive migration, apply it to the target database, and then deploy its matching application revision.
+
+```bash
+pnpm db:generate
+# inspect drizzle/<new-migration>.sql
+pnpm db:migrate
+pnpm verify
+```
+
+Never use `drizzle-kit push` as a substitute for reviewed migrations on a persistent environment.

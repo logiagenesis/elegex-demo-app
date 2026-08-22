@@ -1,8 +1,10 @@
 import { and, asc, eq, lte, sql } from "drizzle-orm";
+
 import {
   integrationConnections,
   integrationEvents,
 } from "../../drizzle/schema";
+
 import { getDatabase } from "./database";
 
 export type ConnectorProvider =

@@ -447,6 +447,7 @@ export const appSettings = mysqlTable("appSettings", {
     .notNull(),
   allowMemberInvites: boolean("allowMemberInvites").default(false).notNull(),
   notificationDigest: boolean("notificationDigest").default(true).notNull(),
+  aiOptIn: boolean("aiOptIn").default(false).notNull(),
   locale: varchar("locale", { length: 32 }).default("en-ZA").notNull(),
   currency: varchar("currency", { length: 32 }).default("ZAR").notNull(),
   timezone: varchar("timezone", { length: 80 })
@@ -556,6 +557,34 @@ export const integrationEvents = mysqlTable(
       table.connectionId,
       table.idempotencyKey
     ),
+  ]
+);
+
+export const aiUsage = mysqlTable(
+  "aiUsage",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    userId: int("userId").notNull(),
+    feature: mysqlEnum("feature", [
+      "job_summary",
+      "quote_draft",
+      "evidence_caption",
+    ]).notNull(),
+    provider: varchar("provider", { length: 40 }).notNull(),
+    model: varchar("model", { length: 120 }).notNull(),
+    inputTokens: int("inputTokens").default(0).notNull(),
+    outputTokens: int("outputTokens").default(0).notNull(),
+    estimatedCostMicros: int("estimatedCostMicros").default(0).notNull(),
+    requestId: varchar("requestId", { length: 120 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("ai_usage_organization_created_idx").on(
+      table.organizationId,
+      table.createdAt
+    ),
+    index("ai_usage_user_created_idx").on(table.userId, table.createdAt),
   ]
 );
 

@@ -342,7 +342,7 @@ describe("critical workflow rollback propagation", () => {
     );
   });
 
-  it("does not leak a quote total through the captured quote return contract", async () => {
+  it("does not accept, persist, or return a commercial total through the field quote contract", async () => {
     configureTransaction([{ id: 88, stage: "in_progress", foremanId: userId }]);
     mocks.values
       .mockResolvedValueOnce([{ insertId: 501 }])
@@ -352,7 +352,6 @@ describe("critical workflow rollback propagation", () => {
     const result = await captureForemanQuote(organizationId, userId, {
       jobId: 88,
       quoteNumber: "QT-9021",
-      total: 9876,
     });
     expect(result).toEqual({
       quoteId: 501,
@@ -360,5 +359,13 @@ describe("critical workflow rollback propagation", () => {
       status: "draft",
     });
     expect(result).not.toHaveProperty("total");
+    expect(mocks.values).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ total: 0 })
+    );
+    expect(mocks.values).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ unitPrice: 0, total: 0 })
+    );
   });
 });

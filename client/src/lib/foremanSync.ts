@@ -23,12 +23,14 @@ export type ForemanProcedureTransport = {
       "before_photo" | "after_photo" | "note" | "job_card" | "signature";
     title: string;
     note?: string;
+    fileName?: string;
+    mimeType?: string;
+    dataUrl?: string;
     idempotencyKey: string;
   }) => Promise<unknown>;
   quote: (input: {
     jobId: number;
     quoteNumber: string;
-    total: number;
     idempotencyKey: string;
   }) => Promise<unknown>;
   complete: (input: {
@@ -68,13 +70,15 @@ export async function submitQueuedForemanMutation(
       evidenceType: payload.evidenceType,
       title: String(payload.title),
       note: payload.note ? String(payload.note) : undefined,
+      fileName: payload.fileName ? String(payload.fileName) : undefined,
+      mimeType: payload.mimeType ? String(payload.mimeType) : undefined,
+      dataUrl: payload.dataUrl ? String(payload.dataUrl) : undefined,
       idempotencyKey: mutation.id,
     });
   if (mutation.type === "quote")
     return transport.quote({
       jobId: Number(payload.jobId),
       quoteNumber: String(payload.quoteNumber),
-      total: Number(payload.total),
       idempotencyKey: mutation.id,
     });
   return transport.complete({

@@ -1,10 +1,13 @@
-import express, { type Express } from "express";
 import fs from "fs";
 import { type Server } from "http";
-import { nanoid } from "nanoid";
 import path from "path";
+
+import express, { type Express } from "express";
+import { nanoid } from "nanoid";
 import { createServer as createViteServer } from "vite";
+
 import viteConfig from "../../vite.config";
+
 import { ENV } from "./env";
 
 export async function setupVite(app: Express, server: Server) {
@@ -40,7 +43,11 @@ export async function setupVite(app: Express, server: Server) {
         `src="/src/main.tsx?v=${nanoid()}"`
       );
       const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+      const nonce = res.locals.cspNonce as string | undefined;
+      const pageWithNonce = nonce
+        ? page.replaceAll("<script", `<script nonce="${nonce}"`)
+        : page;
+      res.status(200).set({ "Content-Type": "text/html" }).end(pageWithNonce);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
       next(e);

@@ -1,7 +1,8 @@
-import { startLogin } from "@/const";
-import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
+
+import { startLogin } from "@/const";
+import { trpc } from "@/lib/trpc";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -43,6 +44,7 @@ export function useAuth(options?: UseAuthOptions) {
       // header-based sessions (Safari ITP / WebView) are logged out too. The
       // backend cookie is cleared by the logout mutation.
       try {
+        sessionStorage.removeItem("elegex-session-token");
         sessionStorage.removeItem("manus-cookie");
       } catch {}
       utils.auth.me.setData(undefined, null);
@@ -52,7 +54,7 @@ export function useAuth(options?: UseAuthOptions) {
 
   const state = useMemo(() => {
     localStorage.setItem(
-      "manus-runtime-user-info",
+      "elegex-runtime-user-info",
       JSON.stringify(meQuery.data)
     );
     return {

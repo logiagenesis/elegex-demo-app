@@ -1,0 +1,665 @@
+--- environment contract ---
+import { z } from "zod";
+
+const logLevelSchema = z.enum([
+  "fatal",
+  "error",
+  "warn",
+  "info",
+  "debug",
+  "trace",
+]);
+
+const envSchema = z.object({
+  VITE_APP_ID: z.string().min(1, "VITE_APP_ID is required"),
+  JWT_SECRET: z
+    .string()
+    .min(16, "JWT_SECRET must be at least 16 characters for secure signing"),
+  DATABASE_URL: z
+    .string()
+    .url("DATABASE_URL must be a valid connection string"),
+  OAUTH_SERVER_URL: z.string().url("OAUTH_SERVER_URL must be a valid URL"),
+  VITE_OAUTH_PORTAL_URL: z
+    .string()
+    .url("VITE_OAUTH_PORTAL_URL is required for login redirection"),
+  OWNER_OPEN_ID: z.string().optional(),
+  SEED_OPEN_ID: z.string().optional(),
+  NODE_ENV: z
+    .enum(["development", "production", "test"])
+    .default("development"),
+  PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  LOG_LEVEL: logLevelSchema.default("info"),
+  OUTBOX_WORKER_ENABLED: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform(value => value === "true"),
+  BUILT_IN_FORGE_API_URL: z.string().url().optional(),
+  BUILT_IN_FORGE_API_KEY: z.string().min(1).optional(),
+  VITE_FRONTEND_FORGE_API_URL: z.string().url().optional(),
+  VITE_FRONTEND_FORGE_API_KEY: z.string().min(1).optional(),
+});
+
+type RawEnvironment = Record<string, string | undefined>;
+export type RuntimeEnvironment = z.infer<typeof envSchema>;
+
+const testDefaults: RawEnvironment = {
+  VITE_APP_ID: "test-app-id",
+  JWT_SECRET: "test-secret-must-be-16-chars",
+  DATABASE_URL: "mysql://test:test@localhost:3306/test",
+  OAUTH_SERVER_URL: "http://test-oauth.com",
+  VITE_OAUTH_PORTAL_URL: "http://test-portal.com",
+  NODE_ENV: "test",
+  OWNER_OPEN_ID: "test-owner",
+  SEED_OPEN_ID: "test-seed",
+  BUILT_IN_FORGE_API_URL: "http://test-forge.com",
+  BUILT_IN_FORGE_API_KEY: "test-forge-key",
+  VITE_FRONTEND_FORGE_API_URL: "http://test-forge-frontend.com",
+  VITE_FRONTEND_FORGE_API_KEY: "test-forge-frontend-key",
+};
+
+export function parseEnvironment(raw: RawEnvironment): RuntimeEnvironment {
+  const parsed = envSchema.safeParse(raw);
+  if (!parsed.success) {
+    const issues = parsed.error.issues
+      .map(issue => `${issue.path.join(".")}: ${issue.message}`)
+      .join("; ");
+    throw new Error(`Invalid environment configuration: ${issues}`);
+  }
+  return parsed.data;
+}
+
+export function createTestEnvironment(
+  overrides: RawEnvironment = {}
+): RuntimeEnvironment {
+  return parseEnvironment({ ...testDefaults, ...overrides, NODE_ENV: "test" });
+}
+
+function getTestRuntimeOverrides(raw: RawEnvironment): RawEnvironment {
+  return {
+    PORT: raw.PORT,
+    LOG_LEVEL: raw.LOG_LEVEL,
+    OUTBOX_WORKER_ENABLED: raw.OUTBOX_WORKER_ENABLED,
+  };
+}
+
+const runtimeEnvironment =
+  process.env.NODE_ENV === "test"
+    ? createTestEnvironment(getTestRuntimeOverrides(process.env))
+    : parseEnvironment(process.env);
+
+export const ENV = {
+  appId: runtimeEnvironment.VITE_APP_ID,
+  cookieSecret: runtimeEnvironment.JWT_SECRET,
+  databaseUrl: runtimeEnvironment.DATABASE_URL,
+  oAuthServerUrl: runtimeEnvironment.OAUTH_SERVER_URL,
+  ownerOpenId: runtimeEnvironment.OWNER_OPEN_ID ?? "",
+  nodeEnv: runtimeEnvironment.NODE_ENV,
+  port: runtimeEnvironment.PORT,
+  logLevel: runtimeEnvironment.LOG_LEVEL,
+  outboxWorkerEnabled: runtimeEnvironment.OUTBOX_WORKER_ENABLED,
+  isDevelopment: runtimeEnvironment.NODE_ENV === "development",
+  isProduction: runtimeEnvironment.NODE_ENV === "production",
+  forgeApiUrl: runtimeEnvironment.BUILT_IN_FORGE_API_URL ?? "",
+  forgeApiKey: runtimeEnvironment.BUILT_IN_FORGE_API_KEY ?? "",
+};
+\n--- auth session contract ---
+import {
+  AXIOS_TIMEOUT_MS,
+  COOKIE_NAME,
+  ONE_YEAR_MS,
+  decodeOAuthState,
+} from "@shared/const";
+import { ForbiddenError } from "@shared/_core/errors";
+import axios, { type AxiosInstance } from "axios";
+import { parse as parseCookieHeader } from "cookie";
+import type { Request } from "express";
+import { SignJWT, jwtVerify } from "jose";
+import type { User } from "../../drizzle/schema";
+import * as db from "../db";
+import { ENV } from "./env";
+import type {
+  ExchangeTokenRequest,
+  ExchangeTokenResponse,
+  GetUserInfoResponse,
+  GetUserInfoWithJwtRequest,
+  GetUserInfoWithJwtResponse,
+} from "./types/manusTypes";
+// Utility function
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === "string" && value.length > 0;
+
+export type SessionPayload = {
+  openId: string;
+  appId: string;
+  name: string;
+};
+
+const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
+const GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
+const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfoWithJwt`;
+
+class OAuthService {
+  constructor(private client: ReturnType<typeof axios.create>) {
+    console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
+    if (!ENV.oAuthServerUrl) {
+      console.error(
+        "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
+      );
+    }
+  }
+
+  private decodeState(state: string): string {
+    return decodeOAuthState(state).redirectUri;
+  }
+
+  async getTokenByCode(
+    code: string,
+    state: string
+  ): Promise<ExchangeTokenResponse> {
+    const payload: ExchangeTokenRequest = {
+      clientId: ENV.appId,
+      grantType: "authorization_code",
+      code,
+      redirectUri: this.decodeState(state),
+    };
+
+    const { data } = await this.client.post<ExchangeTokenResponse>(
+      EXCHANGE_TOKEN_PATH,
+      payload
+    );
+
+    return data;
+  }
+
+  async getUserInfoByToken(
+    token: ExchangeTokenResponse
+  ): Promise<GetUserInfoResponse> {
+    const { data } = await this.client.post<GetUserInfoResponse>(
+      GET_USER_INFO_PATH,
+      {
+        accessToken: token.accessToken,
+      }
+    );
+
+    return data;
+  }
+}
+
+const createOAuthHttpClient = (): AxiosInstance =>
+  axios.create({
+    baseURL: ENV.oAuthServerUrl,
+    timeout: AXIOS_TIMEOUT_MS,
+  });
+
+class SDKServer {
+  private readonly client: AxiosInstance;
+  private readonly oauthService: OAuthService;
+
+  constructor(client: AxiosInstance = createOAuthHttpClient()) {
+    this.client = client;
+    this.oauthService = new OAuthService(this.client);
+  }
+
+  private deriveLoginMethod(
+    platforms: unknown,
+    fallback: string | null | undefined
+  ): string | null {
+    if (fallback && fallback.length > 0) return fallback;
+    if (!Array.isArray(platforms) || platforms.length === 0) return null;
+    const set = new Set<string>(
+      platforms.filter((p): p is string => typeof p === "string")
+    );
+    if (set.has("REGISTERED_PLATFORM_EMAIL")) return "email";
+    if (set.has("REGISTERED_PLATFORM_GOOGLE")) return "google";
+    if (set.has("REGISTERED_PLATFORM_APPLE")) return "apple";
+    if (
+      set.has("REGISTERED_PLATFORM_MICROSOFT") ||
+      set.has("REGISTERED_PLATFORM_AZURE")
+    )
+      return "microsoft";
+    if (set.has("REGISTERED_PLATFORM_GITHUB")) return "github";
+    const first = Array.from(set)[0];
+    return first ? first.toLowerCase() : null;
+  }
+
+  /**
+   * Exchange OAuth authorization code for access token
+   * @example
+   * const tokenResponse = await sdk.exchangeCodeForToken(code, state);
+   */
+  async exchangeCodeForToken(
+    code: string,
+    state: string
+  ): Promise<ExchangeTokenResponse> {
+    return this.oauthService.getTokenByCode(code, state);
+  }
+
+  /**
+   * Get user information using access token
+   * @example
+   * const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
+   */
+  async getUserInfo(accessToken: string): Promise<GetUserInfoResponse> {
+    const data = await this.oauthService.getUserInfoByToken({
+      accessToken,
+    } as ExchangeTokenResponse);
+    const loginMethod = this.deriveLoginMethod(
+      (data as any)?.platforms,
+      (data as any)?.platform ?? data.platform ?? null
+    );
+    return {
+      ...(data as any),
+      platform: loginMethod,
+      loginMethod,
+    } as GetUserInfoResponse;
+  }
+
+  private parseCookies(cookieHeader: string | undefined) {
+    if (!cookieHeader) {
+      return new Map<string, string>();
+    }
+
+    const parsed = parseCookieHeader(cookieHeader);
+    return new Map(Object.entries(parsed));
+  }
+
+  private getSessionSecret() {
+    const secret = ENV.cookieSecret;
+    return new TextEncoder().encode(secret);
+  }
+
+  /**
+   * Create a session token for a Manus user openId
+   * @example
+   * const sessionToken = await sdk.createSessionToken(userInfo.openId);
+   */
+  async createSessionToken(
+    openId: string,
+    options: { expiresInMs?: number; name?: string } = {}
+  ): Promise<string> {
+    return this.signSession(
+      {
+        openId,
+        appId: ENV.appId,
+        name: options.name || "",
+      },
+      options
+    );
+  }
+
+  async signSession(
+    payload: SessionPayload,
+    options: { expiresInMs?: number } = {}
+  ): Promise<string> {
+    const issuedAt = Date.now();
+    const expiresInMs = options.expiresInMs ?? ONE_YEAR_MS;
+    const expirationSeconds = Math.floor((issuedAt + expiresInMs) / 1000);
+    const secretKey = this.getSessionSecret();
+
+    return new SignJWT({
+      openId: payload.openId,
+      appId: payload.appId,
+      name: payload.name,
+    })
+      .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+      .setExpirationTime(expirationSeconds)
+      .sign(secretKey);
+  }
+
+  async verifySession(
+    cookieValue: string | undefined | null
+  ): Promise<{ openId: string; appId: string; name: string } | null> {
+    if (!cookieValue) {
+      console.warn("[Auth] Missing session cookie");
+      return null;
+    }
+
+    try {
+      const secretKey = this.getSessionSecret();
+      const { payload } = await jwtVerify(cookieValue, secretKey, {
+        algorithms: ["HS256"],
+      });
+      const { openId, appId, name } = payload as Record<string, unknown>;
+
+      if (
+        !isNonEmptyString(openId) ||
+        !isNonEmptyString(appId) ||
+        !isNonEmptyString(name)
+      ) {
+        console.warn("[Auth] Session payload missing required fields");
+        return null;
+      }
+
+      return {
+        openId,
+        appId,
+        name,
+      };
+    } catch (error) {
+      console.warn("[Auth] Session verification failed", String(error));
+      return null;
+    }
+  }
+
+  async getUserInfoWithJwt(
+    jwtToken: string
+  ): Promise<GetUserInfoWithJwtResponse> {
+    const payload: GetUserInfoWithJwtRequest = {
+      jwtToken,
+      projectId: ENV.appId,
+    };
+
+    const { data } = await this.client.post<GetUserInfoWithJwtResponse>(
+      GET_USER_INFO_WITH_JWT_PATH,
+      payload
+    );
+
+    const loginMethod = this.deriveLoginMethod(
+      (data as any)?.platforms,
+      (data as any)?.platform ?? data.platform ?? null
+    );
+    return {
+      ...(data as any),
+      platform: loginMethod,
+      loginMethod,
+    } as GetUserInfoWithJwtResponse;
+  }
+
+  async authenticateRequest(req: Request): Promise<AuthenticatedUser> {
+    // 1. Prefer the session cookie (regular OAuth login).
+    const cookies = this.parseCookies(req.headers.cookie);
+    let sessionToken = cookies.get(COOKIE_NAME);
+
+    // 2. Fallback to the Authorization header (Preview auto-login via
+    //    sessionStorage), used when the browser blocks iframe cookies such as
+    //    Safari ITP, private browsing, or iOS/Android WebView.
+    if (!sessionToken) {
+      const authHeader = req.headers.authorization;
+      if (typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
+        sessionToken = authHeader.slice(7);
+      }
+    }
+
+    const session = await this.verifySession(sessionToken);
+
+    if (!session) {
+\n--- OAuth route ---
+import {
+  COOKIE_NAME,
+  ONE_YEAR_MS,
+  OAUTH_STATE_COOKIE,
+  decodeOAuthState,
+} from "@shared/const";
+import { parse as parseCookieHeader } from "cookie";
+import type { Express, Request, Response } from "express";
+import * as db from "../db";
+import { getSessionCookieOptions } from "./cookies";
+import { sdk } from "./sdk";
+
+function getQueryParam(req: Request, key: string): string | undefined {
+  const value = req.query[key];
+  return typeof value === "string" ? value : undefined;
+}
+
+export function registerOAuthRoutes(app: Express) {
+  app.get("/api/oauth/callback", async (req: Request, res: Response) => {
+    const code = getQueryParam(req, "code");
+    const state = getQueryParam(req, "state");
+
+    if (!code || !state) {
+      res.status(400).json({ error: "code and state are required" });
+      return;
+    }
+
+    // CSRF guard: the nonce in `state` must match the one-time cookie that
+    // startLogin set in the browser that began this login. An attacker can
+    // forge `state`, but cannot plant this cookie in the victim's browser.
+    const { nonce } = decodeOAuthState(state);
+    const expectedNonce = parseCookieHeader(req.headers.cookie ?? "")[
+      OAUTH_STATE_COOKIE
+    ];
+    if (!nonce || nonce !== expectedNonce) {
+      res.status(403).json({ error: "invalid oauth state" });
+      return;
+    }
+    res.clearCookie(OAUTH_STATE_COOKIE, {
+      path: "/",
+      secure: true,
+      sameSite: "none",
+    });
+
+    try {
+      const tokenResponse = await sdk.exchangeCodeForToken(code, state);
+      const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
+
+      if (!userInfo.openId) {
+        res.status(400).json({ error: "openId missing from user info" });
+        return;
+      }
+
+      await db.upsertUser({
+        openId: userInfo.openId,
+        name: userInfo.name || null,
+        email: userInfo.email ?? null,
+        loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+        lastSignedIn: new Date(),
+      });
+
+      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
+        name: userInfo.name || "",
+        expiresInMs: ONE_YEAR_MS,
+      });
+
+      const cookieOptions = getSessionCookieOptions(req);
+      res.cookie(COOKIE_NAME, sessionToken, {
+        ...cookieOptions,
+        maxAge: ONE_YEAR_MS,
+      });
+
+      res.redirect(302, "/");
+    } catch (error) {
+      console.error("[OAuth] Callback failed", error);
+      res.status(500).json({ error: "OAuth callback failed" });
+    }
+  });
+}
+\n--- storage proxy ---
+import type { Express } from "express";
+import { ENV } from "./env";
+
+export function registerStorageProxy(app: Express) {
+  app.get("/manus-storage/*key", async (req, res) => {
+    const wildcard = (req.params as { key?: string | string[] }).key;
+    const key = Array.isArray(wildcard) ? wildcard.join("/") : wildcard;
+    if (!key) {
+      res.status(400).send("Missing storage key");
+      return;
+    }
+
+    if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
+      res.status(500).send("Storage proxy not configured");
+      return;
+    }
+
+    try {
+      const forgeUrl = new URL(
+        "v1/storage/presign/get",
+        ENV.forgeApiUrl.replace(/\/+$/, "") + "/"
+      );
+      forgeUrl.searchParams.set("path", key);
+
+      const forgeResp = await fetch(forgeUrl, {
+        headers: { Authorization: `Bearer ${ENV.forgeApiKey}` },
+      });
+
+      if (!forgeResp.ok) {
+        const body = await forgeResp.text().catch(() => "");
+        console.error(
+          `[StorageProxy] forge error: ${forgeResp.status} ${body}`
+        );
+        res.status(502).send("Storage backend error");
+        return;
+      }
+
+      const { url } = (await forgeResp.json()) as { url: string };
+      if (!url) {
+        res.status(502).send("Empty signed URL from backend");
+        return;
+      }
+
+      res.set("Cache-Control", "no-store");
+      res.redirect(307, url);
+    } catch (err) {
+      console.error("[StorageProxy] failed:", err);
+      res.status(502).send("Storage proxy error");
+    }
+  });
+}
+\n--- Vite build configuration ---
+import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import fs from "node:fs";
+import path from "node:path";
+import { defineConfig, type Plugin, type ViteDevServer } from "vite";
+import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
+
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+];
+
+export default defineConfig({
+  plugins,
+  resolve: {
+    alias: {
+      "@": path.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path.resolve(import.meta.dirname, "shared"),
+      "@assets": path.resolve(import.meta.dirname, "attached_assets"),
+    },
+  },
+  envDir: path.resolve(import.meta.dirname),
+  root: path.resolve(import.meta.dirname, "client"),
+  publicDir: path.resolve(import.meta.dirname, "client", "public"),
+  build: {
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    emptyOutDir: true,
+  },
+  server: {
+    host: true,
+    allowedHosts: [
+      ".manuspre.computer",
+      ".manus.computer",
+      ".manus-asia.computer",
+      ".manuscomputer.ai",
+      ".manusvm.computer",
+      "localhost",
+      "127.0.0.1",
+    ],
+    fs: {
+      strict: true,
+      deny: ["**/.*"],
+    },
+  },
+});
+\n--- client auth hook ---
+import { startLogin } from "@/const";
+import { trpc } from "@/lib/trpc";
+import { TRPCClientError } from "@trpc/client";
+import { useCallback, useEffect, useMemo } from "react";
+
+type UseAuthOptions = {
+  redirectOnUnauthenticated?: boolean;
+  redirectPath?: string;
+};
+
+export function useAuth(options?: UseAuthOptions) {
+  // Login is started via startLogin() in the effect below, only when we actually
+  // navigate — never during render. startLogin() mints a one-time nonce + writes
+  // the state cookie, so calling it per render would overwrite the cookie and
+  // desync it from an in-flight login's `state`.
+  const { redirectOnUnauthenticated = false, redirectPath } = options ?? {};
+  const utils = trpc.useUtils();
+
+  const meQuery = trpc.auth.me.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const logoutMutation = trpc.auth.logout.useMutation({
+    onSuccess: () => {
+      utils.auth.me.setData(undefined, null);
+    },
+  });
+
+  const logout = useCallback(async () => {
+    try {
+      await logoutMutation.mutateAsync();
+    } catch (error: unknown) {
+      if (
+        error instanceof TRPCClientError &&
+        error.data?.code === "UNAUTHORIZED"
+      ) {
+        return;
+      }
+      throw error;
+    } finally {
+      // Clear the Preview auto-login token mirrored into sessionStorage, so
+      // header-based sessions (Safari ITP / WebView) are logged out too. The
+      // backend cookie is cleared by the logout mutation.
+      try {
+        sessionStorage.removeItem("manus-cookie");
+      } catch {}
+      utils.auth.me.setData(undefined, null);
+      await utils.auth.me.invalidate();
+    }
+  }, [logoutMutation, utils]);
+
+  const state = useMemo(() => {
+    localStorage.setItem(
+      "manus-runtime-user-info",
+      JSON.stringify(meQuery.data)
+    );
+    return {
+      user: meQuery.data ?? null,
+      loading: meQuery.isLoading || logoutMutation.isPending,
+      error: meQuery.error ?? logoutMutation.error ?? null,
+      isAuthenticated: Boolean(meQuery.data),
+    };
+  }, [
+    meQuery.data,
+    meQuery.error,
+    meQuery.isLoading,
+    logoutMutation.error,
+    logoutMutation.isPending,
+  ]);
+
+  useEffect(() => {
+    if (!redirectOnUnauthenticated) return;
+    if (meQuery.isLoading || logoutMutation.isPending) return;
+    if (state.user) return;
+    if (typeof window === "undefined") return;
+    if (redirectPath && window.location.pathname === redirectPath) return;
+
+    // Navigate at this moment only. startLogin() mints the nonce + cookie itself.
+    if (redirectPath) {
+      window.location.href = redirectPath;
+    } else {
+      startLogin();
+    }
+  }, [
+    redirectOnUnauthenticated,
+    redirectPath,
+    logoutMutation.isPending,
+    meQuery.isLoading,
+    state.user,
+  ]);
+
+  return {
+    ...state,
+    refresh: () => meQuery.refetch(),
+    logout,
+  };
+}

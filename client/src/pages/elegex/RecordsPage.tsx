@@ -1,8 +1,3 @@
-import { PageHeading } from "../ElegexPages";
-import { trpc } from "@/lib/trpc";
-import { formatOrganizationDate } from "@/lib/organizationFormat";
-import { useState } from "react";
-import { useLocation } from "wouter";
 import {
   BriefcaseBusiness,
   ChevronLeft,
@@ -15,9 +10,16 @@ import {
   Search,
   UsersRound,
 } from "lucide-react";
+import { useState } from "react";
+import { useLocation } from "wouter";
+
+import { PageHeading } from "../ElegexPages";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { formatOrganizationDate } from "@/lib/organizationFormat";
+import { trpc } from "@/lib/trpc";
 
 type RecordKind = "contacts" | "projects" | "cases";
 

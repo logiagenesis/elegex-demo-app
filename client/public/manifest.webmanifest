@@ -1,0 +1,17 @@
+{
+  "name": "Elegex Field Service",
+  "short_name": "Elegex",
+  "description": "Reliable field-service operations for mobile crews and office teams.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6F8FC",
+  "theme_color": "#12264F",
+  "icons": [
+    {
+      "src": "/manus-storage/elegex-brand-mark_bd91b904.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

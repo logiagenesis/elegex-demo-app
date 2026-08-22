@@ -1,11 +1,58 @@
-# Copy these variable names into your hosting provider's encrypted secret manager.
-# Replace every value with a real value. Do not rename this file to .env or commit secrets.
+# Copy variable names into your hosting provider's encrypted secret manager.
+# This reference is not loaded by the application and must never contain real credentials.
 
+# Core runtime
+NODE_ENV=production
+PORT=3000
 DATABASE_URL=mysql://<username>:<password>@<host>:3306/<database>
 JWT_SECRET=<generate-a-long-random-secret>
+LOG_LEVEL=info
+SLOW_QUERY_MS=750
+TRUST_PROXY_HOPS=1
+OUTBOX_WORKER_ENABLED=false
+
+# Authentication: manus | demo | oidc | dev. Demo and dev are rejected in production.
+AUTH_PROVIDER=manus
 VITE_APP_ID=<oauth-application-id>
 OAUTH_SERVER_URL=https://api.manus.im
 VITE_OAUTH_PORTAL_URL=https://manus.im
+PUBLIC_APP_ORIGIN=https://<public-host>
+OWNER_OPEN_ID=<optional-owner-open-id>
 
-# Optional for the standalone seed script only.
-SEED_OPEN_ID=<local-demo-owner-id>
+# Required for production observability scraping. Send as Authorization: Bearer <value>.
+METRICS_BEARER_TOKEN=<generate-a-long-random-metrics-token>
+
+# Only required when AUTH_PROVIDER=oidc.
+OIDC_ISSUER_URL=https://<identity-provider>
+OIDC_CLIENT_ID=<oidc-client-id>
+OIDC_CLIENT_SECRET=<oidc-client-secret>
+OIDC_REDIRECT_URI=https://<public-host>/api/oauth/callback
+
+# Storage: manus | s3 | local. Local is rejected in production.
+STORAGE_PROVIDER=manus
+S3_ENDPOINT=https://<s3-compatible-endpoint>
+S3_REGION=<region>
+S3_BUCKET=<bucket>
+S3_ACCESS_KEY_ID=<access-key-id>
+S3_SECRET_ACCESS_KEY=<secret-access-key>
+
+# Notifications: manus | webhook | email | noop.
+NOTIFICATION_PROVIDER=manus
+NOTIFICATION_WEBHOOK_URL=https://<webhook-endpoint>
+SMTP_URL=smtps://<user>:<password>@<smtp-host>:465
+NOTIFICATION_FROM=operations@<your-domain>
+
+# AI: noop | anthropic. Set aiOptIn in workspace settings before use.
+AI_PROVIDER=noop
+ANTHROPIC_API_KEY=<optional-anthropic-api-key>
+ANTHROPIC_MODEL=claude-3-5-haiku-latest
+AI_DAILY_TOKEN_BUDGET=100000
+AI_INPUT_COST_MICROS_PER_MILLION=0
+AI_OUTPUT_COST_MICROS_PER_MILLION=0
+
+# Zero-external-account Compose demo overrides:
+# NODE_ENV=development
+# AUTH_PROVIDER=demo
+# STORAGE_PROVIDER=local
+# NOTIFICATION_PROVIDER=noop
+# AI_PROVIDER=noop

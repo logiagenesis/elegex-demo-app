@@ -1,0 +1,314 @@
+--- repository baseline ---
+2e75784
+ [31mM[m todo.md
+[31m??[m .baseline-inventory.txt
+\n--- top-level implementation files ---
+client/src/App.tsx
+client/src/components/DashboardLayout.interaction.test.tsx
+client/src/components/DashboardLayout.tsx
+client/src/components/DashboardLayoutSkeleton.tsx
+client/src/components/ErrorBoundary.tsx
+client/src/components/ManusDialog.tsx
+client/src/components/Map.tsx
+client/src/const.ts
+client/src/contexts/ThemeContext.tsx
+client/src/hooks/useComposition.ts
+client/src/hooks/useMobile.tsx
+client/src/hooks/usePersistFn.ts
+client/src/lib/access.ts
+client/src/lib/foremanSync.ts
+client/src/lib/network-partition.test.ts
+client/src/lib/offline-integration.test.ts
+client/src/lib/organizationFormat.test.ts
+client/src/lib/organizationFormat.ts
+client/src/lib/syncQueue.test.ts
+client/src/lib/syncQueue.ts
+client/src/lib/trpc.ts
+client/src/lib/utils.ts
+client/src/lib/workspace-ui.test.ts
+client/src/lib/workspace-ui.ts
+client/src/main.tsx
+client/src/pages/ElegexPages.tsx
+client/src/pages/FieldServicePages.tsx
+client/src/pages/ForemanPage.tsx
+client/src/pages/NotFound.tsx
+client/src/pages/OrganizationSettingsPage.tsx
+client/src/pages/TypedDocumentsPage.tsx
+client/src/pages/frontend-state-contract.test.ts
+drizzle/meta/0000_snapshot.json
+drizzle/meta/0001_snapshot.json
+drizzle/meta/0002_snapshot.json
+drizzle/meta/0003_snapshot.json
+drizzle/meta/0004_snapshot.json
+drizzle/meta/0005_snapshot.json
+drizzle/meta/0006_snapshot.json
+drizzle/meta/0007_snapshot.json
+drizzle/meta/0008_snapshot.json
+drizzle/meta/0009_snapshot.json
+drizzle/meta/0010_snapshot.json
+drizzle/meta/0011_snapshot.json
+drizzle/meta/_journal.json
+drizzle/relations.ts
+drizzle/schema.ts
+server/_core/apiFallback.ts
+server/_core/context.ts
+server/_core/cookies.ts
+server/_core/dataApi.ts
+server/_core/env.ts
+server/_core/heartbeat.ts
+server/_core/imageGeneration.ts
+server/_core/index.ts
+server/_core/llm.ts
+server/_core/logger.ts
+server/_core/map.ts
+server/_core/notification.ts
+server/_core/oauth.ts
+server/_core/sdk.ts
+server/_core/storageProxy.ts
+server/_core/systemRouter.ts
+server/_core/trpc.ts
+server/_core/types/cookie.d.ts
+server/_core/types/manusTypes.ts
+server/_core/vite.ts
+server/_core/voiceTranscription.ts
+server/api-fallback.test.ts
+server/auth.logout.test.ts
+server/connectors/audit.ts
+server/connectors/database.test.ts
+server/connectors/database.ts
+server/connectors/outbox.ts
+server/connectors/schemaGuard.test.ts
+server/connectors/worker.ts
+server/db.ts
+server/elegex.access.test.ts
+server/elegex.contract.test.ts
+server/elegex.procedure-auth.test.ts
+server/elegex.workflow.test.ts
+server/env-contract.test.ts
+server/idempotency.stress.test.ts
+server/routers.ts
+server/routers/elegex.ts
+server/storage.ts
+shared/_core/errors.ts
+shared/const.ts
+shared/types.ts
+\n--- provider/coupling references ---
+client/src/_core/hooks/useAuth.ts:46:        sessionStorage.removeItem("manus-cookie");
+client/src/_core/hooks/useAuth.ts:55:      "manus-runtime-user-info",
+client/src/components/DashboardLayout.tsx:70:        src="/manus-storage/elegex-user-logo-transparent_32ecda05.png"
+client/src/lib/foremanSync.ts:1:import type { SyncMutation } from "./syncQueue";
+client/src/lib/network-partition.test.ts:3:import { SyncQueue } from "./syncQueue";
+client/src/lib/network-partition.test.ts:14:    // Simulate a transport that fails when offline, and is idempotent when online
+client/src/lib/network-partition.test.ts:50:    // 1. Start offline, queue a check-in
+client/src/lib/network-partition.test.ts:101:    // Try to sync while offline
+client/src/lib/offline-integration.test.ts:3:import { SyncQueue } from "./syncQueue";
+client/src/lib/offline-integration.test.ts:45:      databaseName: `elegex-offline-integration-${Math.random()}`,
+client/src/lib/offline-integration.test.ts:52:    // 1. App is offline. Foreman checks in and adds materials.
+client/src/lib/offline-integration.test.ts:66:    // Try to drain while offline
+client/src/lib/offline-integration.test.ts:84:    // 2. Simulate tab crash/reload while offline
+client/src/lib/syncQueue.test.ts:3:import { SyncQueue, type SyncMutation } from "./syncQueue";
+client/src/main.tsx:51:          const raw = sessionStorage.getItem("manus-cookie");
+client/src/pages/ForemanPage.tsx:6:import { SyncQueue, type ForemanMutationType } from "@/lib/syncQueue";
+server/_core/dataApi.ts:21:    throw new Error("BUILT_IN_FORGE_API_URL is not configured");
+server/_core/dataApi.ts:24:    throw new Error("BUILT_IN_FORGE_API_KEY is not configured");
+server/_core/env.ts:35:  BUILT_IN_FORGE_API_URL: z.string().url().optional(),
+server/_core/env.ts:36:  BUILT_IN_FORGE_API_KEY: z.string().min(1).optional(),
+server/_core/env.ts:53:  BUILT_IN_FORGE_API_URL: "http://test-forge.com",
+server/_core/env.ts:54:  BUILT_IN_FORGE_API_KEY: "test-forge-key",
+server/_core/env.ts:101:  forgeApiUrl: runtimeEnvironment.BUILT_IN_FORGE_API_URL ?? "",
+server/_core/env.ts:102:  forgeApiKey: runtimeEnvironment.BUILT_IN_FORGE_API_KEY ?? "",
+server/_core/heartbeat.ts:50:        "Heartbeat service URL is not configured (BUILT_IN_FORGE_API_URL).",
+server/_core/heartbeat.ts:57:        "Heartbeat service API key is not configured (BUILT_IN_FORGE_API_KEY).",
+server/_core/imageGeneration.ts:47:    throw new Error("BUILT_IN_FORGE_API_URL is not configured");
+server/_core/imageGeneration.ts:50:    throw new Error("BUILT_IN_FORGE_API_KEY is not configured");
+server/_core/imageGeneration.ts:127:    throw new Error("BUILT_IN_FORGE_API_URL is not configured");
+server/_core/imageGeneration.ts:130:    throw new Error("BUILT_IN_FORGE_API_KEY is not configured");
+server/_core/index.ts:10:import { registerStorageProxy } from "./storageProxy";
+server/_core/index.ts:16:import { startOutboxWorker, stopOutboxWorker } from "../connectors/worker";
+server/_core/index.ts:140:    startOutboxWorker();
+server/_core/map.ts:27:      "Google Maps proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
+server/_core/notification.ts:64:export async function notifyOwner(
+server/_core/sdk.ts:36:class OAuthService {
+server/_core/sdk.ts:91:  private readonly oauthService: OAuthService;
+server/_core/sdk.ts:95:    this.oauthService = new OAuthService(this.client);
+server/_core/storageProxy.ts:5:  app.get("/manus-storage/*key", async (req, res) => {
+server/_core/systemRouter.ts:2:import { notifyOwner } from "./notification";
+server/_core/systemRouter.ts:16:  notifyOwner: adminProcedure
+server/_core/systemRouter.ts:24:      const delivered = await notifyOwner(input);
+server/_core/voiceTranscription.ts:87:        details: "BUILT_IN_FORGE_API_URL is not set",
+server/_core/voiceTranscription.ts:94:        details: "BUILT_IN_FORGE_API_KEY is not set",
+server/connectors/worker.ts:18:export function startOutboxWorker(pollIntervalMs = 10000) {
+server/db.ts:3381:    document.storageUrl?.startsWith("/manus-storage/")
+server/elegex.access.test.ts:57:        storageUrl: "/manus-storage/brief.pdf",
+server/elegex.access.test.ts:63:        storageUrl: "/manus-storage/brief.pdf",
+server/elegex.workflow.test.ts:120:        storageUrl: "/manus-storage/handover.pdf",
+server/storage.ts:3:// Downloads return /manus-storage/{key} paths served via 307 redirect.
+server/storage.ts:13:      "Storage config missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
+server/storage.ts:71:  return { key, url: `/manus-storage/${key}` };
+server/storage.ts:78:  return { key, url: `/manus-storage/${key}` };
+\n--- package scripts ---
+{
+  "scripts": {
+    "dev": "NODE_ENV=development tsx watch server/_core/index.ts",
+    "build": "vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "start": "NODE_ENV=production node dist/index.js",
+    "check": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "release:evidence:check": "node scripts/validate-release-evidence.mjs",
+    "test:integration:mariadb": "node scripts/verify-mariadb-integration.mjs",
+    "seed:demo": "node scripts/seed-demo.mjs",
+    "test:integration:seed": "node scripts/verify-seed-demo.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "pnpm db:generate && pnpm db:migrate",
+    "verify": "pnpm format:check && pnpm check && pnpm test && pnpm release:evidence:check && pnpm build",
+    "smoke:release": "node scripts/release-smoke.mjs"
+  },
+  "dependencies": [
+    "@hookform/resolvers",
+    "@radix-ui/react-accordion",
+    "@radix-ui/react-alert-dialog",
+    "@radix-ui/react-aspect-ratio",
+    "@radix-ui/react-avatar",
+    "@radix-ui/react-checkbox",
+    "@radix-ui/react-collapsible",
+    "@radix-ui/react-context-menu",
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-dropdown-menu",
+    "@radix-ui/react-hover-card",
+    "@radix-ui/react-label",
+    "@radix-ui/react-menubar",
+    "@radix-ui/react-navigation-menu",
+    "@radix-ui/react-popover",
+    "@radix-ui/react-progress",
+    "@radix-ui/react-radio-group",
+    "@radix-ui/react-scroll-area",
+    "@radix-ui/react-select",
+    "@radix-ui/react-separator",
+    "@radix-ui/react-slider",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-switch",
+    "@radix-ui/react-tabs",
+    "@radix-ui/react-toggle",
+    "@radix-ui/react-toggle-group",
+    "@radix-ui/react-tooltip",
+    "@tanstack/react-query",
+    "@trpc/client",
+    "@trpc/react-query",
+    "@trpc/server",
+    "axios",
+    "class-variance-authority",
+    "clsx",
+    "cmdk",
+    "cookie",
+    "date-fns",
+    "dotenv",
+    "drizzle-orm",
+    "embla-carousel-react",
+    "express",
+    "express-rate-limit",
+    "framer-motion",
+    "helmet",
+    "input-otp",
+    "jose",
+    "lucide-react",
+    "mysql2",
+    "nanoid",
+    "next-themes",
+    "pino",
+    "pino-http",
+    "react",
+    "react-day-picker",
+    "react-dom",
+    "react-hook-form",
+    "react-resizable-panels",
+    "recharts",
+    "sonner",
+    "superjson",
+    "tailwind-merge",
+    "tailwindcss-animate",
+    "vaul",
+    "wouter",
+    "zod"
+  ],
+  "devDependencies": [
+    "@builder.io/vite-plugin-jsx-loc",
+    "@tailwindcss/typography",
+    "@tailwindcss/vite",
+    "@testing-library/react",
+    "@testing-library/user-event",
+    "@types/express",
+    "@types/google.maps",
+    "@types/node",
+    "@types/react",
+    "@types/react-dom",
+    "@vitejs/plugin-react",
+    "autoprefixer",
+    "drizzle-kit",
+    "esbuild",
+    "fake-indexeddb",
+    "jsdom",
+    "pino-pretty",
+    "postcss",
+    "prettier",
+    "tailwindcss",
+    "tsx",
+    "tw-animate-css",
+    "typescript",
+    "vite",
+    "vite-plugin-manus-runtime",
+    "vitest"
+  ]
+}
+\n--- current route declarations ---
+4:import { canAccessWorkspaceRoute } from "@/lib/access";
+6:import { Route, Switch, useLocation } from "wouter";
+73:function RouteLoading() {
+81:function PrivilegedRoute({
+89:  if (workspace.isLoading) return <RouteLoading />;
+90:  if (!canAccessWorkspaceRoute(path, workspace.data?.role))
+110:class RouteLoadBoundary extends Component<
+154:function Router() {
+158:      <RouteLoadBoundary key={location}>
+159:        <Suspense fallback={<RouteLoading />}>
+160:          <Switch>
+161:            <Route path="/" component={FieldCommandCentre} />
+162:            <Route path="/jobs/:id">
+164:            </Route>
+165:            <Route path="/jobs" component={JobsPage} />
+166:            <Route path="/field" component={ForemanPage} />
+167:            <Route path="/dispatch" component={DispatchPage} />
+168:            <Route path="/projects/:id">
+172:            </Route>
+173:            <Route path="/cases/:id">
+177:            </Route>
+178:            <Route path="/contacts/:id">
+182:            </Route>
+183:            <Route path="/projects">
+185:            </Route>
+186:            <Route path="/cases">{() => <RecordsPage kind="cases" />}</Route>
+187:            <Route path="/contacts">
+189:            </Route>
+190:            <Route path="/tasks" component={TasksPage} />
+191:            <Route path="/documents" component={DocumentsPage} />
+192:            <Route path="/reports" component={FieldReportsPage} />
+193:            <Route path="/staging">
+195:                <PrivilegedRoute path="/staging">
+197:                </PrivilegedRoute>
+199:            </Route>
+200:            <Route path="/notifications" component={NotificationsPage} />
+201:            <Route path="/admin">
+203:                <PrivilegedRoute path="/admin">
+205:                </PrivilegedRoute>
+207:            </Route>
+208:            <Route path="/settings">
+210:                <PrivilegedRoute path="/settings">
+212:                </PrivilegedRoute>
+214:            </Route>
+215:            <Route>
+217:            </Route>
+218:          </Switch>
+220:      </RouteLoadBoundary>
+231:          <Router />

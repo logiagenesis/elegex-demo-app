@@ -1,20 +1,3 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  formatOrganizationDate,
-  formatOrganizationDateTime,
-  formatOrganizationMoney,
-} from "@/lib/organizationFormat";
-import { trpc } from "@/lib/trpc";
 import { format, formatDistanceToNowStrict } from "date-fns";
 import {
   AlertTriangle,
@@ -50,6 +33,24 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  formatOrganizationDate,
+  formatOrganizationDateTime,
+  formatOrganizationMoney,
+} from "@/lib/organizationFormat";
+import { trpc } from "@/lib/trpc";
 
 const stageStyle: Record<string, string> = {
   scheduled: "bg-[#E9F0FF] text-[#1D56C9]",

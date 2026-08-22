@@ -1,20 +1,3 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-} from "@/components/ui/sidebar";
-import { startLogin } from "@/const";
-import { canAccessWorkspaceAdministration } from "@/lib/access";
-import { trpc } from "@/lib/trpc";
 import {
   Bell,
   BriefcaseBusiness,
@@ -35,8 +18,26 @@ import {
 import React, { useState } from "react";
 import { useLocation } from "wouter";
 
+import { useAuth } from "@/_core/hooks/useAuth";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+} from "@/components/ui/sidebar";
+import { startLogin } from "@/const";
+import { canAccessWorkspaceAdministration } from "@/lib/access";
+import { trpc } from "@/lib/trpc";
+
 const primaryNavigation = [
-  { icon: LayoutDashboard, label: "Office overview", path: "/" },
+  { icon: LayoutDashboard, label: "Office overview", path: "/app" },
   { icon: Wrench, label: "Jobs", path: "/jobs" },
   { icon: ClipboardCheck, label: "My field visits", path: "/field" },
   { icon: MapPinned, label: "Dispatch", path: "/dispatch" },
@@ -67,8 +68,8 @@ function ElegexWordmark({
       className={`inline-flex items-center gap-2 ${inverted ? "text-white" : "text-[#101827]"}`}
     >
       <img
-        src="/manus-storage/elegex-user-logo-transparent_32ecda05.png"
-        alt="Elegex metallic E mark"
+        src="/manus-storage/elegex-brand-mark_bd91b904.png"
+        alt="Elegex brand mark"
         className={`h-6 w-6 object-contain ${inverted ? "rounded-md bg-white/95 p-0.5 shadow-sm" : ""}`}
       />
       <span className="font-black tracking-[0.13em]">ELEGEX</span>
@@ -94,7 +95,15 @@ export default function DashboardLayout({
   const workspace = trpc.elegex.workspace.current.useQuery(undefined, {
     enabled: Boolean(user),
   });
+  const authProvider = trpc.auth.provider.useQuery(undefined, {
+    retry: false,
+    staleTime: Infinity,
+  });
   const isPrivileged = canAccessWorkspaceAdministration(workspace.data?.role);
+  const isDemoProvider = authProvider.data?.isDemo === true;
+  const signInLabel = isDemoProvider
+    ? "Choose a demo persona"
+    : `Continue with ${authProvider.data?.label ?? "secure sign-in"}`;
 
   if (loading) return <div className="min-h-screen bg-[#F5F7FB]" />;
   if (!user) {
@@ -159,15 +168,15 @@ export default function DashboardLayout({
               Sign in to operations
             </h2>
             <p className="mt-3 text-sm leading-6 text-[#667085]">
-              Continue securely with your Manus account. Your first sign-in
-              provisions a private multi-tenant operations workspace with a
-              clearly labelled, synthetic demonstration history.
+              {isDemoProvider
+                ? "Choose a role-scoped synthetic persona to explore the shareable demo environment."
+                : "Continue through the configured identity provider to access your tenant-scoped operations workspace."}
             </p>
             <Button
               onClick={() => startLogin()}
               className="mt-8 h-12 w-full rounded-xl bg-[#195FE6] text-sm font-semibold shadow-[0_8px_20px_rgba(25,95,230,0.25)] hover:bg-[#124FC3]"
             >
-              Continue with Manus
+              {signInLabel}
             </Button>
             <div className="mt-5 grid grid-cols-3 gap-2 text-center lg:hidden">
               <span className="rounded-lg bg-[#F5F8FF] px-2 py-2 text-[10px] font-semibold text-[#50617F]">
@@ -182,12 +191,12 @@ export default function DashboardLayout({
             </div>
             <div className="mt-8 rounded-xl bg-[#F5F8FF] p-4 text-sm leading-6 text-[#4B5C7A]">
               <span className="font-semibold text-[#14213D]">
-                Demonstration access
+                {isDemoProvider ? "Demo environment" : "Secure access"}
               </span>
               <br />
-              No shared password is required. Use any Manus account; the app
-              provisions a tenant-isolated synthetic workspace with owner,
-              admin, manager, member, and viewer roles.
+              {isDemoProvider
+                ? "No shared password is required. Every persona receives a signed session and a real role in a tenant-isolated synthetic workspace."
+                : "Your identity provider establishes a signed session before any tenant data is loaded."}
             </div>
             <p className="mt-5 text-center text-xs text-[#98A2B3]">
               Public entry is independent of tenant data and remains available
@@ -224,7 +233,10 @@ export default function DashboardLayout({
         className={`border-r border-[#E7ECF5] bg-white ${mobileOpen ? "translate-x-0" : ""}`}
       >
         <SidebarHeader className="h-20 justify-center px-5">
-          <button onClick={() => navigate("/")} className="text-left text-sm">
+          <button
+            onClick={() => navigate("/app")}
+            className="text-left text-sm"
+          >
             <ElegexWordmark compact />
           </button>
         </SidebarHeader>
@@ -326,7 +338,7 @@ export default function DashboardLayout({
                 {workspace.data?.organizationName || "Elegex Operations"}
               </p>
               <p className="text-sm font-semibold text-[#14213D]">
-                {location === "/"
+                {location === "/app"
                   ? "Command centre"
                   : location.slice(1).replace(/-/g, " ")}
               </p>

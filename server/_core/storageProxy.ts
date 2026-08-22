@@ -1,51 +1,60 @@
-import type { Express } from "express";
-import { ENV } from "./env";
+import type { Express, Request, Response } from "express";
+
+import { canUserReadStorageKey } from "../db";
+import { getStorageProvider } from "../providers/storage";
+import { assertStorageKey } from "../providers/storage/validation";
+
+import { sdk } from "./sdk";
+
+const PUBLIC_STORAGE_KEYS = new Set(["elegex-brand-mark_bd91b904.png"]);
+
+function extractKey(req: Request) {
+  const wildcard = (req.params as { key?: string | string[] }).key;
+  return Array.isArray(wildcard) ? wildcard.join("/") : wildcard;
+}
+
+async function canReadStorageKey(req: Request, key: string) {
+  if (PUBLIC_STORAGE_KEYS.has(key)) return true;
+  try {
+    const user = await sdk.authenticateRequest(req);
+    return await canUserReadStorageKey(user.id, key);
+  } catch {
+    return false;
+  }
+}
+
+async function serveStorage(req: Request, res: Response) {
+  const rawKey = extractKey(req);
+  if (!rawKey) {
+    res.status(400).send("Missing storage key");
+    return;
+  }
+  try {
+    const key = assertStorageKey(rawKey);
+    if (!(await canReadStorageKey(req, key))) {
+      res.status(404).send("Storage object is unavailable");
+      return;
+    }
+    const provider = getStorageProvider();
+    const signedUrl = await provider.getSignedUrl(key);
+    if (signedUrl.startsWith("local://")) {
+      const body = await provider.read?.(key);
+      if (!body) {
+        res.status(404).send("Storage object not found");
+        return;
+      }
+      res.set("Cache-Control", "private, no-store");
+      res.type("application/octet-stream").status(200).send(body);
+      return;
+    }
+    res.set("Cache-Control", "private, no-store");
+    res.redirect(307, signedUrl);
+  } catch {
+    res.status(404).send("Storage object is unavailable");
+  }
+}
 
 export function registerStorageProxy(app: Express) {
-  app.get("/manus-storage/*key", async (req, res) => {
-    const wildcard = (req.params as { key?: string | string[] }).key;
-    const key = Array.isArray(wildcard) ? wildcard.join("/") : wildcard;
-    if (!key) {
-      res.status(400).send("Missing storage key");
-      return;
-    }
-
-    if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
-      res.status(500).send("Storage proxy not configured");
-      return;
-    }
-
-    try {
-      const forgeUrl = new URL(
-        "v1/storage/presign/get",
-        ENV.forgeApiUrl.replace(/\/+$/, "") + "/"
-      );
-      forgeUrl.searchParams.set("path", key);
-
-      const forgeResp = await fetch(forgeUrl, {
-        headers: { Authorization: `Bearer ${ENV.forgeApiKey}` },
-      });
-
-      if (!forgeResp.ok) {
-        const body = await forgeResp.text().catch(() => "");
-        console.error(
-          `[StorageProxy] forge error: ${forgeResp.status} ${body}`
-        );
-        res.status(502).send("Storage backend error");
-        return;
-      }
-
-      const { url } = (await forgeResp.json()) as { url: string };
-      if (!url) {
-        res.status(502).send("Empty signed URL from backend");
-        return;
-      }
-
-      res.set("Cache-Control", "no-store");
-      res.redirect(307, url);
-    } catch (err) {
-      console.error("[StorageProxy] failed:", err);
-      res.status(502).send("Storage proxy error");
-    }
-  });
+  app.get("/storage/*key", serveStorage);
+  app.get("/manus-storage/*key", serveStorage);
 }

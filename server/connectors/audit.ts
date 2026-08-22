@@ -1,4 +1,5 @@
 import { activityLogs } from "../../drizzle/schema";
+
 import { getDatabase, type DatabaseClient } from "./database";
 
 export type AuditEvent = {
