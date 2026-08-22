@@ -20,11 +20,7 @@ export type ForemanProcedureTransport = {
   evidence: (input: {
     jobId: number;
     evidenceType:
-      | "before_photo"
-      | "after_photo"
-      | "note"
-      | "job_card"
-      | "signature";
+      "before_photo" | "after_photo" | "note" | "job_card" | "signature";
     title: string;
     note?: string;
     idempotencyKey: string;
