@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A Stricter Integrated Gate</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #f5f7fb;
+        color: #102a43;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .frame {
+        min-height: 720px;
+        padding-top: 40px;
+        padding-left: 72px;
+        padding-right: 72px;
+      }
+      .eyebrow {
+        color: #087e8b;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 40px;
+        line-height: 1.08;
+        letter-spacing: -1.1px;
+        margin-top: 10px;
+      }
+      .sub {
+        color: #526579;
+        font-size: 18px;
+        line-height: 1.4;
+        margin-top: 12px;
+        max-width: 940px;
+      }
+      .pipeline {
+        min-height: 158px;
+        margin-top: 24px;
+        display: grid;
+        grid-template-columns: 1fr 46px 1fr 46px 1fr 46px 1fr;
+        align-items: center;
+        border-top: 1px solid #b9c8d7;
+        border-bottom: 1px solid #b9c8d7;
+      }
+      .stage {
+        min-height: 112px;
+        background: #ffffff;
+        padding-top: 18px;
+        padding-left: 20px;
+        padding-right: 18px;
+        border-top: 5px solid #1aa99d;
+      }
+      .stage-index {
+        color: #087e8b;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.4px;
+      }
+      .stage-title {
+        color: #102a43;
+        font-size: 21px;
+        font-weight: 700;
+        line-height: 1.1;
+        margin-top: 8px;
+      }
+      .stage-code {
+        color: #65788e;
+        font-size: 13px;
+        font-family: Consolas, Monaco, monospace;
+        margin-top: 10px;
+      }
+      .arrow {
+        color: #6f8296;
+        font-size: 30px;
+        text-align: center;
+        font-weight: 300;
+      }
+      .lower {
+        display: grid;
+        grid-template-columns: 34% 66%;
+        min-height: 248px;
+        margin-top: 20px;
+      }
+      .comparison {
+        background: #e8eef5;
+        padding-top: 25px;
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+      .label {
+        color: #60758c;
+        font-size: 12px;
+        letter-spacing: 1.4px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .old {
+        color: #7b5260;
+        font-family: Consolas, Monaco, monospace;
+        font-size: 17px;
+        margin-top: 16px;
+        text-decoration: line-through;
+      }
+      .new {
+        color: #0c625e;
+        font-family: Consolas, Monaco, monospace;
+        font-size: 17px;
+        font-weight: 700;
+        margin-top: 18px;
+        line-height: 1.45;
+      }
+      .changes {
+        background: #ffffff;
+        padding-top: 25px;
+        padding-left: 30px;
+        padding-right: 30px;
+      }
+      .change-row {
+        display: grid;
+        grid-template-columns: 155px 1fr;
+        column-gap: 16px;
+        min-height: 55px;
+        border-top: 1px solid #d9e3ed;
+        padding-top: 11px;
+      }
+      .change-row:first-of-type {
+        margin-top: 12px;
+      }
+      .tag {
+        color: #087e8b;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.7px;
+        text-transform: uppercase;
+      }
+      .copy {
+        color: #31485e;
+        font-size: 15px;
+        line-height: 1.35;
+      }
+      .evidence {
+        min-height: 51px;
+        margin-top: 18px;
+        background: #102a43;
+        color: #eef6ff;
+        display: flex;
+        align-items: center;
+        padding-left: 22px;
+        padding-right: 22px;
+        font-size: 16px;
+      }
+      .evidence strong {
+        color: #62ddd3;
+        margin-right: 10px;
+      }
+      .foot {
+        color: #718398;
+        font-size: 12px;
+        margin-top: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <main class="frame">
+        <div class="eyebrow">Release control 03</div>
+        <h1>A stricter integrated gate now protects <code>main</code></h1>
+        <p class="sub">
+          The default verification command was widened so formatting drift is
+          rejected before the existing type, test and production-build checks
+          run.
+        </p>
+
+        <section class="pipeline" aria-label="Current pnpm verify pipeline">
+          <div class="stage">
+            <div class="stage-index">STAGE 01</div>
+            <div class="stage-title">Format</div>
+            <div class="stage-code">prettier --check .</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="stage">
+            <div class="stage-index">STAGE 02</div>
+            <div class="stage-title">Type check</div>
+            <div class="stage-code">tsc --noEmit</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="stage">
+            <div class="stage-index">STAGE 03</div>
+            <div class="stage-title">Tests</div>
+            <div class="stage-code">vitest run</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="stage">
+            <div class="stage-index">STAGE 04</div>
+            <div class="stage-title">Production build</div>
+            <div class="stage-code">vite + esbuild</div>
+          </div>
+        </section>
+
+        <section class="lower">
+          <aside class="comparison">
+            <div class="label">Verification command</div>
+            <div class="old">check → test → build</div>
+            <div class="new">format:check → check → test → build</div>
+          </aside>
+          <section class="changes">
+            <div class="label">Remediation applied</div>
+            <div class="change-row">
+              <div class="tag">Formatting</div>
+              <div class="copy">
+                Prettier was applied across tracked files; the repository now
+                fails the release gate on future formatting drift.
+              </div>
+            </div>
+            <div class="change-row">
+              <div class="tag">Dependencies</div>
+              <div class="copy">
+                Legacy package-manager metadata was migrated from
+                <code>pnpm.overrides</code> to the compatible
+                <code>resolutions</code> field.
+              </div>
+            </div>
+            <div class="change-row">
+              <div class="tag">Remote proof</div>
+              <div class="copy">
+                The integrated commit <strong>9f51916</strong> was pushed to
+                <strong>main</strong>; its GitHub Actions
+                <strong>Quality</strong> run passed.
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <div class="evidence">
+          <strong>Important boundary:</strong> a clean formatting gate improves
+          consistency and reviewability; it does not, on its own, prove
+          live-service correctness.
+        </div>
+        <p class="foot">
+          Verified locally with <code>pnpm verify</code> and remotely through
+          the corresponding GitHub Actions Quality workflow on 22 Aug 2026.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>

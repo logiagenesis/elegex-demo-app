@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>P0 and P1: The Right Next Investments</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #f5f7fb;
+        color: #102a43;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .frame {
+        min-height: 720px;
+        padding-top: 48px;
+        padding-left: 72px;
+        padding-right: 72px;
+      }
+      .eyebrow {
+        color: #087e8b;
+        font-size: 13px;
+        letter-spacing: 2px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 39px;
+        line-height: 1.1;
+        letter-spacing: -1px;
+        margin-top: 10px;
+      }
+      .subtitle {
+        color: #526579;
+        font-size: 18px;
+        line-height: 1.4;
+        margin-top: 12px;
+        max-width: 1000px;
+      }
+
+      /* Layout: place the two priority blocks side-by-side to save vertical space */
+      .priorities {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 24px;
+      }
+
+      .priority-block {
+        margin-top: 0;
+        min-height: 194px;
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        background: #ffffff;
+      }
+      .priority-label {
+        min-height: 194px;
+        color: #ffffff;
+        padding-top: 20px;
+        padding-left: 16px;
+        padding-right: 14px;
+      }
+      .p0 .priority-label {
+        background: #a55b12;
+      }
+      .p1 .priority-label {
+        background: #0b5864;
+      }
+      .priority-code {
+        font-size: 14px;
+        letter-spacing: 2px;
+        font-weight: 700;
+      }
+      .priority-name {
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.05;
+        margin-top: 9px;
+      }
+      .priority-note {
+        color: #f7e1c5;
+        font-size: 14px;
+        line-height: 1.35;
+        margin-top: 12px;
+      }
+      .p1 .priority-note {
+        color: #c7e8e5;
+      }
+
+      .work-grid {
+        min-height: 194px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .work {
+        min-height: 90px;
+        border-bottom: 1px solid #dbe5ee;
+        padding-top: 10px;
+        padding-left: 18px;
+        padding-right: 18px;
+      }
+      .work:nth-child(odd) {
+        border-right: 1px solid #dbe5ee;
+      }
+      .work:nth-child(n + 3) {
+        border-bottom: 0;
+      }
+      .work-title {
+        font-size: 17px;
+        line-height: 1.18;
+        font-weight: 700;
+        color: #102a43;
+      }
+      .work-copy {
+        color: #53677b;
+        font-size: 14px;
+        line-height: 1.35;
+        margin-top: 6px;
+      }
+      .criterion {
+        color: #087e8b;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        margin-top: 7px;
+      }
+      .criterion span {
+        color: #526579;
+        font-weight: 400;
+        letter-spacing: 0;
+      }
+
+      .decision {
+        min-height: 80px;
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: 218px 1fr;
+        background: #102a43;
+      }
+      .decision-head {
+        color: #53d1c9;
+        padding-top: 18px;
+        padding-left: 18px;
+        padding-right: 14px;
+        font-size: 17px;
+        line-height: 1.25;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+      }
+      .decision-copy {
+        color: #e1edf7;
+        border-left: 1px solid #4c657d;
+        padding-top: 14px;
+        padding-left: 18px;
+        padding-right: 20px;
+        font-size: 16px;
+        line-height: 1.42;
+      }
+      .foot {
+        color: #66788e;
+        font-size: 12px;
+        margin-top: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <main class="frame">
+        <div class="eyebrow">Remediation plan 08</div>
+        <h1>P0 and P1: the right next investments</h1>
+        <p class="subtitle">
+          Prioritize operational proof and reliable delivery over more
+          surface-area features. Each work item is framed as a measurable
+          acceptance decision—not a vague improvement intention.
+        </p>
+
+        <div class="priorities">
+          <section
+            class="priority-block p0"
+            aria-label="P0 remediation priorities"
+          >
+            <aside class="priority-label">
+              <div class="priority-code">P0</div>
+              <div class="priority-name">Close the unsafe boundaries</div>
+              <div class="priority-note">
+                Required before describing the backend as operationally
+                reliable.
+              </div>
+            </aside>
+            <div class="work-grid">
+              <article class="work">
+                <div class="work-title">Complete environment contract</div>
+                <div class="work-copy">
+                  Inventory server, client, OAuth and deployment variables in
+                  one validated interface.
+                </div>
+                <div class="criterion">
+                  ACCEPTANCE:
+                  <span
+                    >no undocumented required variable; startup failure path is
+                    tested.</span
+                  >
+                </div>
+              </article>
+              <article class="work">
+                <div class="work-title">
+                  Make the provider boundary explicit
+                </div>
+                <div class="work-copy">
+                  Either implement signed provider delivery or disable the
+                  simulated worker by default and label it a scaffold.
+                </div>
+                <div class="criterion">
+                  ACCEPTANCE:
+                  <span
+                    >no documentation or runtime path can imply simulated
+                    success is real delivery.</span
+                  >
+                </div>
+              </article>
+              <article class="work">
+                <div class="work-title">Define delivery ownership</div>
+                <div class="work-copy">
+                  Specify who owns credentials, retry policy, failure escalation
+                  and event-schema changes.
+                </div>
+                <div class="criterion">
+                  ACCEPTANCE:
+                  <span
+                    >provider contract and operational owner are
+                    documented.</span
+                  >
+                </div>
+              </article>
+              <article class="work">
+                <div class="work-title">Protect production claims</div>
+                <div class="work-copy">
+                  Keep demo, validated and production-only statements distinct
+                  in README and audit material.
+                </div>
+                <div class="criterion">
+                  ACCEPTANCE:
+                  <span
+                    >reviewer can map every major claim to code or
+                    evidence.</span
+                  >
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section
+            class="priority-block p1"
+            aria-label="P1 remediation priorities"
+          >
+            <aside class="priority-label">
+              <div class="priority-code">P1</div>
+              <div class="priority-name">Build operational proof</div>
+              <div class="priority-note">
+                The next tranche converts sound design into runtime evidence.
+              </div>
+            </aside>
+            <div class="work-grid">
+              <article class="work">
+                <div class="work-title">
+                  Atomic event claim and lease recovery
+                </div>
+                <div class="work-copy">
+                  Use conditional claim semantics, a lease deadline and recovery
+                  of stale processing work.
+                </div>
+                <div class="criterion">
+                  ACCEPTANCE:
+                  <span
+                    >multi-worker test proves one active claim per event.</span
+                  >
+                </div>
+              </article>
+              <article class="work">
+                <div class="work-title">
+                  Real MySQL/MariaDB concurrency suite
+                </div>
+                <div class="work-copy">
+                  Run parallel idempotent requests in CI against an ephemeral
+                  database engine.
+                </div>
+                <div class="criterion">
+                  ACCEPTANCE:
+                  <span
+                    >single business effect, duplicate response and lock-error
+                    policy asserted.</span
+                  >
+                </div>
+              </article>
+              <article class="work">
+                <div class="work-title">
+                  Operational telemetry and dead-letter policy
+                </div>
+                <div class="work-copy">
+                  Add structured logs, worker readiness, backlog age,
+                  failed-delivery metrics and recovery workflow.
+                </div>
+                <div class="criterion">
+                  ACCEPTANCE:
+                  <span>health/alert dashboard has owner and runbook.</span>
+                </div>
+              </article>
+              <article class="work">
+                <div class="work-title">Expand CI quality evidence</div>
+                <div class="work-copy">
+                  Add lint, dependency scanning, release smoke checks and
+                  targeted browser E2E.
+                </div>
+                <div class="criterion">
+                  ACCEPTANCE:
+                  <span
+                    >GitHub required checks reflect the release risk
+                    profile.</span
+                  >
+                </div>
+              </article>
+            </div>
+          </section>
+        </div>
+
+        <section class="decision">
+          <div class="decision-head">Investment decision</div>
+          <div class="decision-copy">
+            Do not add a separate Python service merely for appearance. First
+            harden the existing TypeScript service boundary, prove database and
+            delivery semantics, then introduce an interoperable Python
+            worker/API only where a concrete workload justifies it.
+          </div>
+        </section>
+        <p class="foot">
+          Priority labels reflect operational risk and evidence gaps identified
+          in the current audit; they are not a claim that all listed controls
+          are already implemented.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>

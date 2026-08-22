@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fail Fast, Then Complete the Contract</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #f5f7fb;
+        color: #102a43;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .frame {
+        min-height: 720px;
+        padding-top: 54px;
+        padding-left: 72px;
+        padding-right: 72px;
+      }
+      .eyebrow {
+        color: #087e8b;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 39px;
+        line-height: 1.1;
+        letter-spacing: -1px;
+        margin-top: 10px;
+      }
+      .sub {
+        color: #526579;
+        font-size: 18px;
+        line-height: 1.35;
+        margin-top: 13px;
+        max-width: 920px;
+      }
+
+      /* Reduced vertical spacing and min-heights to avoid overflow */
+      .stages {
+        margin-top: 20px;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        column-gap: 24px;
+      }
+      .stage {
+        min-height: 260px;
+        background: #ffffff;
+        border-top: 6px solid #8fa4bb;
+        padding-top: 12px;
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+      .stage.now {
+        border-top-color: #1aa99d;
+      }
+      .stage.next {
+        border-top-color: #e49a32;
+      }
+      .stage-label {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+        color: #61758a;
+      }
+      .stage.now .stage-label {
+        color: #087e8b;
+      }
+      .stage.next .stage-label {
+        color: #b96800;
+      }
+      .stage h2 {
+        font-size: 25px;
+        line-height: 1.14;
+        letter-spacing: -0.4px;
+        margin-top: 13px;
+      }
+      .stage p {
+        color: #4d6074;
+        font-size: 17px;
+        line-height: 1.42;
+        margin-top: 12px;
+      }
+      .rule {
+        width: 46px;
+        height: 4px;
+        background: #d6e0ea;
+        margin-top: 12px;
+      }
+      .stage.now .rule {
+        background: #53d1c9;
+      }
+      .stage.next .rule {
+        background: #f2bd65;
+      }
+      ul {
+        margin-top: 12px;
+        padding-left: 19px;
+        color: #274258;
+        font-size: 16px;
+        line-height: 1.45;
+      }
+      li {
+        margin-top: 6px;
+      }
+
+      .bottom {
+        min-height: 112px;
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: 29% 71%;
+        background: #102a43;
+        color: #ffffff;
+      }
+      .bottom-head {
+        padding-top: 14px;
+        padding-left: 25px;
+        padding-right: 18px;
+        font-size: 20px;
+        line-height: 1.2;
+        font-weight: 700;
+        color: #53d1c9;
+      }
+      .bottom-copy {
+        border-left: 1px solid #4e677f;
+        padding-top: 12px;
+        padding-left: 18px;
+        padding-right: 20px;
+        font-size: 17px;
+        line-height: 1.48;
+        color: #d7e4ef;
+      }
+      code {
+        font-family: "Courier New", monospace;
+        color: #0b6772;
+        font-size: 0.92em;
+      }
+      .bottom code {
+        color: #8de4dd;
+      }
+      .foot {
+        color: #66788e;
+        font-size: 12px;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <main class="frame">
+        <div class="eyebrow">Configuration control 05</div>
+        <h1>Fail fast, then complete the contract</h1>
+        <p class="sub">
+          Environment validation now prevents an invalid production start. The
+          next P0 task is to reconcile the complete client/server configuration
+          interface—not to add more silent fallbacks.
+        </p>
+
+        <section class="stages" aria-label="Environment configuration maturity">
+          <article class="stage">
+            <div class="stage-label">Before remediation</div>
+            <h2>Validation could degrade into fallback</h2>
+            <div class="rule"></div>
+            <p>
+              <code>safeParse</code> logged invalid configuration but continued
+              with raw <code>process.env</code> values.
+            </p>
+            <ul>
+              <li>Missing secrets could become empty strings.</li>
+              <li>Operational handover was harder to diagnose.</li>
+            </ul>
+          </article>
+
+          <article class="stage now">
+            <div class="stage-label">Implemented and verified</div>
+            <h2>Invalid production configuration exits</h2>
+            <div class="rule"></div>
+            <p>
+              The Zod schema continues to validate required URLs, secret length
+              and declared fields.
+            </p>
+            <ul>
+              <li>Validation errors are reported by field path.</li>
+              <li>
+                Invalid production configuration calls
+                <code>process.exit(1)</code>.
+              </li>
+            </ul>
+          </article>
+
+          <article class="stage next">
+            <div class="stage-label">P0 closure required</div>
+            <h2>One explicit environment contract</h2>
+            <div class="rule"></div>
+            <p>
+              Reconcile every variable used by server, client build, OAuth and
+              deployment documentation.
+            </p>
+            <ul>
+              <li>
+                Model actual client-required values, including
+                <code>VITE_OAUTH_PORTAL_URL</code> where required.
+              </li>
+              <li>Test the production-start failure path directly.</li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="bottom">
+          <div class="bottom-head">Why a corporate reviewer will care</div>
+          <div class="bottom-copy">
+            Configuration is an API between source code and the operating
+            environment. A strict schema makes the failure mode early and
+            diagnosable; a complete variable inventory prevents the more subtle
+            failure of one tier assuming configuration that another tier neither
+            validates nor documents.
+          </div>
+        </section>
+        <div class="foot">
+          Verified code change: <code>server/_core/env.ts</code>. Status is
+          “improved, not complete”; no claim is made that all deployment
+          configuration is already covered.
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

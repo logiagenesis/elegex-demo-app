@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Corporate Python-Backend Lens</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      .slide-container {
+        width: 1280px;
+        min-height: 720px;
+        background: #f5f7fb;
+        color: #102a43;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .frame {
+        min-height: 720px;
+        padding-top: 54px;
+        padding-left: 72px;
+        padding-right: 72px;
+      }
+      .eyebrow {
+        color: #087e8b;
+        font-size: 13px;
+        letter-spacing: 2px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 39px;
+        letter-spacing: -1px;
+        line-height: 1.1;
+        margin-top: 10px;
+      }
+      .sub {
+        color: #526579;
+        font-size: 18px;
+        line-height: 1.4;
+        margin-top: 13px;
+        max-width: 1010px;
+      }
+      /* Reduced matrix height and top spacing to remove overflow */
+      .matrix {
+        min-height: 320px;
+        margin-top: 8px;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        background: #ffffff;
+        border-top: 6px solid #102a43;
+      }
+      .domain {
+        min-height: 320px;
+        padding-top: 18px;
+        padding-left: 16px;
+        padding-right: 16px;
+        border-right: 1px solid #d5e0eb;
+        display: flex;
+        flex-direction: column;
+      }
+      .domain:last-child {
+        border-right: 0;
+      }
+      .index {
+        font-size: 12px;
+        letter-spacing: 1.5px;
+        font-weight: 700;
+        color: #087e8b;
+      }
+      .domain h2 {
+        font-size: 21px;
+        line-height: 1.14;
+        letter-spacing: -0.3px;
+        margin-top: 12px;
+        min-height: 52px;
+      }
+      .rule {
+        width: 48px;
+        height: 5px;
+        background: #1aa99d;
+        margin-top: 18px;
+      }
+      .expect-label,
+      .state-label {
+        font-size: 11px;
+        letter-spacing: 1.2px;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-top: 18px;
+      }
+      .expect-label {
+        color: #6a7e92;
+      }
+      .state-label {
+        color: #6a7e92;
+      }
+      .expect {
+        font-size: 15px;
+        line-height: 1.38;
+        color: #27445f;
+        margin-top: 7px;
+        min-height: 68px;
+      }
+      .state {
+        font-size: 15px;
+        line-height: 1.38;
+        color: #102a43;
+        margin-top: 7px;
+      }
+      .state strong {
+        font-weight: 700;
+      }
+      .implemented {
+        color: #087e8b;
+      }
+      .partial {
+        color: #9a6500;
+      }
+      /* Reduced bottom area height and spacing */
+      .bottom {
+        min-height: 96px;
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: 270px 1fr;
+        background: #102a43;
+        color: #f8fbff;
+      }
+      .bottom-title {
+        padding-top: 18px;
+        padding-left: 24px;
+        padding-right: 20px;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.25;
+        color: #53d1c9;
+      }
+      .bottom-text {
+        padding-top: 16px;
+        padding-left: 22px;
+        padding-right: 26px;
+        border-left: 1px solid rgba(226, 239, 250, 0.28);
+        color: #dce8f3;
+        font-size: 17px;
+        line-height: 1.45;
+      }
+      .foot {
+        color: #66788e;
+        font-size: 12px;
+        margin-top: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <main class="frame">
+        <div class="eyebrow">Review standard 02</div>
+        <h1>Corporate Python-backend lens</h1>
+        <p class="sub">
+          The review tests operational controls and verifiable evidence—not
+          whether a TypeScript stack merely resembles Django, FastAPI or Celery.
+        </p>
+        <section
+          class="matrix"
+          aria-label="Corporate backend review dimensions"
+        >
+          <article class="domain">
+            <div class="index">01 / CONFIGURATION</div>
+            <h2>Explicit startup contract</h2>
+            <div class="rule"></div>
+            <div class="expect-label">Corporate expectation</div>
+            <p class="expect">
+              Validated settings, documented ownership and failure before unsafe
+              service startup.
+            </p>
+            <div class="state-label">Observed condition</div>
+            <p class="state">
+              <strong class="implemented">Improved.</strong> Zod validation now
+              exits on invalid non-test configuration; variable inventory
+              reconciliation remains.
+            </p>
+          </article>
+          <article class="domain">
+            <div class="index">02 / DATA INTEGRITY</div>
+            <h2>Database-enforced correctness</h2>
+            <div class="rule"></div>
+            <div class="expect-label">Corporate expectation</div>
+            <p class="expect">
+              Transaction boundaries, tenant isolation, constraints and
+              concurrency evidence from the real database engine.
+            </p>
+            <div class="state-label">Observed condition</div>
+            <p class="state">
+              <strong class="partial">Partial.</strong> DB uniqueness and
+              transactions exist; live MySQL/MariaDB contention proof is still
+              absent.
+            </p>
+          </article>
+          <article class="domain">
+            <div class="index">03 / BACKGROUND WORK</div>
+            <h2>Safe durable dispatch</h2>
+            <div class="rule"></div>
+            <div class="expect-label">Corporate expectation</div>
+            <p class="expect">
+              Atomic claim, lease recovery, timeouts, dead-letter handling,
+              telemetry and independent worker operation.
+            </p>
+            <div class="state-label">Observed condition</div>
+            <p class="state">
+              <strong class="partial">Demo boundary.</strong> Polling and retry
+              states exist; provider delivery and multi-worker safety do not.
+            </p>
+          </article>
+          <article class="domain">
+            <div class="index">04 / DELIVERY QUALITY</div>
+            <h2>Integrated release evidence</h2>
+            <div class="rule"></div>
+            <div class="expect-label">Corporate expectation</div>
+            <p class="expect">
+              Deterministic install, formatting, static checks, tests, build and
+              independently executed CI.
+            </p>
+            <div class="state-label">Observed condition</div>
+            <p class="state">
+              <strong class="implemented">Verified.</strong> Fresh clone, frozen
+              install, format/type/test/build gate and GitHub Actions Quality
+              pass.
+            </p>
+          </article>
+          <article class="domain">
+            <div class="index">05 / OPERATIONS</div>
+            <h2>Measurable service health</h2>
+            <div class="rule"></div>
+            <div class="expect-label">Corporate expectation</div>
+            <p class="expect">
+              SLO-led telemetry, clear readiness, structured logs, rollback
+              procedure and incident learning loop.
+            </p>
+            <div class="state-label">Observed condition</div>
+            <p class="state">
+              <strong class="partial">Partial.</strong> Operations documentation
+              exists; worker health, backlog indicators and SLOs are not yet
+              implemented.
+            </p>
+          </article>
+        </section>
+        <section class="bottom">
+          <div class="bottom-title">Review conclusion</div>
+          <div class="bottom-text">
+            The repository is strongest where quality can be mechanically
+            verified today. The next tranche should prioritize
+            <strong>real operational proof</strong>—database concurrency,
+            reliable provider delivery and observable worker behaviour—over
+            cosmetic feature expansion.
+          </div>
+        </section>
+        <div class="foot">
+          Reference lenses: OWASP ASVS 5.0 security-verification baseline;
+          Google SRE guidance on meaningful SLIs/SLOs. Sources listed in the
+          deck conclusion.
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
