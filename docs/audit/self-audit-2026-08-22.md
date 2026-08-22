@@ -4,7 +4,7 @@ Date: 2026-08-22
 
 ## Executive Summary
 
-This self-audit validates the Phase 3 hardening and CI remediation. The repository's continuous integration pipelines (Quality and CodeQL) are now passing on the `main` branch. All automated Dependabot PRs have been merged, except for a known `@babel/core` conflict which has been ignored to prevent workflow failures.
+This self-audit validates the Phase 3 hardening and CI remediation. The repository's continuous integration pipelines (Quality and CodeQL) are now passing on the `main` branch. The core GitHub Actions workflows (Quality and CodeQL) are green on `main`. However, the repository still has 23 dependency vulnerabilities and 20 CodeQL alerts. The large Dependabot PR that attempted to resolve these was closed because it introduced type errors and formatting regressions that broke the build.
 
 **Key Questions:**
 
@@ -18,7 +18,7 @@ This self-audit validates the Phase 3 hardening and CI remediation. The reposito
 
 - [x] **Quality Workflow:** Passing on `main` (Node 22, frozen lockfile, format check, TypeScript check, Vitest, Vite/esbuild build).
 - [x] **CodeQL Workflow:** Passing on `main`.
-- [x] **Dependabot:** Configured and merged. Babel core update ignored due to conflicts.
+- [x] **Dependabot:** Configured. Babel core update ignored due to conflicts. The large `npm-dependencies` group PR was closed because it introduced type errors in UI components (`react-day-picker` and `react-resizable-panels`) and broke Prettier formatting rules.
 - [ ] **Gap:** No E2E testing (Playwright).
 - [ ] **Gap:** No real database integration testing in CI.
 
