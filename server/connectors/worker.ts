@@ -16,6 +16,13 @@ let workerInterval: ReturnType<typeof setInterval> | null = null;
 export function startOutboxWorker(pollIntervalMs = 10000) {
   if (workerInterval) return;
 
+  if (process.env.OUTBOX_WORKER_ENABLED !== "true") {
+    console.log(
+      "[Worker] Outbox worker is disabled by default. Set OUTBOX_WORKER_ENABLED=true to enable."
+    );
+    return;
+  }
+
   // Explicitly log the boundary condition on startup
   console.log(
     "[Worker] WARNING: Outbox worker is running in DEMO mode. Delivery is simulated."
@@ -59,6 +66,8 @@ async function processOutbox() {
 
   for (const connection of activeConnections) {
     // Find pending events for this connection that are ready to run
+    // In a Python/Celery/SQLAlchemy environment, this would use SELECT FOR UPDATE SKIP LOCKED
+    // Drizzle doesn't natively support SKIP LOCKED on MySQL, so we use a compare-and-swap atomic claim
     const pendingEvents = await db
       .select()
       .from(integrationEvents)
@@ -73,11 +82,21 @@ async function processOutbox() {
 
     for (const event of pendingEvents) {
       try {
-        // Mark as processing
-        await db
+        // Atomic claim: only proceed if the status is still "pending"
+        const claimResult = await db
           .update(integrationEvents)
           .set({ status: "processing", attempts: event.attempts + 1 })
-          .where(eq(integrationEvents.id, event.id));
+          .where(
+            and(
+              eq(integrationEvents.id, event.id),
+              eq(integrationEvents.status, "pending")
+            )
+          );
+
+        if (Number((claimResult[0] as any).affectedRows) === 0) {
+          // Another worker claimed this event first
+          continue;
+        }
 
         // In a real app, this would dispatch to the specific provider (webhook, etc.)
         // For now, we just simulate successful delivery (This is a known limitation in the demo boundary)
