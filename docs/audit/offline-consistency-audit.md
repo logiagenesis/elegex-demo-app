@@ -34,6 +34,11 @@ A new integration test suite (`offline-integration.test.ts`) was executed to sim
 - **Verification:** The `idempotency.stress.test.ts` suite mocks the database transaction layer to enforce unique index constraints and introduce random scheduling delays.
 - **Result:** **Pass**. The atomic `onDuplicateKeyUpdate` correctly serializes the claims. Exactly one request succeeds in inserting the business data (returning a valid `insertId`), while the other 49 requests bypass execution without throwing errors. The final database state contains exactly one material record and one activity log.
 
+### 1.6. Network Partition and Intermittent Connectivity
+- **Scenario:** The device loses connectivity, regains it briefly to sync the check-in, loses it again while the user continues to add multiple materials and evidence, and finally regains connectivity permanently.
+- **Verification:** The `network-partition.test.ts` suite verifies that the queue survives multiple distinct partition boundaries. It proves that mutations queued during the second drop correctly resolve their dependencies against the mutation that succeeded during the brief reconnection window.
+- **Result:** **Pass**. When connectivity returns permanently, the entire backlog drains in dependency order, and the server receives exactly one check-in, two materials, and one evidence record.
+
 ## 2. End-to-End Limits
 
 While the offline queue and server idempotency are robust, the following boundaries exist in the current deployment:
