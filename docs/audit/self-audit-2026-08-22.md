@@ -1,60 +1,50 @@
-# Phase 3 Hardening Self-Audit
+# Elegex Release Self-Audit and Gap Register
 
-Date: 2026-08-22
+**Audit date:** 2026-08-22  
+**GitHub authority:** [`main` at `655e627`](https://github.com/logiagenesis/elegex-demo-app/commit/655e627)  
+**Evidence rule:** A control is marked **DONE** only when a named test, workflow, API response, or live-service observation exists. A passing unit build is not deployment, database, authorization, or customer-data evidence.
 
-## Executive Summary
+## Release decision
 
-This self-audit validates the Phase 3 hardening and CI remediation. The repository's continuous integration pipelines (Quality and CodeQL) are now passing on the `main` branch. The core GitHub Actions workflows (Quality and CodeQL) are green on `main`. However, the repository still has 23 dependency vulnerabilities and 20 CodeQL alerts. The large Dependabot PR that attempted to resolve these was closed because it introduced type errors and formatting regressions that broke the build.
+| Decision                                             | Status          | Evidence and reason                                                                                                                                                                                                                       |
+| ---------------------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deploy to production tonight                         | **BLOCKED**     | The repository has no verified managed production deployment, no clean MariaDB migration proof, no authenticated browser smoke test, and unresolved security findings.                                                                    |
+| Accept paying customer data                          | **BLOCKED**     | Tenant-scoped data code has unit coverage, but the schema, migration, database concurrency, owner security settings, and live-service controls have not been verified together.                                                           |
+| Sign off for acquisition or regulated production use | **BLOCKED**     | `main` is public and unprotected; secret scanning and private vulnerability reporting remain disabled; screenshots show unresolved Dependabot and CodeQL findings.                                                                        |
+| Claim a public integration API                       | **NOT STARTED** | The insecure demonstrator-only API router was removed in [`7801275`](https://github.com/logiagenesis/elegex-demo-app/commit/7801275). No tenant-key, scope, rate-limit, idempotency, OpenAPI, or integration-delivery replacement exists. |
 
-**Key Questions:**
+## Verified release controls
 
-1. Deploy to production tonight? **NO**. The application lacks real DB CI (MariaDB service, migrations from zero, schema guard, transaction/FK/idempotency concurrent test), true E2E tests, and production-grade authentication/storage adapters.
-2. Let paying customer data in? **NO**. The API is not multi-tenant API-key/scopes or sellable API, and documentation calling it `/api/v1/jobs/list` is false.
-3. Sign off in acquisition? **NO**. The repository is still missing critical owner-only security settings (branch protection, private vulnerability reporting, secret scanning) and a comprehensive security roadmap.
+| Area                                                        | Status          | Severity | Owner                            | Evidence                                                                                                                                                                                                                                                 | Remaining work                                                                                                                                                      |
+| ----------------------------------------------------------- | --------------- | -------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frozen dependency installation                              | **DONE**        | P0       | Engineering                      | [`655e627`](https://github.com/logiagenesis/elegex-demo-app/commit/655e627) reconciles the lockfile; the `Type, test, and production build` job passed in [run `32573167034`](https://github.com/logiagenesis/elegex-demo-app/actions/runs/32573167034). | Keep `pnpm install --frozen-lockfile` mandatory for every change.                                                                                                   |
+| Formatting, type checking, unit tests, and production build | **DONE**        | P1       | Engineering                      | GitHub job `Type, test, and production build` passed at [`655e627`](https://github.com/logiagenesis/elegex-demo-app/commit/655e627); local verification ran 17 test files / 76 tests plus Vite and esbuild production builds.                            | Add browser and MariaDB-backed coverage before broader readiness claims.                                                                                            |
+| CodeQL execution                                            | **DONE**        | P1       | Engineering                      | [CodeQL run `32573167020`](https://github.com/logiagenesis/elegex-demo-app/actions/runs/32573167020) completed successfully for `655e627`.                                                                                                               | A successful scan is not a clean alert queue; remediate individual findings once alert details are available.                                                       |
+| Dependency vulnerability remediation                        | **PARTIAL**     | P0       | Engineering and repository owner | Production dependency audit reported no known vulnerabilities after the compatible package slice. GitHub’s alert API is unavailable to this token (HTTP 403), while supplied screenshots show 23 Dependabot findings.                                    | Grant alert-read capability or remediate findings in the GitHub security UI one compatible dependency slice at a time.                                              |
+| Code scanning finding remediation                           | **BLOCKED**     | P0       | Repository owner and engineering | Supplied screenshots show 20 code-scanning findings. The CodeQL alert API returns HTTP 403 to the current integration token.                                                                                                                             | Grant code-scanning alert access or export the finding list; triage each alert to fix, justified dismissal, or false-positive evidence.                             |
+| Strict production environment validation                    | **PARTIAL**     | P0       | Engineering                      | [`4b929b6`](https://github.com/logiagenesis/elegex-demo-app/commit/4b929b6) tightened environment validation; [`219c57e`](https://github.com/logiagenesis/elegex-demo-app/commit/219c57e) routes the database module through `ENV`.                      | Remove remaining direct environment reads, provide a safe test-only configuration seam, and test production startup with missing and invalid values.                |
+| Database-pool lifecycle                                     | **PARTIAL**     | P0       | Engineering                      | Shared pool creation, `closeDatabase`, and a basic readiness query are present; related unit tests pass.                                                                                                                                                 | Remove type escapes, add connection timeout/retry policy, and prove cleanup, transaction, and failure behavior against MariaDB.                                     |
+| Outbox worker boundary                                      | **PARTIAL**     | P1       | Engineering                      | The worker is disabled unless explicitly enabled and uses structured logging after [`cf0ecd6`](https://github.com/logiagenesis/elegex-demo-app/commit/cf0ecd6).                                                                                          | It remains an in-process simulated dispatcher, not a Celery-equivalent worker: no provider delivery, HMAC, lease/reaper, DLQ, metrics, or concurrent real-DB proof. |
+| Public external API                                         | **NOT STARTED** | P0       | Engineering                      | The unsafe global-key, organization-1 demonstrator router was removed in [`7801275`](https://github.com/logiagenesis/elegex-demo-app/commit/7801275).                                                                                                    | Build no public API until a tenant-key schema, hashed secrets, scopes, validation, idempotency, rate limits, OpenAPI, and integration tests exist.                  |
+| MariaDB migrations and integration suite                    | **NOT STARTED** | P0       | Engineering                      | Migration SQL exists, but no CI MariaDB service, migration-from-zero verification, or live relational test result is recorded.                                                                                                                           | Add a disposable MariaDB CI job that applies migrations and verifies foreign keys, transactions, tenant isolation, idempotency, and schema guards.                  |
+| Records and dashboard workflow preservation                 | **PARTIAL**     | P0       | Engineering                      | Basic frontend and interaction tests run, but the extracted `RecordsPage` does not restore the former CRUD drawer/dialog/archive behaviors.                                                                                                              | Restore and browser-test CRUD, archive, loading, empty, error, navigation, keyboard, and responsive flows; replace source-string contracts with behavior tests.     |
+| Docker or portable deployment                               | **NOT STARTED** | P0       | Engineering                      | Docker is unavailable in the current sandbox, and neither a clean compose startup nor a deployment health result is recorded.                                                                                                                            | Remove unsafe defaults, use explicit migration operations, add readiness checks, then prove a clean startup before describing artifacts as portable.                |
+| Managed production deployment and live revision parity      | **NOT STARTED** | P0       | Engineering and project owner    | No managed environment is configured to a verified `main` revision and no live health, authenticated, or core-workflow smoke evidence exists.                                                                                                            | Configure managed MySQL and runtime secrets, deploy a checkpointed revision, then record health and workflow results against the public URL.                        |
+| Release and verification-failure notifications              | **NOT STARTED** | P1       | Engineering and project owner    | No notification target, credential, event source, or delivery test is configured.                                                                                                                                                                        | Configure a server-side owner notification target and test both release-success and required-gate-failure notifications.                                            |
+| Repository privacy                                          | **BLOCKED**     | P0       | Repository owner                 | GitHub repository API reports `private: false` and `visibility: public`.                                                                                                                                                                                 | Make the proprietary repository private after confirming all intended collaborators retain access.                                                                  |
+| Protected `main` ruleset                                    | **BLOCKED**     | P0       | Repository owner                 | `GET /branches/main/protection` returned HTTP 404, confirming no branch protection.                                                                                                                                                                      | Require pull requests, review, successful release checks, linear history, and no force pushes.                                                                      |
+| Secret scanning and push protection                         | **BLOCKED**     | P0       | Repository owner                 | Repository API reports `secret_scanning: disabled` and `secret_scanning_push_protection: disabled`.                                                                                                                                                      | Enable secret scanning, push protection, and validity checks in GitHub settings.                                                                                    |
+| Private vulnerability reporting                             | **BLOCKED**     | P1       | Repository owner                 | Supplied GitHub Security screenshot shows private vulnerability reporting disabled.                                                                                                                                                                      | Enable it in repository security settings.                                                                                                                          |
 
-## Checklist & Gap Register
+## Python-grade comparison
 
-### 1. CI / CD Pipeline
+| Concern                              | Current TypeScript state                                               | Comparable Python control                                                     | Assessment                                                                                           |
+| ------------------------------------ | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Request and configuration validation | Zod validates selected configuration and tRPC inputs.                  | Pydantic settings and FastAPI dependency validation.                          | **PARTIAL**: central configuration access and boot failure semantics are not yet uniformly enforced. |
+| Relational persistence               | Drizzle and MySQL transactions are used.                               | SQLAlchemy sessions, Alembic migrations, and transactional integration tests. | **PARTIAL**: migration and transaction claims lack real MariaDB CI evidence.                         |
+| Asynchronous delivery                | Disabled in-process interval worker with basic compare-and-swap claim. | Celery/RQ with broker, retries, DLQ, monitoring, and separate processes.      | **PARTIAL** and materially weaker.                                                                   |
+| API exposure                         | No public integration API is exposed after router removal.             | FastAPI routes with OAuth/scoped API keys/OpenAPI.                            | **NOT STARTED** until all tenant and security controls are implemented.                              |
 
-- [x] **Quality Workflow:** Passing on `main` (Node 22, frozen lockfile, format check, TypeScript check, Vitest, Vite/esbuild build).
-- [x] **CodeQL Workflow:** Passing on `main`.
-- [x] **Dependabot:** Configured. Babel core update ignored due to conflicts. The large `npm-dependencies` group PR was closed because it introduced type errors in UI components (`react-day-picker` and `react-resizable-panels`) and broke Prettier formatting rules.
-- [ ] **Gap:** No E2E testing (Playwright).
-- [ ] **Gap:** No real database integration testing in CI.
+## Required release sequence
 
-### 2. Security & Settings
-
-- [ ] **Gap:** Branch protection rules not enforced (Owner action required).
-- [ ] **Gap:** Secret scanning not enabled (Owner action required).
-- [ ] **Gap:** Private vulnerability reporting not enabled (Owner action required).
-- [ ] **Gap:** Repository visibility is public, should be private (Owner action required).
-- [ ] **Gap:** Commit signing not enforced (Owner action required).
-
-### 3. Application Architecture
-
-- [x] **Frontend:** Successfully builds and passes basic component tests.
-- [ ] **Gap:** Dashboard and Records pages were partially extracted, but original CRUD dialogs/drawer/archive behavior is missing, and tests were weakened.
-- [ ] **Gap:** `server/routers/api/v1.ts` is a mock tRPC endpoint, not a true REST API.
-- [ ] **Gap:** `server/_core/env.ts` uses `safeParse` and raw `process.env` fallback, violating the master directive's strict env-access pattern.
-- [ ] **Gap:** Database pool typing and connection management (`server/connectors/database.ts`) need rework and real DB tests.
-- [ ] **Gap:** Outbox worker (`server/connectors/worker.ts`) lacks HMAC provider delivery, lease/reaper/DLQ, separate process, and real DB concurrency proof.
-
-### 4. Code Quality
-
-- [x] **Formatting:** Prettier enforces consistent code style across the repository.
-- [ ] **Gap:** Multiple files still exceed the 500-line limit mandated by the master directive (e.g., `FieldServicePages.tsx`, `server/db.ts`).
-
-## Python-Grade Comparison
-
-- **Backend Framework:** Express/tRPC is currently used. It lacks the built-in structural rigor of Django/FastAPI (e.g., automatic OpenAPI generation, strict Pydantic validation at all boundaries).
-- **Task Queue:** The current outbox worker is a simple in-process poller. It is **significantly weaker** than Celery (lacks robust retry, DLQ, monitoring, and separate worker processes).
-- **ORM:** Drizzle ORM is used. While capable, the current setup lacks the mature migration management and complex relationship handling often seen in SQLAlchemy setups.
-
-## Next Steps
-
-1. Owner must configure the missing GitHub security settings.
-2. Implement real database CI testing.
-3. Rework the environment variable handling to be strictly validated without fallbacks.
-4. Refactor oversized files to meet the 500-line limit.
-5. Restore full functionality to the Dashboard and Records pages and strengthen their tests.
-6. Design and implement a true REST API with proper tenant isolation and API key management.
+The next release slice must first update this document, then implement one bounded control, run the frozen install and verification suite, push to `main`, verify the exact GitHub check-run URL, and finally update this register with the resulting evidence. A code change that does not complete the whole loop remains **PARTIAL**.
