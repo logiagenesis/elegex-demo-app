@@ -627,6 +627,11 @@ export const elegexRouter = router({
     ),
   }),
   documents: router({
+    openEvidenceDocument: tenantProcedure
+      .input(z.object({ evidenceId: z.number().int().positive() }))
+      .mutation(({ ctx, input }) =>
+        db.openDemoEvidenceDocument(ctx.scope.organizationId, input.evidenceId)
+      ),
     list: tenantProcedure
       .input(documentListInput.optional())
       .query(({ ctx, input }) =>

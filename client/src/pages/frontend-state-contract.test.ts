@@ -138,6 +138,12 @@ describe("frontend interaction and state contracts", () => {
     expect(publicBrandMark).not.toContain("egx-slot");
   });
 
+  it("keeps each job-evidence row actionable as a document experience", () => {
+    expect(fieldPages).toContain("openEvidenceDocument");
+    expect(fieldPages).toContain("Open");
+    expect(fieldPages).toContain("Open ${evidence.title}");
+  });
+
   it("keeps public discovery metadata crawlable while preserving zoom and protected-route crawler boundaries", () => {
     expect(browserEntry).toContain('rel="canonical"');
     expect(browserEntry).toContain("application/ld+json");
