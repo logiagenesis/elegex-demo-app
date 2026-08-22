@@ -9,8 +9,8 @@
 |---|---|---|---|
 | WP0 — Screenshot defects | BLOCKED | `docs/audit/screenshot-defect-resolution.md` | Directive screenshot slot was not populated. No triangle can be classified without screenshot/route evidence. |
 | WP1 — Acceptance contradiction | PARTIAL | `docs/audit/foreman-workflow-ground-truth.md`; retracted `docs/audit/final-acceptance-report.md` | Contradiction is reconciled and unsupported acceptance retracted. Complete authenticated mutation execution log remains pending. |
-| WP2 — Restore the domain | UNVERIFIED REMOTE WORK | `drizzle/0008_living_skaar.sql`, `0009_sloppy_red_skull.sql`, `0010_groovy_gwen_stacy.sql`, schema | Remote branch added migration and schema work. It must be reviewed for additive safety, applied state, UI configuration, seed impact, and tests before status can advance. |
-| WP3 — Enforce business rules | PARTIAL / UNVERIFIED REMOTE WORK | Remote `syncLogs` implementation; `docs/audit/python-reviewer-audit.md` | Idempotency-oriented remote work exists; the full directive rules are not yet verified as server-enforced invariants. |
+| WP2 — Restore the domain | PARTIAL / UNVERIFIED REMOTE WORK | `drizzle/0008_living_skaar.sql`, `0009_sloppy_red_skull.sql`, `0010_groovy_gwen_stacy.sql`, `drizzle/schema.ts` | Schema inspection confirms per-organization `locale`, `currency`, and `timezone` defaults of `en-ZA`, `ZAR`, and `Africa/Johannesburg`; temporal `callOutTypes`; and client/site fields. Applied migration state, settings UI, South African seed history, historical-rate behavior, and user-facing formatting remain unverified. |
+| WP3 — Enforce business rules | PARTIAL / UNVERIFIED REMOTE WORK | `syncLogs` schema; remote `syncQueue` implementation; `docs/audit/python-reviewer-audit.md` | Organization-scoped idempotency keys and job call-out links exist in schema. The full consent, no-price, no-delete, time-correction, invoice-link, and completion-exception requirements are not yet verified as server-enforced invariants. |
 | WP4 — Real documents | INCOMPLETE | `docs/audit/document-routing-verification.md` | Remote audit template exists; directive corpus, checksum, retention, and full routing proof are not complete. |
 | WP5 — Foreman workflow proper | PARTIAL / UNVERIFIED REMOTE WORK | `client/src/lib/syncQueue.ts`, `client/src/lib/syncQueue.test.ts` | Queue utility exists but has not been accepted as an integrated field product with service worker, UI, and replay evidence. |
 | WP6–WP12 | BLOCKED | Pending prior work packages | No status may be promoted until preceding packages satisfy their named verification artifacts. |
@@ -18,4 +18,3 @@
 ## Specific unblocker
 
 The next necessary condition is a connected authenticated browser session with a synthetic foreman-capable user and disposable assigned job. No credentials belong in code, documentation, or chat. Once available, the execution log will capture timestamps, tRPC procedures, and queryable resulting row IDs for each directive step.
-

@@ -86,7 +86,7 @@
 - [x] Fix the development dashboard query failure where a tRPC client receives HTML (`<!doctype …>`) rather than JSON, and add a regression check for the API response content type. Evidence: JSON API fallback unit test, valid tRPC/invalid API endpoint probes, rendered dashboard, and 46-test verification.
 - [ ] WP1: reconcile the foreman acceptance contradiction with an execution-backed ground-truth audit and retract unsupported acceptance claims. Retraction and source-ground-truth artifact are complete; authenticated mutation execution log remains pending.
 - [ ] Complete the directive-required authenticated foreman execution log after a connected session is available; do not treat rendered-route observation as functional verification.
-- [ ] WP2: restore per-organization South African locale, ZAR currency, Africa/Johannesburg display timezone, trade vocabulary, and temporal call-out taxonomy.
+- [ ] WP2: restore per-organization South African locale, ZAR currency, Africa/Johannesburg display timezone, trade vocabulary, and temporal call-out taxonomy. Merged schema foundations are audited as partial; UI, seed, application, and verification remain pending.
 - [ ] WP3: implement and test server-enforced consent, no-price foreman responses, no-delete, time-correction, invoice-link, and completion-exception rules.
 - [ ] WP4: model typed, retention-governed documents and build deterministic six-month document-corpus pipeline evidence.
 - [ ] WP5: scope offline-sync, field PWA, and platform expansion work with explicit execution evidence and assurance boundaries.
