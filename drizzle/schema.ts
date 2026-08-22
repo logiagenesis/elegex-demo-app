@@ -570,6 +570,8 @@ export const aiUsage = mysqlTable(
       "job_summary",
       "quote_draft",
       "evidence_caption",
+      "marketing_draft",
+      "operations_assistant",
     ]).notNull(),
     provider: varchar("provider", { length: 40 }).notNull(),
     model: varchar("model", { length: 120 }).notNull(),
@@ -1071,6 +1073,398 @@ export const releaseChecks = mysqlTable(
       table.releaseId,
       table.category,
       table.status
+    ),
+  ]
+);
+
+export const contractorProfiles = mysqlTable(
+  "contractorProfiles",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    slug: varchar("slug", { length: 120 }).notNull(),
+    displayName: varchar("displayName", { length: 160 }).notNull(),
+    summary: text("summary"),
+    serviceAreas: json("serviceAreas").$type<string[]>().notNull(),
+    services: json("services").$type<string[]>().notNull(),
+    bookingEnabled: boolean("bookingEnabled").default(true).notNull(),
+    reviewRequestsEnabled: boolean("reviewRequestsEnabled")
+      .default(true)
+      .notNull(),
+    publicContactEmail: varchar("publicContactEmail", { length: 320 }),
+    publicContactPhone: varchar("publicContactPhone", { length: 50 }),
+    createdBy: int("createdBy").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    uniqueIndex("contractor_profile_slug_unique").on(table.slug),
+    uniqueIndex("contractor_profile_organization_unique").on(
+      table.organizationId
+    ),
+  ]
+);
+
+export const bookingRequests = mysqlTable(
+  "bookingRequests",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    profileId: int("profileId").notNull(),
+    customerName: varchar("customerName", { length: 160 }).notNull(),
+    email: varchar("email", { length: 320 }),
+    phone: varchar("phone", { length: 50 }),
+    serviceType: varchar("serviceType", { length: 120 }).notNull(),
+    address: varchar("address", { length: 360 }).notNull(),
+    description: text("description").notNull(),
+    preferredStart: timestamp("preferredStart"),
+    preferredEnd: timestamp("preferredEnd"),
+    consentToContact: boolean("consentToContact").default(false).notNull(),
+    status: mysqlEnum("status", [
+      "new",
+      "reviewing",
+      "quoted",
+      "scheduled",
+      "declined",
+    ])
+      .default("new")
+      .notNull(),
+    assignedTo: int("assignedTo"),
+    convertedContactId: int("convertedContactId"),
+    convertedJobId: int("convertedJobId"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("booking_request_organization_status_idx").on(
+      table.organizationId,
+      table.status,
+      table.createdAt
+    ),
+    index("booking_request_profile_idx").on(table.profileId, table.createdAt),
+  ]
+);
+
+export const quoteApprovals = mysqlTable(
+  "quoteApprovals",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    quoteId: int("quoteId").notNull(),
+    approvalToken: varchar("approvalToken", { length: 72 }).notNull(),
+    customerName: varchar("customerName", { length: 160 }),
+    status: mysqlEnum("status", ["pending", "approved", "declined"])
+      .default("pending")
+      .notNull(),
+    respondedAt: timestamp("respondedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    uniqueIndex("quote_approval_token_unique").on(table.approvalToken),
+    uniqueIndex("quote_approval_quote_unique").on(table.quoteId),
+    index("quote_approval_organization_status_idx").on(
+      table.organizationId,
+      table.status
+    ),
+  ]
+);
+
+export const contractorInvoices = mysqlTable(
+  "contractorInvoices",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    jobId: int("jobId").notNull(),
+    invoiceNumber: varchar("invoiceNumber", { length: 60 }).notNull(),
+    amountDue: int("amountDue").default(0).notNull(),
+    amountPaid: int("amountPaid").default(0).notNull(),
+    dueAt: timestamp("dueAt"),
+    status: mysqlEnum("status", [
+      "draft",
+      "sent",
+      "viewed",
+      "partially_paid",
+      "paid",
+      "overdue",
+      "void",
+    ])
+      .default("draft")
+      .notNull(),
+    paymentProvider: varchar("paymentProvider", { length: 80 })
+      .default("manual")
+      .notNull(),
+    paymentReference: varchar("paymentReference", { length: 160 }),
+    createdBy: int("createdBy").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    uniqueIndex("contractor_invoice_organization_number_unique").on(
+      table.organizationId,
+      table.invoiceNumber
+    ),
+    index("contractor_invoice_organization_status_idx").on(
+      table.organizationId,
+      table.status,
+      table.dueAt
+    ),
+    index("contractor_invoice_job_idx").on(table.organizationId, table.jobId),
+  ]
+);
+
+export const jobTimeEntries = mysqlTable(
+  "jobTimeEntries",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    jobId: int("jobId").notNull(),
+    userId: int("userId").notNull(),
+    startedAt: timestamp("startedAt").notNull(),
+    endedAt: timestamp("endedAt"),
+    geoStatus: mysqlEnum("geoStatus", [
+      "not_requested",
+      "verified",
+      "manual_override",
+      "unavailable",
+    ])
+      .default("not_requested")
+      .notNull(),
+    notes: varchar("notes", { length: 500 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("job_time_entry_organization_user_idx").on(
+      table.organizationId,
+      table.userId,
+      table.startedAt
+    ),
+    index("job_time_entry_job_idx").on(table.organizationId, table.jobId),
+  ]
+);
+
+export const jobExpenses = mysqlTable(
+  "jobExpenses",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    jobId: int("jobId").notNull(),
+    category: mysqlEnum("category", [
+      "materials",
+      "travel",
+      "equipment",
+      "subcontractor",
+      "other",
+    ]).notNull(),
+    amount: int("amount").notNull(),
+    description: varchar("description", { length: 280 }).notNull(),
+    receiptStorageKey: varchar("receiptStorageKey", { length: 500 }),
+    receiptStorageUrl: varchar("receiptStorageUrl", { length: 600 }),
+    recordedBy: int("recordedBy").notNull(),
+    incurredAt: timestamp("incurredAt").defaultNow().notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("job_expense_organization_job_idx").on(
+      table.organizationId,
+      table.jobId,
+      table.incurredAt
+    ),
+  ]
+);
+
+export const marketingDrafts = mysqlTable(
+  "marketingDrafts",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    jobId: int("jobId"),
+    channel: mysqlEnum("channel", [
+      "facebook",
+      "instagram",
+      "nextdoor",
+      "general",
+    ])
+      .default("general")
+      .notNull(),
+    source: varchar("source", { length: 80 }).default("manual").notNull(),
+    content: text("content").notNull(),
+    status: mysqlEnum("status", ["draft", "approved", "archived"])
+      .default("draft")
+      .notNull(),
+    reviewRequired: boolean("reviewRequired").default(true).notNull(),
+    createdBy: int("createdBy").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("marketing_draft_organization_status_idx").on(
+      table.organizationId,
+      table.status,
+      table.createdAt
+    ),
+  ]
+);
+
+export const growthGuideProgress = mysqlTable(
+  "growthGuideProgress",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    userId: int("userId").notNull(),
+    leadSource: mysqlEnum("leadSource", [
+      "google_business_profile",
+      "nextdoor",
+      "facebook",
+      "referrals",
+      "local_partnerships",
+    ]).notNull(),
+    level: int("level").default(1).notNull(),
+    completedSteps: json("completedSteps").$type<string[]>().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    uniqueIndex("growth_guide_user_source_unique").on(
+      table.organizationId,
+      table.userId,
+      table.leadSource
+    ),
+  ]
+);
+
+export const repairReports = mysqlTable(
+  "repairReports",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    jobId: int("jobId"),
+    reportedBy: int("reportedBy").notNull(),
+    title: varchar("title", { length: 180 }).notNull(),
+    description: text("description").notNull(),
+    priority: mysqlEnum("priority", ["low", "standard", "urgent", "critical"])
+      .default("standard")
+      .notNull(),
+    status: mysqlEnum("status", [
+      "reported",
+      "triaged",
+      "assigned",
+      "resolved",
+      "closed",
+    ])
+      .default("reported")
+      .notNull(),
+    firstFixOutcome: mysqlEnum("firstFixOutcome", [
+      "unknown",
+      "resolved_first_visit",
+      "follow_up_required",
+    ])
+      .default("unknown")
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("repair_report_organization_status_idx").on(
+      table.organizationId,
+      table.status,
+      table.createdAt
+    ),
+    index("repair_report_job_idx").on(table.organizationId, table.jobId),
+  ]
+);
+
+export const maintenancePlans = mysqlTable(
+  "maintenancePlans",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    projectId: int("projectId"),
+    siteId: int("siteId"),
+    title: varchar("title", { length: 180 }).notNull(),
+    description: text("description"),
+    intervalDays: int("intervalDays").notNull(),
+    nextDueAt: timestamp("nextDueAt").notNull(),
+    assignedTo: int("assignedTo"),
+    status: mysqlEnum("status", ["active", "paused", "completed"])
+      .default("active")
+      .notNull(),
+    createdBy: int("createdBy").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("maintenance_plan_organization_due_idx").on(
+      table.organizationId,
+      table.status,
+      table.nextDueAt
+    ),
+    index("maintenance_plan_site_idx").on(table.organizationId, table.siteId),
+  ]
+);
+
+export const reviewRequests = mysqlTable(
+  "reviewRequests",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    jobId: int("jobId").notNull(),
+    contactId: int("contactId"),
+    channel: mysqlEnum("channel", ["email", "sms", "manual"])
+      .default("manual")
+      .notNull(),
+    status: mysqlEnum("status", ["draft", "queued", "sent", "cancelled"])
+      .default("draft")
+      .notNull(),
+    consentConfirmed: boolean("consentConfirmed").default(false).notNull(),
+    requestedBy: int("requestedBy").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("review_request_organization_status_idx").on(
+      table.organizationId,
+      table.status,
+      table.createdAt
+    ),
+    index("review_request_job_idx").on(table.organizationId, table.jobId),
+  ]
+);
+
+export const contractorMarketplaceEntries = mysqlTable(
+  "contractorMarketplaceEntries",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    name: varchar("name", { length: 180 }).notNull(),
+    trade: varchar("trade", { length: 100 }).notNull(),
+    serviceAreas: json("serviceAreas").$type<string[]>().notNull(),
+    contactEmail: varchar("contactEmail", { length: 320 }),
+    contactPhone: varchar("contactPhone", { length: 50 }),
+    notes: text("notes"),
+    verificationStatus: mysqlEnum("verificationStatus", [
+      "not_verified",
+      "self_attested",
+      "verified_by_workspace",
+    ])
+      .default("not_verified")
+      .notNull(),
+    availabilityStatus: mysqlEnum("availabilityStatus", [
+      "unknown",
+      "accepting_enquiries",
+      "unavailable",
+    ])
+      .default("unknown")
+      .notNull(),
+    createdBy: int("createdBy").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    archivedAt: timestamp("archivedAt"),
+  },
+  table => [
+    index("marketplace_entry_organization_trade_idx").on(
+      table.organizationId,
+      table.trade,
+      table.archivedAt
     ),
   ]
 );

@@ -19,6 +19,31 @@ describe("Elegex protected workflow contract", () => {
       "elegex.contacts.create",
       "elegex.contacts.list",
       "elegex.contacts.update",
+      "elegex.contractor.approvals.create",
+      "elegex.contractor.bookings.list",
+      "elegex.contractor.bookings.setStatus",
+      "elegex.contractor.expenses.create",
+      "elegex.contractor.expenses.list",
+      "elegex.contractor.growthGuide.complete",
+      "elegex.contractor.growthGuide.list",
+      "elegex.contractor.invoices.create",
+      "elegex.contractor.invoices.list",
+      "elegex.contractor.maintenance.create",
+      "elegex.contractor.maintenance.list",
+      "elegex.contractor.marketing.create",
+      "elegex.contractor.marketing.list",
+      "elegex.contractor.marketplace.create",
+      "elegex.contractor.marketplace.list",
+      "elegex.contractor.overview",
+      "elegex.contractor.profile.get",
+      "elegex.contractor.profile.update",
+      "elegex.contractor.repairs.create",
+      "elegex.contractor.repairs.list",
+      "elegex.contractor.repairs.update",
+      "elegex.contractor.reviews.create",
+      "elegex.contractor.reviews.list",
+      "elegex.contractor.time.end",
+      "elegex.contractor.time.start",
       "elegex.dashboard",
       "elegex.documents.list",
       "elegex.documents.materializeDemoCorpus",
@@ -72,7 +97,7 @@ describe("Elegex protected workflow contract", () => {
   });
 
   it("keeps every declared Elegex procedure behind a composed tRPC contract boundary", () => {
-    expect(procedures).toHaveLength(60);
+    expect(procedures).toHaveLength(85);
     for (const name of procedures) {
       const definition = (appRouter._def.procedures[name] as any)?._def;
       expect(
