@@ -2557,6 +2557,155 @@ export async function getJobDetail(organizationId: number, jobId: number) {
   };
 }
 
+type DemoEvidenceDocumentInput = {
+  evidenceType: string;
+  evidenceTitle: string;
+  capturedAt: Date;
+  jobNumber: string;
+  jobTitle: string;
+  serviceAddress: string;
+  contactName: string;
+};
+
+function escapeDemoDocumentHtml(value: string) {
+  return value.replace(/[&<>'"]/g, character => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "'": "&#39;",
+      '"': "&quot;",
+    };
+    return entities[character] ?? character;
+  });
+}
+
+/**
+ * Produces a clearly labelled, tenant-scoped demonstration artefact for seeded
+ * field evidence. It is deliberately not used for customer evidence.
+ */
+export function buildDemoEvidenceDocument(input: DemoEvidenceDocumentInput) {
+  const isSignOff = input.evidenceType === "signature";
+  const heading = isSignOff
+    ? "Client completion sign-off"
+    : "Before-condition record";
+  const purpose = isSignOff
+    ? "Confirms that the representative reviewed the completed demonstration service and received the handover summary."
+    : "Records the visible pre-work condition and planned safety controls before demonstration work starts.";
+  const detailRows = isSignOff
+    ? [
+        ["Representative", `${input.contactName} (demo contact)`],
+        [
+          "Outcome reviewed",
+          "Work area left safe; handover notes acknowledged",
+        ],
+        [
+          "Client acknowledgement",
+          "Completion summary accepted for demo workflow",
+        ],
+        ["Signature method", "Typed client sign-off — synthetic demonstration"],
+      ]
+    : [
+        [
+          "Observed condition",
+          "Existing installation visually inspected before intervention",
+        ],
+        [
+          "Work-area controls",
+          "Access verified; isolation and safe-work controls planned",
+        ],
+        [
+          "Photo reference",
+          "Before-condition capture is represented by this controlled demo record",
+        ],
+        [
+          "Handover dependency",
+          "Any change to condition requires office review before invoicing",
+        ],
+      ];
+  const rows = detailRows
+    .map(
+      ([label, value]) =>
+        `<tr><th>${escapeDemoDocumentHtml(label!)}</th><td>${escapeDemoDocumentHtml(value!)}</td></tr>`
+    )
+    .join("");
+  const captureTime = input.capturedAt
+    .toISOString()
+    .replace("T", " ")
+    .replace(".000Z", " UTC");
+  const job = `${input.jobNumber} — ${input.jobTitle}`;
+
+  return {
+    fileName: `${isSignOff ? "Client-sign-off" : "Before-condition"}-${input.jobNumber.replace("#", "")}.html`,
+    html: `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeDemoDocumentHtml(heading)} — ${escapeDemoDocumentHtml(input.jobNumber)}</title><style>body{margin:0;background:#eef2f7;color:#18263e;font:15px/1.55 Arial,sans-serif}.page{max-width:820px;margin:32px auto;background:#fff;padding:48px;box-shadow:0 8px 28px #15294a18}.brand{color:#195fe6;font-weight:800;letter-spacing:.16em}.tag{display:inline-block;margin-top:18px;padding:5px 10px;border-radius:999px;background:#e7f8ef;color:#167244;font-size:12px;font-weight:700}.eyebrow{margin:30px 0 6px;color:#5f7090;font-size:11px;font-weight:800;letter-spacing:.14em}h1{margin:0;font-size:32px;line-height:1.15}h2{margin:28px 0 10px;font-size:18px}.lead{color:#50617f;font-size:16px}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{padding:13px 12px;border:1px solid #e5eaf1;text-align:left;vertical-align:top}th{width:32%;background:#f7f9fc;color:#50617f;font-size:12px;text-transform:uppercase;letter-spacing:.06em}.notice{margin-top:28px;padding:15px 16px;border-left:4px solid #195fe6;background:#eef4ff;color:#34435f}.footer{margin-top:38px;color:#7a879e;font-size:12px;border-top:1px solid #e5eaf1;padding-top:16px}@media print{body{background:#fff}.page{margin:0;box-shadow:none}}</style></head><body><main class="page"><div class="brand">ELEGEX OPERATIONS</div><div class="tag">SYNCED DEMO EVIDENCE</div><p class="eyebrow">FIELD EVIDENCE / ${isSignOff ? "CLIENT HANDOVER" : "SITE CONDITION"}</p><h1>${escapeDemoDocumentHtml(heading)}</h1><p class="lead">${escapeDemoDocumentHtml(purpose)}</p><h2>Service reference</h2><table><tr><th>Job</th><td>${escapeDemoDocumentHtml(job)}</td></tr><tr><th>Service address</th><td>${escapeDemoDocumentHtml(input.serviceAddress)}</td></tr><tr><th>Captured</th><td>${escapeDemoDocumentHtml(captureTime)}</td></tr><tr><th>Evidence label</th><td>${escapeDemoDocumentHtml(input.evidenceTitle)}</td></tr>${rows}</table><aside class="notice"><strong>Demonstration record.</strong> This is a detailed, tenant-scoped example document created for the Elegex demonstration workspace. It contains no customer data and is not a legal certificate, invoice, or production client signature.</aside><p class="footer">Generated by Elegex Operations · immutable demo evidence reference · ${escapeDemoDocumentHtml(input.jobNumber)}</p></main></body></html>`,
+  };
+}
+
+export async function openDemoEvidenceDocument(
+  organizationId: number,
+  evidenceId: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const result = await db
+    .select({ evidence: jobEvidence, job: jobs, contact: contacts })
+    .from(jobEvidence)
+    .innerJoin(jobs, eq(jobEvidence.jobId, jobs.id))
+    .innerJoin(contacts, eq(jobs.contactId, contacts.id))
+    .where(
+      and(
+        eq(jobEvidence.organizationId, organizationId),
+        eq(jobEvidence.id, evidenceId),
+        eq(jobs.organizationId, organizationId)
+      )
+    )
+    .limit(1);
+  const row = result[0];
+  if (!row) throw new Error("Evidence is not available in this workspace");
+  if (row.evidence.storageUrl)
+    return { url: row.evidence.storageUrl, title: row.evidence.title };
+
+  const metadata =
+    row.evidence.metadata && typeof row.evidence.metadata === "object"
+      ? (row.evidence.metadata as Record<string, unknown>)
+      : {};
+  if (metadata.demo !== true)
+    throw new Error("This evidence has not been uploaded for preview yet");
+
+  const document = buildDemoEvidenceDocument({
+    evidenceType: row.evidence.evidenceType,
+    evidenceTitle: row.evidence.title,
+    capturedAt: row.evidence.capturedAt,
+    jobNumber: row.job.jobNumber,
+    jobTitle: row.job.title,
+    serviceAddress: row.job.serviceAddress,
+    contactName: row.contact.name ?? "Client representative",
+  });
+  const artifact = await storagePut(
+    `elegex/${organizationId}/demo-evidence/${row.job.id}-${row.evidence.id}-${randomUUID()}.html`,
+    document.html,
+    "text/html; charset=utf-8"
+  );
+  await db
+    .update(jobEvidence)
+    .set({
+      storageUrl: artifact.url,
+      metadata: {
+        ...metadata,
+        storageKey: artifact.key,
+        demoDocument: true,
+        fileName: document.fileName,
+      },
+    })
+    .where(
+      and(
+        eq(jobEvidence.organizationId, organizationId),
+        eq(jobEvidence.id, evidenceId)
+      )
+    );
+  return { url: artifact.url, title: row.evidence.title };
+}
+
 export async function listDispatchVisits(
   organizationId: number,
   start?: Date,

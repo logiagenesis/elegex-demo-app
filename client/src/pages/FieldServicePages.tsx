@@ -755,6 +755,24 @@ export function JobDetailPage({ id }: { id: number }) {
       setInvoice("");
     },
   });
+  const openEvidenceDocument =
+    trpc.elegex.documents.openEvidenceDocument.useMutation({
+      onError: error => toast.error(error.message),
+    });
+  const openEvidence = (evidenceId: number) => {
+    const preview = window.open("", "_blank");
+    openEvidenceDocument.mutate(
+      { evidenceId },
+      {
+        onSuccess: document => {
+          if (preview) preview.location.href = document.url;
+          else window.location.assign(document.url);
+          toast.success(`${document.title} opened`);
+        },
+        onError: () => preview?.close(),
+      }
+    );
+  };
   if (detail.isLoading)
     return (
       <div className="grid min-h-96 place-items-center text-sm text-[#667085]">
@@ -871,6 +889,18 @@ export function JobDetailPage({ id }: { id: number }) {
                   >
                     {pretty(evidence.syncStatus)}
                   </Badge>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 border-[#C9D6ED] text-[#195FE6] hover:bg-[#EEF4FF]"
+                    onClick={() => openEvidence(evidence.id)}
+                    disabled={openEvidenceDocument.isPending}
+                    aria-label={`Open ${evidence.title}`}
+                  >
+                    <ArrowUpRight className="mr-1 h-3.5 w-3.5" />
+                    Open
+                  </Button>
                 </div>
               ))}
             </div>
