@@ -20,7 +20,7 @@ export const MAX_UPLOAD_DATA_URL_LENGTH =
 function decodeManagedDataUrl(
   dataUrl: string,
   expectedMimeType: string,
-  subject: "Upload" | "Field media"
+  subject: "Upload" | "Field media" | "Photo upload"
 ) {
   const match = dataUrl.match(/^data:([^;,]+);base64,([A-Za-z0-9+/]+={0,2})$/);
   if (!match || match[1] !== expectedMimeType) {
@@ -69,6 +69,30 @@ const documentListInput = z
   .refine(input => Boolean(input.resource) === Boolean(input.recordId), {
     message: "Document resource and record ID must be supplied together",
   });
+const photoListInput = z.object({
+  query: z.string().trim().max(120).optional(),
+  category: z
+    .enum(["before", "during", "after", "issue", "asset", "other"])
+    .optional(),
+  jobId: z.number().int().positive().optional(),
+  siteId: z.number().int().positive().optional(),
+  page: z.number().int().positive().optional(),
+  pageSize: z.number().int().positive().max(48).optional(),
+});
+const photoUploadInput = z.object({
+  fileName: z.string().min(1).max(255),
+  mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  dataUrl: z.string().max(MAX_UPLOAD_DATA_URL_LENGTH),
+  title: z.string().trim().min(2).max(180),
+  description: z.string().trim().max(2000).optional(),
+  tags: z.array(z.string().trim().min(1).max(40)).max(12).optional(),
+  category: z
+    .enum(["before", "during", "after", "issue", "asset", "other"])
+    .optional(),
+  jobId: z.number().int().positive().optional(),
+  siteId: z.number().int().positive().optional(),
+  capturedAt: z.date().optional(),
+});
 const tenantProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   const scope = await db.ensureTenantScope(ctx.user.id);
   return next({ ctx: { ...ctx, scope } });
@@ -710,6 +734,54 @@ export const elegexRouter = router({
           storageUrl: uploaded.url,
           sizeBytes: bytes.length,
         });
+      }),
+  }),
+  photos: router({
+    list: tenantProcedure
+      .input(photoListInput.optional())
+      .query(({ ctx, input }) =>
+        db.listSitePhotos(ctx.scope.organizationId, input)
+      ),
+    upload: tenantProcedure
+      .input(photoUploadInput)
+      .mutation(async ({ ctx, input }) => {
+        requireEdit(ctx.scope.role);
+        const bytes = decodeManagedDataUrl(
+          input.dataUrl,
+          input.mimeType,
+          "Photo upload"
+        );
+        try {
+          await validateUpload(bytes, input.mimeType, input.fileName);
+        } catch (error) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              error instanceof Error ? error.message : "Invalid photo upload.",
+          });
+        }
+        const uploaded = await storagePut(
+          `elegex/${ctx.scope.organizationId}/photos/${input.fileName}`,
+          bytes,
+          input.mimeType
+        );
+        return db.createSitePhoto(ctx.scope.organizationId, ctx.user.id, {
+          ...input,
+          originalFileName: input.fileName,
+          storageKey: uploaded.key,
+          storageUrl: uploaded.url,
+          sizeBytes: bytes.length,
+        });
+      }),
+    archive: tenantProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ ctx, input }) => {
+        requireManage(ctx.scope.role);
+        return db.archiveSitePhoto(
+          ctx.scope.organizationId,
+          ctx.user.id,
+          input.id
+        );
       }),
   }),
   reports: router({

@@ -274,6 +274,7 @@ describe("Elegex role capabilities", () => {
       "/cases/:id",
       "/tasks",
       "/documents",
+      "/photos",
       "/reports",
       "/notifications",
       "/staging",

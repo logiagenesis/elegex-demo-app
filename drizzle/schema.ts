@@ -795,6 +795,52 @@ export const jobEvidence = mysqlTable(
   ]
 );
 
+export const sitePhotos = mysqlTable(
+  "sitePhotos",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    jobId: int("jobId"),
+    siteId: int("siteId"),
+    title: varchar("title", { length: 180 }).notNull(),
+    description: text("description"),
+    tags: varchar("tags", { length: 500 }).notNull().default(""),
+    category: mysqlEnum("category", [
+      "before",
+      "during",
+      "after",
+      "issue",
+      "asset",
+      "other",
+    ])
+      .default("other")
+      .notNull(),
+    originalFileName: varchar("originalFileName", { length: 255 }).notNull(),
+    mimeType: varchar("mimeType", { length: 120 }).notNull(),
+    sizeBytes: int("sizeBytes").notNull(),
+    storageKey: varchar("storageKey", { length: 500 }).notNull(),
+    storageUrl: varchar("storageUrl", { length: 600 }).notNull(),
+    capturedAt: timestamp("capturedAt").defaultNow().notNull(),
+    uploadedBy: int("uploadedBy").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    deletedAt: timestamp("deletedAt"),
+  },
+  table => [
+    index("site_photo_organization_created_idx").on(
+      table.organizationId,
+      table.createdAt
+    ),
+    index("site_photo_job_idx").on(table.organizationId, table.jobId),
+    index("site_photo_site_idx").on(table.organizationId, table.siteId),
+    index("site_photo_category_idx").on(table.organizationId, table.category),
+    uniqueIndex("site_photo_organization_storage_key_unique").on(
+      table.organizationId,
+      table.storageKey
+    ),
+  ]
+);
+
 export const quotes = mysqlTable(
   "quotes",
   {
