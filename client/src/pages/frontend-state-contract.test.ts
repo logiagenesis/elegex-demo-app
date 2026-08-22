@@ -134,10 +134,15 @@ describe("frontend interaction and state contracts", () => {
     expect(browserEntry).toContain('rel="canonical"');
     expect(browserEntry).toContain("application/ld+json");
     expect(browserEntry).toContain("SoftwareApplication");
+    expect(browserEntry).toContain('property="og:url"');
+    expect(browserEntry).toContain('name="twitter:card"');
     expect(browserEntry).not.toContain("maximum-scale=1");
+    expect(browserEntry).not.toContain("fonts.googleapis.com");
     for (const protectedPath of ["/app", "/field", "/documents", "/login"]) {
       expect(robots).toContain(`Disallow: ${protectedPath}`);
     }
-    expect(robots).toContain("Sitemap: /sitemap.xml");
+    expect(robots).toContain(
+      "Sitemap: https://elegexapp-jnwgrvvj.manus.space/sitemap.xml"
+    );
   });
 });
