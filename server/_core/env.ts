@@ -23,6 +23,7 @@ const envSchema = z.object({
   BUILT_IN_FORGE_API_KEY: z.string().optional(),
   VITE_FRONTEND_FORGE_API_URL: z.string().optional(),
   VITE_FRONTEND_FORGE_API_KEY: z.string().optional(),
+  API_MASTER_KEY: z.string().min(16).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -53,4 +54,5 @@ export const ENV = {
   isProduction: validEnv.NODE_ENV === "production",
   forgeApiUrl: validEnv.BUILT_IN_FORGE_API_URL || "",
   forgeApiKey: validEnv.BUILT_IN_FORGE_API_KEY || "",
+  apiMasterKey: validEnv.API_MASTER_KEY || "",
 };
