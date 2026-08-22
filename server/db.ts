@@ -22,6 +22,7 @@ import {
   notifications,
   organizationMembers,
   organizations,
+  photoFolders,
   projects,
   quoteItems,
   quotes,
@@ -3856,6 +3857,117 @@ const PHOTO_CATEGORIES = [
 ] as const;
 export type PhotoCategory = (typeof PHOTO_CATEGORIES)[number];
 
+export const DEMO_PHOTO_CORPUS_SIZE = 540;
+
+const DEMO_FOLDER_BLUEPRINTS: Array<{
+  name: string;
+  slug: string;
+  trade: string;
+  category: PhotoCategory;
+  description: string;
+}> = [
+  {
+    name: "01 — Initial survey",
+    slug: "initial-survey",
+    trade: "Shared field evidence",
+    category: "before",
+    description: "Synthetic pre-work survey placeholders.",
+  },
+  {
+    name: "02 — Electrical works",
+    slug: "electrical-works",
+    trade: "Electrical",
+    category: "during",
+    description: "Synthetic electrical installation placeholders.",
+  },
+  {
+    name: "03 — Plumbing works",
+    slug: "plumbing-works",
+    trade: "Plumbing",
+    category: "during",
+    description: "Synthetic plumbing installation placeholders.",
+  },
+  {
+    name: "04 — Tiling & finishes",
+    slug: "tiling-finishes",
+    trade: "Tiling",
+    category: "after",
+    description: "Synthetic finish-quality placeholders.",
+  },
+  {
+    name: "05 — Defects & close-out",
+    slug: "defects-close-out",
+    trade: "Shared field evidence",
+    category: "issue",
+    description: "Synthetic close-out and defect-record placeholders.",
+  },
+];
+
+const DEMO_PHOTO_SUBJECTS = [
+  "service riser access",
+  "isolation point",
+  "pipework alignment",
+  "distribution board",
+  "waterproofing detail",
+  "tile setting-out",
+  "equipment label",
+  "ceiling void route",
+  "drainage connection",
+  "completion detail",
+] as const;
+
+const DEMO_PHOTO_PROJECTS = [
+  {
+    name: "Harbourview Amenities Renewal",
+    code: "HV-PHOTO",
+    description:
+      "Synthetic shared photo evidence workspace for amenities renewal.",
+  },
+  {
+    name: "Cedar Estate Services",
+    code: "CD-PHOTO",
+    description:
+      "Synthetic shared photo evidence workspace for estate services.",
+  },
+  {
+    name: "Helio Plant Upgrade",
+    code: "HS-PHOTO",
+    description:
+      "Synthetic shared photo evidence workspace for plant upgrades.",
+  },
+  {
+    name: "Arbor Retail Fit-out",
+    code: "AR-PHOTO",
+    description:
+      "Synthetic shared photo evidence workspace for retail fit-out.",
+  },
+  {
+    name: "Ridgeway Common Areas",
+    code: "RW-PHOTO",
+    description: "Synthetic shared photo evidence workspace for common areas.",
+  },
+  {
+    name: "Lakeside Handover Programme",
+    code: "LH-PHOTO",
+    description:
+      "Synthetic shared photo evidence workspace for client handover.",
+  },
+] as const;
+
+type DemoPhotoFolder = {
+  id: number;
+  projectId: number;
+  name: string;
+  trade: string;
+  category: PhotoCategory;
+};
+
+type DemoPhotoContributor = {
+  userId: number;
+  name: string;
+  trade: string;
+};
+
 export function normalizePhotoTags(tags: string[]) {
   return Array.from(
     new Set(tags.map(tag => tag.trim().toLowerCase()).filter(Boolean))
@@ -3864,10 +3976,53 @@ export function normalizePhotoTags(tags: string[]) {
     .join(",");
 }
 
+export function buildDemoPhotoCorpusPlan(
+  projectRows: Array<{ id: number; name: string }>,
+  folders: DemoPhotoFolder[],
+  contributors: DemoPhotoContributor[]
+) {
+  if (!projectRows.length || !folders.length || !contributors.length) return [];
+  return Array.from({ length: DEMO_PHOTO_CORPUS_SIZE }, (_, index) => {
+    const project = projectRows[index % projectRows.length]!;
+    const projectFolders = folders.filter(
+      folder => folder.projectId === project.id
+    );
+    const folder = projectFolders[index % projectFolders.length]!;
+    const contributor = contributors[index % contributors.length]!;
+    const subject = DEMO_PHOTO_SUBJECTS[index % DEMO_PHOTO_SUBJECTS.length]!;
+    const sequence = String(index + 1).padStart(3, "0");
+    return {
+      projectId: project.id,
+      folderId: folder.id,
+      title: `${folder.name} — ${subject} ${sequence}`,
+      description: `Synthetic demonstration placeholder ${sequence} for ${project.name}. It represents a ${folder.trade.toLowerCase()} field capture and contains no real site image.`,
+      tags: normalizePhotoTags([
+        "synthetic-demo",
+        folder.trade,
+        project.name,
+        subject,
+      ]),
+      category: folder.category,
+      originalFileName: `placeholder-${sequence}.synthetic`,
+      mimeType: "image/png" as const,
+      sizeBytes: 0,
+      storageKey: `demo-placeholder/${project.id}/${folder.id}/placeholder-${sequence}.synthetic`,
+      storageUrl: `/storage/elegex/demo-placeholder/${project.id}/${folder.id}/placeholder-${sequence}.synthetic`,
+      capturedAt: new Date(
+        Date.now() - (DEMO_PHOTO_CORPUS_SIZE - index) * 86_400_000
+      ),
+      uploadedBy: contributor.userId,
+      contributorTrade: contributor.trade,
+    };
+  });
+}
+
 export async function createSitePhoto(
   organizationId: number,
   userId: number,
   input: {
+    projectId?: number;
+    folderId?: number;
     jobId?: number;
     siteId?: number;
     title: string;
@@ -3880,9 +4035,26 @@ export async function createSitePhoto(
     storageKey: string;
     storageUrl: string;
     capturedAt?: Date;
+    contributorTrade?: string;
   }
 ) {
   return withTransaction(async tx => {
+    await assertScopedEntity(
+      tx,
+      projects,
+      organizationId,
+      input.projectId,
+      "Project",
+      true
+    );
+    await assertScopedEntity(
+      tx,
+      photoFolders,
+      organizationId,
+      input.folderId,
+      "Photo folder",
+      true
+    );
     await assertScopedEntity(
       tx,
       jobs,
@@ -3899,8 +4071,45 @@ export async function createSitePhoto(
       "Site",
       true
     );
+    const folder = input.folderId
+      ? await tx
+          .select({ projectId: photoFolders.projectId })
+          .from(photoFolders)
+          .where(
+            and(
+              eq(photoFolders.id, input.folderId),
+              eq(photoFolders.organizationId, organizationId),
+              isNull(photoFolders.deletedAt)
+            )
+          )
+          .limit(1)
+      : [];
+    if (
+      input.projectId &&
+      folder[0]?.projectId &&
+      input.projectId !== folder[0].projectId
+    ) {
+      throw new Error("Photo folder does not belong to the selected project");
+    }
+    const membership = await tx
+      .select({ title: organizationMembers.title })
+      .from(organizationMembers)
+      .where(
+        and(
+          eq(organizationMembers.organizationId, organizationId),
+          eq(organizationMembers.userId, userId),
+          eq(organizationMembers.isActive, true)
+        )
+      )
+      .limit(1);
+    const contributorTrade =
+      input.contributorTrade?.trim() ||
+      membership[0]?.title ||
+      "Shared field team";
     const result = await tx.insert(sitePhotos).values({
       organizationId,
+      projectId: input.projectId ?? folder[0]?.projectId,
+      folderId: input.folderId,
       jobId: input.jobId,
       siteId: input.siteId,
       title: input.title.trim(),
@@ -3914,6 +4123,7 @@ export async function createSitePhoto(
       storageUrl: input.storageUrl,
       capturedAt: input.capturedAt ?? new Date(),
       uploadedBy: userId,
+      contributorTrade,
     });
     const id = Number(result[0].insertId);
     await tx.insert(activityLogs).values({
@@ -3925,8 +4135,11 @@ export async function createSitePhoto(
       summary: `Uploaded site photo: ${input.title.trim()}`,
       metadata: {
         category: input.category ?? "other",
+        projectId: input.projectId ?? folder[0]?.projectId ?? null,
+        folderId: input.folderId ?? null,
         jobId: input.jobId ?? null,
         siteId: input.siteId ?? null,
+        contributorTrade,
       },
     });
     return id;
@@ -3938,6 +4151,9 @@ export async function listSitePhotos(
   input: {
     query?: string;
     category?: PhotoCategory;
+    projectId?: number;
+    folderId?: number;
+    contributorTrade?: string;
     jobId?: number;
     siteId?: number;
     page?: number;
@@ -3954,6 +4170,11 @@ export async function listSitePhotos(
     eq(sitePhotos.organizationId, organizationId),
     isNull(sitePhotos.deletedAt),
     input.category ? eq(sitePhotos.category, input.category) : undefined,
+    input.projectId ? eq(sitePhotos.projectId, input.projectId) : undefined,
+    input.folderId ? eq(sitePhotos.folderId, input.folderId) : undefined,
+    input.contributorTrade
+      ? eq(sitePhotos.contributorTrade, input.contributorTrade)
+      : undefined,
     input.jobId ? eq(sitePhotos.jobId, input.jobId) : undefined,
     input.siteId ? eq(sitePhotos.siteId, input.siteId) : undefined,
     search
@@ -3968,8 +4189,25 @@ export async function listSitePhotos(
   const where = and(...conditions);
   const [items, totals] = await Promise.all([
     db
-      .select()
+      .select({
+        photo: sitePhotos,
+        folderName: photoFolders.name,
+        projectName: projects.name,
+        uploaderName: users.name,
+        uploaderTitle: organizationMembers.title,
+      })
       .from(sitePhotos)
+      .leftJoin(photoFolders, eq(sitePhotos.folderId, photoFolders.id))
+      .leftJoin(projects, eq(sitePhotos.projectId, projects.id))
+      .leftJoin(users, eq(sitePhotos.uploadedBy, users.id))
+      .leftJoin(
+        organizationMembers,
+        and(
+          eq(organizationMembers.organizationId, sitePhotos.organizationId),
+          eq(organizationMembers.userId, sitePhotos.uploadedBy),
+          eq(organizationMembers.isActive, true)
+        )
+      )
       .where(where)
       .orderBy(desc(sitePhotos.capturedAt), desc(sitePhotos.id))
       .limit(pageSize)
@@ -3977,10 +4215,16 @@ export async function listSitePhotos(
     db.select({ total: count() }).from(sitePhotos).where(where),
   ]);
   return {
-    items: items.map(photo => ({
-      ...photo,
-      tags: photo.tags ? photo.tags.split(",") : [],
-      health: getDocumentHealth(photo),
+    items: items.map(row => ({
+      ...row.photo,
+      tags: row.photo.tags ? row.photo.tags.split(",") : [],
+      health: getDocumentHealth(row.photo),
+      folderName: row.folderName,
+      projectName: row.projectName,
+      uploaderName: row.uploaderName,
+      uploaderTitle: row.uploaderTitle,
+      isSyntheticPlaceholder:
+        row.photo.storageKey.startsWith("demo-placeholder/"),
     })),
     page,
     pageSize,
@@ -4014,6 +4258,279 @@ export async function archiveSitePhoto(
       entityId: photoId,
       summary: "Archived a site photo from the library",
     });
+  });
+}
+
+export async function listPhotoFolders(organizationId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  return db
+    .select({
+      id: photoFolders.id,
+      projectId: photoFolders.projectId,
+      name: photoFolders.name,
+      slug: photoFolders.slug,
+      description: photoFolders.description,
+      trade: photoFolders.trade,
+      projectName: projects.name,
+    })
+    .from(photoFolders)
+    .innerJoin(projects, eq(photoFolders.projectId, projects.id))
+    .where(
+      and(
+        eq(photoFolders.organizationId, organizationId),
+        isNull(photoFolders.deletedAt),
+        isNull(projects.deletedAt)
+      )
+    )
+    .orderBy(asc(projects.name), asc(photoFolders.name));
+}
+
+export async function createPhotoFolder(
+  organizationId: number,
+  userId: number,
+  input: {
+    projectId: number;
+    name: string;
+    description?: string;
+    trade?: string;
+  }
+) {
+  return withTransaction(async tx => {
+    await assertScopedEntity(
+      tx,
+      projects,
+      organizationId,
+      input.projectId,
+      "Project",
+      true
+    );
+    const slug = input.name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 120);
+    if (!slug) throw new Error("Folder name must contain a letter or number");
+    const result = await tx.insert(photoFolders).values({
+      organizationId,
+      projectId: input.projectId,
+      name: input.name.trim(),
+      slug,
+      description: input.description?.trim() || null,
+      trade: input.trade?.trim() || "Shared field evidence",
+      createdBy: userId,
+    });
+    const id = Number(result[0].insertId);
+    await tx.insert(activityLogs).values({
+      organizationId,
+      actorId: userId,
+      action: "photo_folder_created",
+      entityType: "photo_folder",
+      entityId: id,
+      summary: `Created photo folder: ${input.name.trim()}`,
+    });
+    return id;
+  });
+}
+
+async function ensureDemoPhotoContributors(tx: any, organizationId: number) {
+  const seeds = [
+    {
+      openId: "demo:electrician",
+      name: "Samira Patel",
+      email: "electrician@demo.elegex.app",
+      title: "Electrician",
+      trade: "Electrical",
+    },
+    {
+      openId: "demo:plumber",
+      name: "Theo Bennett",
+      email: "plumber@demo.elegex.app",
+      title: "Plumber",
+      trade: "Plumbing",
+    },
+    {
+      openId: "demo:tiler",
+      name: "Lina Costa",
+      email: "tiler@demo.elegex.app",
+      title: "Tiler",
+      trade: "Tiling",
+    },
+  ];
+  const contributors: DemoPhotoContributor[] = [];
+  for (const seed of seeds) {
+    await tx
+      .insert(users)
+      .values({
+        openId: seed.openId,
+        name: seed.name,
+        email: seed.email,
+        loginMethod: "demo",
+        role: "user",
+        lastSignedIn: new Date(),
+      })
+      .onDuplicateKeyUpdate({ set: { name: seed.name, email: seed.email } });
+    const user = await tx
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.openId, seed.openId))
+      .limit(1);
+    if (!user[0])
+      throw new Error("Demo trade contributor could not be created");
+    await tx
+      .insert(organizationMembers)
+      .values({
+        organizationId,
+        userId: user[0].id,
+        role: "member",
+        title: seed.title,
+        isActive: true,
+      })
+      .onDuplicateKeyUpdate({
+        set: { role: "member", title: seed.title, isActive: true },
+      });
+    contributors.push({
+      userId: user[0].id,
+      name: seed.name,
+      trade: seed.trade,
+    });
+  }
+  return contributors;
+}
+
+export async function materializeDemoPhotoCorpus(
+  organizationId: number,
+  userId: number
+) {
+  return withTransaction(async tx => {
+    let projectRows = await tx
+      .select({ id: projects.id, name: projects.name })
+      .from(projects)
+      .where(
+        and(
+          eq(projects.organizationId, organizationId),
+          isNull(projects.deletedAt)
+        )
+      )
+      .orderBy(asc(projects.name));
+    if (!projectRows.length) {
+      for (const project of DEMO_PHOTO_PROJECTS) {
+        await tx
+          .insert(projects)
+          .values({
+            organizationId,
+            name: project.name,
+            code: project.code,
+            description: project.description,
+            status: "active",
+            priority: "medium",
+            createdBy: userId,
+            updatedBy: userId,
+          })
+          .onDuplicateKeyUpdate({
+            set: {
+              name: project.name,
+              description: project.description,
+              status: "active",
+              deletedAt: null,
+              updatedBy: userId,
+            },
+          });
+      }
+      projectRows = await tx
+        .select({ id: projects.id, name: projects.name })
+        .from(projects)
+        .where(
+          and(
+            eq(projects.organizationId, organizationId),
+            isNull(projects.deletedAt)
+          )
+        )
+        .orderBy(asc(projects.name));
+    }
+
+    for (const project of projectRows) {
+      for (const folder of DEMO_FOLDER_BLUEPRINTS) {
+        await tx
+          .insert(photoFolders)
+          .values({
+            organizationId,
+            projectId: project.id,
+            name: folder.name,
+            slug: folder.slug,
+            description: folder.description,
+            trade: folder.trade,
+            createdBy: userId,
+          })
+          .onDuplicateKeyUpdate({
+            set: {
+              description: folder.description,
+              trade: folder.trade,
+              deletedAt: null,
+            },
+          });
+      }
+    }
+    const folderRows = await tx
+      .select({
+        id: photoFolders.id,
+        projectId: photoFolders.projectId,
+        name: photoFolders.name,
+        trade: photoFolders.trade,
+      })
+      .from(photoFolders)
+      .where(
+        and(
+          eq(photoFolders.organizationId, organizationId),
+          isNull(photoFolders.deletedAt)
+        )
+      );
+    const folderPlans: DemoPhotoFolder[] = folderRows.map(folder => ({
+      ...folder,
+      category:
+        DEMO_FOLDER_BLUEPRINTS.find(blueprint => blueprint.name === folder.name)
+          ?.category ?? "other",
+    }));
+    const contributors = await ensureDemoPhotoContributors(tx, organizationId);
+    const existing = await tx
+      .select({ total: count() })
+      .from(sitePhotos)
+      .where(
+        and(
+          eq(sitePhotos.organizationId, organizationId),
+          like(sitePhotos.storageKey, "demo-placeholder/%")
+        )
+      );
+    const corpus = buildDemoPhotoCorpusPlan(
+      projectRows,
+      folderPlans,
+      contributors
+    ).map(photo => ({ ...photo, organizationId }));
+    for (let start = 0; start < corpus.length; start += 90) {
+      await tx
+        .insert(sitePhotos)
+        .values(corpus.slice(start, start + 90))
+        .onDuplicateKeyUpdate({ set: { updatedAt: new Date() } });
+    }
+    await tx.insert(activityLogs).values({
+      organizationId,
+      actorId: userId,
+      action: "photo_corpus_materialized",
+      entityType: "site_photo",
+      entityId: null,
+      summary: `Materialized ${DEMO_PHOTO_CORPUS_SIZE} synthetic shared photo placeholders across project folders`,
+    });
+    return {
+      total: DEMO_PHOTO_CORPUS_SIZE,
+      created: Math.max(
+        0,
+        DEMO_PHOTO_CORPUS_SIZE - Number(existing[0]?.total ?? 0)
+      ),
+      projects: projectRows.length,
+      folders: folderRows.length,
+      contributors: contributors.length,
+    };
   });
 }
 

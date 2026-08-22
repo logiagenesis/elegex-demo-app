@@ -20,7 +20,15 @@ export const appRouter = router({
     demoLogin: publicProcedure
       .input(
         z.object({
-          personaId: z.enum(["owner", "manager", "foreman", "viewer"]),
+          personaId: z.enum([
+            "owner",
+            "manager",
+            "foreman",
+            "electrician",
+            "plumber",
+            "tiler",
+            "viewer",
+          ]),
         })
       )
       .mutation(async ({ ctx, input }) => {

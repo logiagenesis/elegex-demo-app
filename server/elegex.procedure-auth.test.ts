@@ -14,6 +14,9 @@ const mocks = vi.hoisted(() => ({
   createDocumentRecord: vi.fn(),
   createSitePhoto: vi.fn(),
   archiveSitePhoto: vi.fn(),
+  listPhotoFolders: vi.fn(),
+  createPhotoFolder: vi.fn(),
+  materializeDemoPhotoCorpus: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -29,6 +32,9 @@ vi.mock("./db", () => ({
   createDocumentRecord: mocks.createDocumentRecord,
   createSitePhoto: mocks.createSitePhoto,
   archiveSitePhoto: mocks.archiveSitePhoto,
+  listPhotoFolders: mocks.listPhotoFolders,
+  createPhotoFolder: mocks.createPhotoFolder,
+  materializeDemoPhotoCorpus: mocks.materializeDemoPhotoCorpus,
   canEditRecords: (role: string) => role !== "viewer",
   canManageRecords: (role: string) =>
     ["owner", "admin", "manager"].includes(role),
@@ -245,11 +251,13 @@ describe("Elegex protected procedure authorization", () => {
         title: "Plant room condition",
         tags: ["Pump", "Safety"],
         category: "before",
+        projectId: 17,
+        folderId: 81,
         jobId: 33,
       })
     ).resolves.toBe(902);
     expect(mocks.storagePut).toHaveBeenCalledWith(
-      "elegex/7/photos/plant-room.png",
+      "elegex/7/photos/project-17/folder-81/plant-room.png",
       expect.any(Buffer),
       "image/png"
     );
@@ -258,6 +266,8 @@ describe("Elegex protected procedure authorization", () => {
       42,
       expect.objectContaining({
         title: "Plant room condition",
+        projectId: 17,
+        folderId: 81,
         jobId: 33,
         category: "before",
         storageKey: "elegex/7/photos/immutable-plant-room.png",
@@ -279,6 +289,46 @@ describe("Elegex protected procedure authorization", () => {
       managerCaller.elegex.photos.archive({ id: 9 })
     ).resolves.toBeUndefined();
     expect(mocks.archiveSitePhoto).toHaveBeenCalledWith(7, 42, 9);
+  });
+
+  it("allows managers to create project folders while reserving the synthetic corpus build for owners and administrators", async () => {
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("viewer"));
+    const viewerCaller = appRouter.createCaller(context(user));
+    await expect(
+      viewerCaller.elegex.photos.createFolder({
+        projectId: 17,
+        name: "Electrical rough-in",
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("manager"));
+    mocks.createPhotoFolder.mockResolvedValueOnce(81);
+    const managerCaller = appRouter.createCaller(context(user));
+    await expect(
+      managerCaller.elegex.photos.createFolder({
+        projectId: 17,
+        name: "Electrical rough-in",
+        trade: "Electrical",
+      })
+    ).resolves.toBe(81);
+    expect(mocks.createPhotoFolder).toHaveBeenCalledWith(7, 42, {
+      projectId: 17,
+      name: "Electrical rough-in",
+      trade: "Electrical",
+    });
+
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("manager"));
+    await expect(
+      managerCaller.elegex.photos.materializeDemoCorpus()
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("owner"));
+    mocks.materializeDemoPhotoCorpus.mockResolvedValueOnce({ total: 540 });
+    const ownerCaller = appRouter.createCaller(context(user));
+    await expect(
+      ownerCaller.elegex.photos.materializeDemoCorpus()
+    ).resolves.toEqual({ total: 540 });
+    expect(mocks.materializeDemoPhotoCorpus).toHaveBeenCalledWith(7, 42);
   });
 
   it("blocks viewers from database connector health and configuration procedures", async () => {
