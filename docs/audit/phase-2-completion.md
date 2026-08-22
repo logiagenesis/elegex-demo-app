@@ -17,4 +17,4 @@
 
 ## Specific unblocker
 
-The next necessary condition is a connected authenticated browser session with a synthetic foreman-capable user and disposable assigned job. No credentials belong in code, documentation, or chat. Once available, the execution log will capture timestamps, tRPC procedures, and queryable resulting row IDs for each directive step.
+The next necessary condition is a connected authenticated browser session with a synthetic foreman-capable user and disposable assigned job. The available browser is currently at the Manus sign-in page and presents a human-verification challenge; it cannot be safely or legitimately automated. No credentials belong in code, documentation, or chat. Once the session is available, the execution log will capture timestamps, tRPC procedures, and queryable resulting row IDs for each directive step.
