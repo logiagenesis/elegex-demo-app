@@ -30,6 +30,40 @@ export async function checkDatabaseHealth() {
   return { healthy: true as const, dialect: "mysql" as const, checkedAt: new Date().toISOString() };
 }
 
+const fieldServiceSchemaColumns = [
+  ["jobs", "clientId"],
+  ["jobs", "siteId"],
+  ["jobs", "callOutTypeId"],
+  ["appSettings", "locale"],
+  ["appSettings", "currency"],
+  ["appSettings", "timezone"],
+] as const;
+
+/**
+ * Fails startup deterministically if field-service code is deployed before its
+ * additive migrations. This prevents the dashboard from presenting an endless
+ * loading state while a query fails on a missing selected column.
+ */
+export async function assertFieldServiceSchema(database?: Pick<DatabaseClient, "execute">) {
+  const activeDatabase = database ?? await getDatabase();
+  const result = await activeDatabase.execute(sql`
+    SELECT TABLE_NAME, COLUMN_NAME
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND ((TABLE_NAME = 'jobs' AND COLUMN_NAME IN ('clientId', 'siteId', 'callOutTypeId'))
+        OR (TABLE_NAME = 'appSettings' AND COLUMN_NAME IN ('locale', 'currency', 'timezone')))
+  `);
+  const rows = (Array.isArray(result) && Array.isArray(result[0]) ? result[0] : result) as Array<{ TABLE_NAME: string; COLUMN_NAME: string }>;
+  const present = new Set(rows.map(row => `${row.TABLE_NAME}.${row.COLUMN_NAME}`));
+  const missing = fieldServiceSchemaColumns
+    .map(([table, column]) => `${table}.${column}`)
+    .filter(column => !present.has(column));
+  if (missing.length) {
+    throw new Error(`Database schema is behind the field-service application code. Apply migrations 0008–0010; missing: ${missing.join(", ")}`);
+  }
+  return { verifiedColumns: fieldServiceSchemaColumns.length };
+}
+
 export function resetDatabaseClientForTests() {
   databaseClient = undefined;
 }
