@@ -8,36 +8,40 @@ type BrandMarkProps = {
 
 function Mark({ className = "" }: { className?: string }) {
   const idPrefix = useId().replace(/:/g, "");
-  const gradientId = `${idPrefix}-chrome`;
-  const maskId = `${idPrefix}-slot`;
+  const faceId = `${idPrefix}-face`;
+  const edgeId = `${idPrefix}-edge`;
+  const shapeId = `${idPrefix}-e`;
 
   return (
-    <svg aria-hidden="true" className={className} viewBox="0 0 1024 1024">
+    <svg aria-hidden="true" className={className} viewBox="0 0 500 500">
       <defs>
-        <linearGradient id={gradientId} x1="0.08" x2="0.92" y1="0" y2="1">
-          <stop offset="0" stopColor="#FAFCFE" />
-          <stop offset="0.14" stopColor="#DCE6F0" />
-          <stop offset="0.31" stopColor="#A9BCCE" />
-          <stop offset="0.46" stopColor="#E8F0F7" />
-          <stop offset="0.58" stopColor="#B6C7D8" />
-          <stop offset="0.72" stopColor="#7C90A5" />
-          <stop offset="0.86" stopColor="#C6D4E1" />
-          <stop offset="1" stopColor="#8395AA" />
+        <linearGradient id={faceId} x1="0.1" x2="0.9" y1="0" y2="1">
+          <stop offset="0" stopColor="#F7FAFC" />
+          <stop offset="0.18" stopColor="#D5E0EB" />
+          <stop offset="0.36" stopColor="#A2B4C6" />
+          <stop offset="0.52" stopColor="#EDF3F8" />
+          <stop offset="0.68" stopColor="#AEC0D1" />
+          <stop offset="0.84" stopColor="#7B8FA4" />
+          <stop offset="1" stopColor="#B9C8D8" />
         </linearGradient>
-        <mask id={maskId}>
-          <rect width="1024" height="1024" fill="#000" />
-          <g fill="#fff">
-            <rect x="232" y="168" width="250" height="712" rx="28" />
-            <rect x="456" y="160" width="344" height="196" rx="28" />
-            <rect x="456" y="430" width="306" height="186" rx="28" />
-            <rect x="456" y="692" width="344" height="196" rx="28" />
-          </g>
-          <rect x="336" y="318" width="40" height="398" rx="20" fill="#000" />
-        </mask>
+        <linearGradient id={edgeId} x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0" stopColor="#8A9BAC" />
+          <stop offset="1" stopColor="#41505F" />
+        </linearGradient>
+        <path
+          id={shapeId}
+          d="M105 78 H392 V152 H180 V212 H358 V282 H180 V344 H392 V418 H105 Z"
+        />
       </defs>
-      <g mask={`url(#${maskId})`}>
-        <rect width="1024" height="1024" fill={`url(#${gradientId})`} />
-      </g>
+      <use href={`#${shapeId}`} x="17" y="17" fill={`url(#${edgeId})`} />
+      <use href={`#${shapeId}`} fill={`url(#${faceId})`} />
+      <use
+        href={`#${shapeId}`}
+        fill="none"
+        stroke="#FFFFFF"
+        strokeOpacity="0.5"
+        strokeWidth="3"
+      />
     </svg>
   );
 }

@@ -47,6 +47,21 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+export function registerBodyParsers(app: express.Express) {
+  // Only these tRPC procedures carry base64 document payloads. Keeping the
+  // larger parser at their boundary prevents unauthenticated observability and
+  // ordinary API routes from accepting upload-sized request bodies.
+  app.use(
+    [
+      "/api/trpc/elegex.documents.upload",
+      "/api/trpc/elegex.fieldService.foreman.evidence",
+    ],
+    express.json({ limit: "36mb" })
+  );
+  app.use(express.json({ limit: "1mb" }));
+  app.use(express.urlencoded({ limit: "1mb", extended: true }));
+}
+
 async function startServer() {
   await assertFieldServiceSchema();
   const app = express();
@@ -181,11 +196,7 @@ async function startServer() {
     res.type("text/plain; version=0.0.4").send(metricsText());
   });
 
-  // Field evidence and documents currently traverse tRPC as base64 data URLs.
-  // The dedicated upload limiter and schema validation bound those routes; the
-  // parser therefore admits the 25 MB binary ceiling plus base64 overhead.
-  app.use(express.json({ limit: "36mb" }));
-  app.use(express.urlencoded({ limit: "1mb", extended: true }));
+  registerBodyParsers(app);
   app.post("/api/client-errors", (req, res) => {
     const body = req.body as {
       errorId?: unknown;
