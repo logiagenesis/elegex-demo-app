@@ -2713,12 +2713,7 @@ export function publicForemanQuoteResponse(
   quoteId: number,
   quoteNumber: string,
   status:
-    | "draft"
-    | "needs_pricing"
-    | "sent"
-    | "accepted"
-    | "declined"
-    | "expired"
+    "draft" | "needs_pricing" | "sent" | "accepted" | "declined" | "expired"
 ) {
   return { quoteId, quoteNumber, status };
 }
@@ -3144,11 +3139,7 @@ export async function captureForemanEvidence(
   input: {
     jobId: number;
     evidenceType:
-      | "before_photo"
-      | "after_photo"
-      | "note"
-      | "job_card"
-      | "signature";
+      "before_photo" | "after_photo" | "note" | "job_card" | "signature";
     title: string;
     note?: string;
     idempotencyKey?: string;

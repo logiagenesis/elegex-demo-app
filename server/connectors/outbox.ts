@@ -6,10 +6,7 @@ import {
 import { getDatabase } from "./database";
 
 export type ConnectorProvider =
-  | "database"
-  | "webhook"
-  | "analytics"
-  | "storage";
+  "database" | "webhook" | "analytics" | "storage";
 export type ConnectorStatus = "active" | "paused" | "degraded" | "disabled";
 
 export async function upsertIntegrationConnection(input: {

@@ -1,17 +1,8 @@
 export type ForemanMutationType =
-  | "consent"
-  | "checkIn"
-  | "material"
-  | "evidence"
-  | "quote"
-  | "complete";
+  "consent" | "checkIn" | "material" | "evidence" | "quote" | "complete";
 
 export type QueueStatus =
-  | "queued"
-  | "syncing"
-  | "retrying"
-  | "succeeded"
-  | "failed";
+  "queued" | "syncing" | "retrying" | "succeeded" | "failed";
 
 export type SyncPayload = Record<string, unknown>;
 
