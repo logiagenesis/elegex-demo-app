@@ -3,13 +3,9 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { elegexRouter } from "./routers/elegex";
-import { v1Router } from "./routers/api/v1";
 
 export const appRouter = router({
   system: systemRouter,
-  api: router({
-    v1: v1Router,
-  }),
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
