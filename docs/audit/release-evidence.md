@@ -1,5 +1,11 @@
 # Release Evidence: Unified Elegex Demo
 
+## Iterative system audit — 22 August 2026
+
+An additional repository, database, route, and UI-control audit found and repaired duplicate active synthetic member identities in the live demo tenant. Historical jobs, visits, tasks, and activity records were merged to the original demo users; redundant memberships were retired. Seed logic now reuses existing tenant members by email, administration filters inactive rows, server responses deduplicate display identities, and the administration screen refetches on mount with explicit loading and retry recovery.
+
+The final iterative gate passed TypeScript, **70 tests across 13 files**, the production build, the production dependency audit, published public-route smoke, and authenticated route rendering. Detailed evidence is in [`iterative-system-audit.md`](./iterative-system-audit.md).
+
 ## Deep code-hardening release — 22 August 2026
 
 The repository completed a fresh deep hardening audit focused on transactional failure semantics, tenant ownership, mutation no-ops, idempotency, offline recovery, schema drift, and runtime dependency exposure. The release adds atomic default demo reset/reseed execution, active-record guards, protected workspace owner roles, settings upsert behavior, paired document relation filters, deleted-job suppression in field lists, canonical outbox idempotency results, due-time/active-connection dispatch controls, and missing-offline-dependency containment.

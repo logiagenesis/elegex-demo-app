@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canEditRecords, canManageRecords, canManageWorkspace, DEMO_DATA_EXPECTATIONS, DEMO_RESET_RELATIONSHIPS, getDocumentHealth, hasDeterministicDemoReseed, resetDemoData } from "./db";
+import { canEditRecords, canManageRecords, canManageWorkspace, dedupeAdminMembers, dedupeWorkspaceMembers, DEMO_DATA_EXPECTATIONS, DEMO_RESET_RELATIONSHIPS, getDocumentHealth, hasDeterministicDemoReseed, resetDemoData } from "./db";
 import { vi } from "vitest";
 import { canAccessWorkspaceAdministration, canAccessWorkspaceRoute, canEditWorkspaceRecords, canManageOperationalControls, workspaceRoutePolicy } from "../client/src/lib/access";
 
@@ -37,6 +37,25 @@ describe("Elegex role capabilities", () => {
     expect(getDocumentHealth({ storageKey: "elegex/7/documents/brief.pdf", storageUrl: "/manus-storage/brief.pdf" })).toBe("available");
     expect(getDocumentHealth({ storageKey: "", storageUrl: "/manus-storage/brief.pdf" })).toBe("unavailable");
     expect(getDocumentHealth({ storageKey: "legacy/file.pdf", storageUrl: "https://example.invalid/file.pdf" })).toBe("unavailable");
+  });
+
+  it("collapses duplicate workspace-member display identities by normalized email without hiding address-less members", () => {
+    const members = [
+      { id: 1, email: "mila.petersen@elegex.demo" },
+      { id: 2, email: " MIlA.PETERSEN@elegex.demo " },
+      { id: 3, email: null },
+      { id: 4, email: null },
+    ];
+    expect(dedupeWorkspaceMembers(members).map(member => member.id)).toEqual([1, 3, 4]);
+  });
+
+  it("collapses duplicate administration membership rows by the nested user email", () => {
+    const members = [
+      { membership: { id: 1 }, user: { email: "mila.petersen@elegex.demo" } },
+      { membership: { id: 2 }, user: { email: "MILA.PETERSEN@elegex.demo" } },
+      { membership: { id: 3 }, user: { email: "jordan.okoro@elegex.demo" } },
+    ];
+    expect(dedupeAdminMembers(members).map(member => member.membership.id)).toEqual([1, 3]);
   });
 
   it("keeps the published six-month synthetic dataset at its documented relationship coverage", () => {

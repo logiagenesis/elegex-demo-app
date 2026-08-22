@@ -132,9 +132,22 @@ async function seedDemoWorkspace(organizationId: number, ownerId: number, databa
   ];
   const teamIds: number[] = [];
   for (const teammate of team) {
-    await db.insert(users).values({ ...teammate, loginMethod: "demo", role: "user", lastSignedIn: new Date() }).onDuplicateKeyUpdate({ set: { name: teammate.name, email: teammate.email } });
-    const teammateRow = await db.select().from(users).where(eq(users.openId, teammate.openId)).limit(1);
-    const teammateId = teammateRow[0]?.id;
+    const existingMembers = await db
+      .select({ membershipId: organizationMembers.id, userId: users.id })
+      .from(organizationMembers)
+      .innerJoin(users, eq(organizationMembers.userId, users.id))
+      .where(and(eq(organizationMembers.organizationId, organizationId), eq(users.email, teammate.email)))
+      .orderBy(asc(organizationMembers.id));
+    const [canonicalMember, ...duplicates] = existingMembers;
+    for (const duplicate of duplicates) {
+      await db.update(organizationMembers).set({ isActive: false }).where(eq(organizationMembers.id, duplicate.membershipId));
+    }
+    let teammateId = canonicalMember?.userId;
+    if (!teammateId) {
+      await db.insert(users).values({ ...teammate, loginMethod: "demo", role: "user", lastSignedIn: new Date() }).onDuplicateKeyUpdate({ set: { name: teammate.name, email: teammate.email } });
+      const teammateRow = await db.select().from(users).where(eq(users.openId, teammate.openId)).limit(1);
+      teammateId = teammateRow[0]?.id;
+    }
     if (teammateId) {
       teamIds.push(teammateId);
       await db.insert(organizationMembers).values({ organizationId, userId: teammateId, role: teammate.role, title: teammate.title }).onDuplicateKeyUpdate({ set: { title: teammate.title, role: teammate.role, isActive: true } });
@@ -452,15 +465,38 @@ export async function ensureTenantScope(userId: number): Promise<TenantScope> {
   return membership[0] as TenantScope;
 }
 
+export function dedupeWorkspaceMembers<T extends { email?: string | null }>(members: T[]) {
+  const seen = new Set<string>();
+  return members.filter(member => {
+    const email = member.email?.trim().toLowerCase();
+    if (!email) return true;
+    if (seen.has(email)) return false;
+    seen.add(email);
+    return true;
+  });
+}
+
+export function dedupeAdminMembers<T extends { user: { email?: string | null } }>(members: T[]) {
+  const seen = new Set<string>();
+  return members.filter(member => {
+    const email = member.user.email?.trim().toLowerCase();
+    if (!email) return true;
+    if (seen.has(email)) return false;
+    seen.add(email);
+    return true;
+  });
+}
+
 export async function listWorkspaceMembers(organizationId: number, database?: any) {
   const db = database ?? await getDb();
   if (!db) throw new Error("Database is not available");
-  return db
+  const members = await db
     .select({ id: users.id, name: users.name, email: users.email, role: organizationMembers.role, title: organizationMembers.title })
     .from(organizationMembers)
     .innerJoin(users, eq(organizationMembers.userId, users.id))
     .where(and(eq(organizationMembers.organizationId, organizationId), eq(organizationMembers.isActive, true)))
     .orderBy(asc(users.name));
+  return dedupeWorkspaceMembers(members);
 }
 
 export async function getDashboard(organizationId: number, userId: number) {
@@ -629,11 +665,11 @@ export async function markNotificationRead(organizationId: number, userId: numbe
 export async function getAdminData(organizationId: number) {
   const db = await getDb(); if (!db) throw new Error("Database is not available");
   const [members, logs, settings] = await Promise.all([
-    db.select({ membership: organizationMembers, user: users }).from(organizationMembers).innerJoin(users, eq(organizationMembers.userId, users.id)).where(eq(organizationMembers.organizationId, organizationId)).orderBy(asc(organizationMembers.role)),
+    db.select({ membership: organizationMembers, user: users }).from(organizationMembers).innerJoin(users, eq(organizationMembers.userId, users.id)).where(and(eq(organizationMembers.organizationId, organizationId), eq(organizationMembers.isActive, true))).orderBy(asc(organizationMembers.role)),
     db.select().from(activityLogs).where(eq(activityLogs.organizationId, organizationId)).orderBy(desc(activityLogs.createdAt)).limit(50),
     db.select().from(appSettings).where(eq(appSettings.organizationId, organizationId)).limit(1),
   ]);
-  return { members, logs, settings: settings[0] };
+  return { members: dedupeAdminMembers(members), logs, settings: settings[0] };
 }
 
 export async function getOrganizationSettings(organizationId: number) {
