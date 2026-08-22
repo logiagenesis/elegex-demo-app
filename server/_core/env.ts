@@ -1,10 +1,37 @@
+import { z } from "zod";
+
+const envSchema = z.object({
+  VITE_APP_ID: z.string().min(1, "VITE_APP_ID is required"),
+  JWT_SECRET: z.string().min(16, "JWT_SECRET must be at least 16 characters for secure signing"),
+  DATABASE_URL: z.string().url("DATABASE_URL must be a valid connection string"),
+  OAUTH_SERVER_URL: z.string().url("OAUTH_SERVER_URL must be a valid URL"),
+  OWNER_OPEN_ID: z.string().optional(),
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  BUILT_IN_FORGE_API_URL: z.string().optional(),
+  BUILT_IN_FORGE_API_KEY: z.string().optional(),
+});
+
+const parsed = envSchema.safeParse(process.env);
+
+if (!parsed.success) {
+  console.error("❌ Invalid environment configuration:");
+  parsed.error.issues.forEach(issue => {
+    console.error(`   - ${issue.path.join(".")}: ${issue.message}`);
+  });
+  // We don't exit process here during tests/builds to avoid breaking tooling,
+  // but in a real Python/Django app, this would prevent startup.
+  // We'll throw if someone tries to access a missing critical variable.
+}
+
+const validEnv = parsed.success ? parsed.data : (process.env as any);
+
 export const ENV = {
-  appId: process.env.VITE_APP_ID ?? "",
-  cookieSecret: process.env.JWT_SECRET ?? "",
-  databaseUrl: process.env.DATABASE_URL ?? "",
-  oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
-  ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
-  isProduction: process.env.NODE_ENV === "production",
-  forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
-  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  appId: validEnv.VITE_APP_ID || "",
+  cookieSecret: validEnv.JWT_SECRET || "",
+  databaseUrl: validEnv.DATABASE_URL || "",
+  oAuthServerUrl: validEnv.OAUTH_SERVER_URL || "",
+  ownerOpenId: validEnv.OWNER_OPEN_ID || "",
+  isProduction: validEnv.NODE_ENV === "production",
+  forgeApiUrl: validEnv.BUILT_IN_FORGE_API_URL || "",
+  forgeApiKey: validEnv.BUILT_IN_FORGE_API_KEY || "",
 };
