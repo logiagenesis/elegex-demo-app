@@ -627,10 +627,21 @@ export const elegexRouter = router({
     ),
   }),
   documents: router({
+    materializeDemoCorpus: tenantProcedure.mutation(({ ctx }) => {
+      requireManage(ctx.scope.role);
+      return db.materializeDemoEvidenceCorpus(
+        ctx.scope.organizationId,
+        ctx.user.id
+      );
+    }),
     openEvidenceDocument: tenantProcedure
       .input(z.object({ evidenceId: z.number().int().positive() }))
       .mutation(({ ctx, input }) =>
-        db.openDemoEvidenceDocument(ctx.scope.organizationId, input.evidenceId)
+        db.openDemoEvidenceDocument(
+          ctx.scope.organizationId,
+          input.evidenceId,
+          ctx.user.id
+        )
       ),
     list: tenantProcedure
       .input(documentListInput.optional())

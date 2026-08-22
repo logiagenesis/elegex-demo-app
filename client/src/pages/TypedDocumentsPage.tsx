@@ -60,6 +60,16 @@ export default function TypedDocumentsPage() {
     },
     onError: error => toast.error(error.message),
   });
+  const materializeDemoCorpus =
+    trpc.elegex.documents.materializeDemoCorpus.useMutation({
+      onSuccess: result => {
+        toast.success(
+          `${result.target} demo evidence documents are ready (${result.createdArtifacts} created now)`
+        );
+        void utils.elegex.documents.invalidate();
+      },
+      onError: error => toast.error(error.message),
+    });
 
   const uploadFile = (file?: File) => {
     if (!file) return;
@@ -214,6 +224,18 @@ export default function TypedDocumentsPage() {
                 Document register
               </h2>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-[#B6D4FF] text-[#195FE6] hover:bg-[#EEF4FF]"
+              onClick={() => materializeDemoCorpus.mutate()}
+              disabled={materializeDemoCorpus.isPending}
+            >
+              {materializeDemoCorpus.isPending
+                ? "Building 60 documents…"
+                : "Build 60-document demo pack"}
+            </Button>
             <select
               value={documentType}
               onChange={event =>
