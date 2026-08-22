@@ -1,5 +1,6 @@
 import {
   boolean,
+  foreignKey,
   index,
   int,
   json,
@@ -29,7 +30,6 @@ export const organizations = mysqlTable("organizations", {
   slug: varchar("slug", { length: 160 }).notNull().unique(),
   industry: varchar("industry", { length: 100 }),
   primaryColor: varchar("primaryColor", { length: 16 }).default("#2563EB").notNull(),
-  timezone: varchar("timezone", { length: 80 }).default("UTC").notNull(),
   createdBy: int("createdBy").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -80,6 +80,47 @@ export const contacts = mysqlTable("contacts", {
 }, table => [
   index("contact_organization_idx").on(table.organizationId),
   index("contact_status_idx").on(table.organizationId, table.status),
+]);
+
+export const clients = mysqlTable("clients", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(),
+  name: varchar("name", { length: 160 }).notNull(),
+  clientType: mysqlEnum("clientType", ["domestic", "commercial", "body_corporate", "estate_development", "managing_agent"]).default("domestic").notNull(),
+  billingEntityId: int("billingEntityId"),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 50 }),
+  address: varchar("address", { length: 360 }),
+  status: mysqlEnum("status", ["lead", "active", "inactive"]).default("active").notNull(),
+  notes: text("notes"),
+  createdBy: int("createdBy").notNull(),
+  updatedBy: int("updatedBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  deletedAt: timestamp("deletedAt"),
+}, table => [
+  index("client_organization_idx").on(table.organizationId),
+  foreignKey({ columns: [table.organizationId], foreignColumns: [organizations.id], name: "clients_organization_fk" }),
+  foreignKey({ columns: [table.billingEntityId], foreignColumns: [table.id], name: "clients_billing_entity_fk" }),
+]);
+
+export const sites = mysqlTable("sites", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(),
+  clientId: int("clientId").notNull(),
+  contactId: int("contactId"),
+  name: varchar("name", { length: 180 }).notNull(),
+  address: varchar("address", { length: 360 }).notNull(),
+  suburb: varchar("suburb", { length: 180 }),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  deletedAt: timestamp("deletedAt"),
+}, table => [
+  index("site_organization_idx").on(table.organizationId, table.clientId),
+  foreignKey({ columns: [table.organizationId], foreignColumns: [organizations.id], name: "sites_organization_fk" }),
+  foreignKey({ columns: [table.clientId], foreignColumns: [clients.id], name: "sites_client_fk" }),
+  foreignKey({ columns: [table.contactId], foreignColumns: [contacts.id], name: "sites_contact_fk" }),
 ]);
 
 export const projects = mysqlTable("projects", {
@@ -236,10 +277,31 @@ export const appSettings = mysqlTable("appSettings", {
   defaultProjectStatus: varchar("defaultProjectStatus", { length: 32 }).default("planning").notNull(),
   allowMemberInvites: boolean("allowMemberInvites").default(false).notNull(),
   notificationDigest: boolean("notificationDigest").default(true).notNull(),
+  locale: varchar("locale", { length: 32 }).default("en-ZA").notNull(),
+  currency: varchar("currency", { length: 32 }).default("ZAR").notNull(),
+  timezone: varchar("timezone", { length: 80 }).default("Africa/Johannesburg").notNull(),
   metadata: json("metadata"),
   updatedBy: int("updatedBy").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+export const callOutTypes = mysqlTable("callOutTypes", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(),
+  name: varchar("name", { length: 180 }).notNull(),
+  baseRate: int("baseRate").default(0).notNull(),
+  travelIncludedKm: int("travelIncludedKm").default(0).notNull(),
+  perKmRate: int("perKmRate").default(0).notNull(),
+  appliesFrom: varchar("appliesFrom", { length: 5 }).notNull(),
+  appliesTo: varchar("appliesTo", { length: 5 }).notNull(),
+  activeFrom: timestamp("activeFrom").defaultNow().notNull(),
+  activeTo: timestamp("activeTo"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("call_out_type_organization_idx").on(table.organizationId, table.activeFrom),
+  foreignKey({ columns: [table.organizationId], foreignColumns: [organizations.id], name: "call_out_types_organization_fk" }),
+]);
 
 export const integrationConnections = mysqlTable("integrationConnections", {
   id: int("id").autoincrement().primaryKey(),
@@ -280,8 +342,11 @@ export const integrationEvents = mysqlTable("integrationEvents", {
 export const jobs = mysqlTable("jobs", {
   id: int("id").autoincrement().primaryKey(),
   organizationId: int("organizationId").notNull(),
+  clientId: int("clientId"),
+  siteId: int("siteId"),
   contactId: int("contactId").notNull(),
   projectId: int("projectId"),
+  callOutTypeId: int("callOutTypeId"),
   jobNumber: varchar("jobNumber", { length: 32 }).notNull(),
   title: varchar("title", { length: 180 }).notNull(),
   description: text("description").notNull(),
@@ -307,6 +372,10 @@ export const jobs = mysqlTable("jobs", {
   uniqueIndex("job_organization_number_unique").on(table.organizationId, table.jobNumber),
   index("job_organization_stage_idx").on(table.organizationId, table.stage, table.scheduledStart),
   index("job_foreman_schedule_idx").on(table.organizationId, table.foremanId, table.scheduledStart),
+  index("job_client_site_idx").on(table.organizationId, table.clientId, table.siteId),
+  foreignKey({ columns: [table.clientId], foreignColumns: [clients.id], name: "jobs_client_fk" }),
+  foreignKey({ columns: [table.siteId], foreignColumns: [sites.id], name: "jobs_site_fk" }),
+  foreignKey({ columns: [table.callOutTypeId], foreignColumns: [callOutTypes.id], name: "jobs_call_out_type_fk" }),
 ]);
 
 export const jobVisits = mysqlTable("jobVisits", {
@@ -325,6 +394,16 @@ export const jobVisits = mysqlTable("jobVisits", {
 }, table => [
   index("job_visit_dispatch_idx").on(table.organizationId, table.foremanId, table.scheduledStart),
   index("job_visit_job_idx").on(table.organizationId, table.jobId),
+]);
+
+export const syncLogs = mysqlTable("syncLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  organizationId: int("organizationId").notNull(),
+  idempotencyKey: varchar("idempotencyKey", { length: 36 }).notNull(),
+  mutationType: varchar("mutationType", { length: 60 }).notNull(),
+  processedAt: timestamp("processedAt").defaultNow().notNull(),
+}, table => [
+  uniqueIndex("sync_log_idempotency_unique").on(table.organizationId, table.idempotencyKey),
 ]);
 
 export const jobMaterials = mysqlTable("jobMaterials", {

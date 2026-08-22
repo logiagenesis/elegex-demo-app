@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Migration Foundation</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    .slide-container { width: 1280px; min-height: 720px; background: #FFFFFF; color: #000000; font-family: Arial, Helvetica, sans-serif; display: grid; grid-template-columns: 390px 1fr; }
+    .title-col { padding-top: 65px; padding-left: 70px; padding-right: 38px; }
+    .eyebrow { color: #EA580C; font-size: 15px; font-weight: 800; letter-spacing: 2px; }
+    h1 { margin-top: 26px; font-size: 57px; line-height: 0.93; font-weight: 800; letter-spacing: -3.4px; }
+    .title-note { border-top: 4px solid #000000; margin-top: 38px; padding-top: 15px; color: #404040; font-size: 17px; line-height: 1.36; }
+    .content { padding-top: 65px; padding-left: 35px; padding-right: 75px; }
+    .migration-id { border-top: 4px solid #000000; padding-top: 18px; display: grid; grid-template-columns: 220px 1fr; column-gap: 28px; align-items: baseline; }
+    .migration-label { color: #EA580C; font-size: 15px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+    .migration-name { font-size: 30px; line-height: 1; font-weight: 800; letter-spacing: -1.5px; }
+    .migration-name code { font-family: "Courier New", monospace; font-size: 23px; font-weight: 700; }
+    .outcomes { margin-top: 45px; border-top: 4px solid #EA580C; }
+    .outcome { display: grid; grid-template-columns: 130px 1fr; column-gap: 30px; padding-top: 22px; min-height: 113px; border-bottom: 1px solid #000000; }
+    .outcome-num { font-size: 41px; line-height: 0.85; font-weight: 800; color: #EA580C; letter-spacing: -2px; }
+    .outcome h2 { font-size: 23px; line-height: 1.08; font-weight: 800; }
+    .outcome p { margin-top: 9px; font-size: 16px; line-height: 1.32; color: #404040; max-width: 590px; }
+    .principle { margin-top: 31px; font-size: 19px; line-height: 1.26; font-weight: 700; }
+    .principle strong { color: #EA580C; }
+  </style>
+</head>
+<body>
+  <div class="slide-container">
+    <section class="title-col">
+      <div class="eyebrow">06 / WP2 DELIVERY</div>
+      <h1>MIGRATION FOUNDATION</h1>
+      <div class="title-note">The WP2 schema change is deliberately additive: it establishes a domain model without destructively repricing or rewriting existing jobs.</div>
+    </section>
+    <section class="content">
+      <div class="migration-id">
+        <div class="migration-label">Generated migration</div>
+        <div class="migration-name"><code>0008_living_skaar.sql</code></div>
+      </div>
+      <div class="outcomes">
+        <div class="outcome">
+          <div class="outcome-num">01</div>
+          <div><h2>Creates domain tables</h2><p>Adds tenant-scoped <strong>callOutTypes</strong>, <strong>clients</strong>, and <strong>sites</strong> to represent the commercial and physical operating model.</p></div>
+        </div>
+        <div class="outcome">
+          <div class="outcome-num">02</div>
+          <div><h2>Extends settings and jobs</h2><p>Adds organization-level <strong>locale</strong>, <strong>currency</strong>, and <strong>timezone</strong>, then links jobs to a client, site, and applicable call-out type.</p></div>
+        </div>
+        <div class="outcome">
+          <div class="outcome-num">03</div>
+          <div><h2>Preserves historical records</h2><p>The migration adds nullable job references rather than overwriting existing prices, dates, stages, or current job data.</p></div>
+        </div>
+      </div>
+      <div class="principle"><strong>Design rule:</strong> a job priced in March keeps its March rate; domain restoration must not rewrite history.</div>
+    </section>
+  </div>
+</body>
+</html>

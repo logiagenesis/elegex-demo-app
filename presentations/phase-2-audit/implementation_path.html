@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sequenced Path</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    .slide-container { width: 1280px; min-height: 720px; background: #FFFFFF; color: #000000; font-family: Arial, Helvetica, sans-serif; display: grid; grid-template-columns: 390px 1fr; }
+    .title-column { padding-top: 65px; padding-left: 70px; padding-right: 40px; }
+    .kicker { color: #EA580C; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { margin-top: 24px; font-size: 56px; line-height: 0.92; letter-spacing: -3.5px; font-weight: 800; }
+    .side-note { margin-top: 37px; border-top: 4px solid #000000; padding-top: 15px; color: #404040; font-size: 17px; line-height: 1.37; }
+    .content-column { padding-top: 66px; padding-left: 35px; padding-right: 75px; }
+    .lead { border-top: 4px solid #000000; padding-top: 18px; font-size: 25px; line-height: 1.18; font-weight: 700; max-width: 735px; }
+    .sequence { display: grid; grid-template-columns: repeat(4, 1fr); column-gap: 16px; margin-top: 49px; }
+    .step { border-top: 4px solid #EA580C; padding-top: 15px; min-height: 302px; }
+    .step-number { color: #EA580C; font-size: 40px; line-height: .85; font-weight: 800; letter-spacing: -2px; }
+    .step-title { margin-top: 19px; font-size: 20px; line-height: 1.08; font-weight: 800; }
+    .step-detail { margin-top: 13px; font-size: 15px; line-height: 1.34; color: #404040; }
+    .step-state { margin-top: 24px; border-top: 1px solid #000000; padding-top: 11px; font-size: 13px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+    .implemented { color: #000000; }
+    .pending { color: #EA580C; }
+    .principle { margin-top: 35px; border-top: 4px solid #000000; padding-top: 14px; font-size: 19px; line-height: 1.28; font-weight: 700; }
+    .principle span { color: #EA580C; }
+  </style>
+</head>
+<body>
+  <div class="slide-container">
+    <section class="title-column">
+      <div class="kicker">10 / DELIVERY ORDER</div>
+      <h1>SEQUENCED PATH</h1>
+      <div class="side-note">The directive is intentionally ordered: later experience claims depend on the persistence, document, tenant-isolation, and test evidence established first.</div>
+    </section>
+    <section class="content-column">
+      <div class="lead">Build the foundation first; then prove that every field artifact is durable, isolated, and reproducible.</div>
+      <div class="sequence">
+        <article class="step">
+          <div class="step-number">01</div>
+          <div class="step-title">WP2<br>Domain foundation</div>
+          <div class="step-detail">Apply the organization-domain migration: locale, currency, timezone, temporal call-out types, clients, sites, and job references.</div>
+          <div class="step-state implemented">Schema foundation implemented</div>
+        </article>
+        <article class="step">
+          <div class="step-number">02</div>
+          <div class="step-title">WP4<br>Document proof</div>
+          <div class="step-detail">Build typed, governed documents and verify routing, storage keys, checksums, tenant isolation, signed-URL expiry, and retention behaviour.</div>
+          <div class="step-state pending">Implementation and verification pending</div>
+        </article>
+        <article class="step">
+          <div class="step-number">03</div>
+          <div class="step-title">WP5<br>Offline-first workflow</div>
+          <div class="step-detail">Introduce the IndexedDB write-ahead queue, client idempotency keys, dependency-aware drain, blob uploads, retry control, and actionable failures.</div>
+          <div class="step-state pending">Architecture reviewed; build pending</div>
+        </article>
+        <article class="step">
+          <div class="step-number">04</div>
+          <div class="step-title">WP9–10<br>Adversarial proof</div>
+          <div class="step-detail">Prove 404 tenant isolation across procedures and validate role-specific office and mobile journeys through authenticated end-to-end coverage.</div>
+          <div class="step-state pending">Evidence harness pending</div>
+        </article>
+      </div>
+      <div class="principle"><span>Release rule:</span> each package remains incomplete until its implementation and its named verification artifact both exist.</div>
+    </section>
+  </div>
+</body>
+</html>

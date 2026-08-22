@@ -1,29 +1,27 @@
 # Foreman Workflow Ground Truth Audit
 
 **Audit date:** 21 August 2026  
-**Method:** Source-contract inspection, automated procedure coverage, and the connected published owner browser observation. This is **not** a complete authenticated mutation replay. No production mutation was issued during this audit.
+**Method:** Current source-contract inspection, existing automated procedure coverage, and connected published-browser observation. This is **not** a complete authenticated mutation replay.
 
-> **Status:** The prior acceptance language overstated the foreman implementation. The current `/field` route is a persistence-backed **partial workflow**, not the complete F-00 through F-09 product specified in the reference directive.
+> **Status: PARTIAL.** An earlier preliminary audit marked the workflow largely absent; the current source confirms a partial persistence-backed implementation. Neither observation establishes completion of the directive’s F-00 through F-09 requirements.
 
 | Reference step | Current result | Backing procedure | Actual writes | Execution evidence and limitation |
 |---|---|---|---|---|
-| F-00 versioned POPIA location consent | **PARTIAL** | `fieldService.foreman.consent` | `jobEvidence` signature artifact; `activityLogs` `consent_recorded` | Typed consent is persisted against a job. There is no dedicated versioned consent table, policy record, withdrawal flow, or consent precondition for check-in. |
-| F-01 today list | **PARTIAL** | `fieldService.foreman.today` | Read-only query of `jobs`, `contacts`, `jobVisits` | Assigned scheduled/in-progress/on-hold jobs render. Yesterday/today/tomorrow navigation, travel-gap logic, and server-backed sync timestamp are absent. |
-| F-02 job card | **PARTIAL** | Existing today query and field view state | No independent job-card data contract | The live page renders a job card and action controls. It does not yet provide the reference-grade time panel, media thumbnails, sign-off state, or separate card route. |
-| F-03 geo check-in/check-out | **PARTIAL** | `fieldService.foreman.checkIn`, `fieldService.foreman.complete` | `jobs` stage/check-in/check-out timestamps; `jobVisits` status; `activityLogs` | Check-in and completion are transactional, but they persist `manual_override` geo status and do not accept GPS, calculate a distance flag, or support material-trip checkout intent. |
-| F-04 camera/media capture | **PARTIAL** | `fieldService.foreman.evidence` | `jobEvidence`; `activityLogs` `evidence_captured` | The procedure persists evidence metadata for before/after/note/job-card modes. It does not accept media bytes, generate thumbnails, or queue offline uploads. |
-| F-05 call-out/travel/materials | **PARTIAL** | `fieldService.foreman.material` | `jobMaterials`; `activityLogs` `material_recorded` | Materials are persisted during an active visit. Call-out types, travel toggle, catalogue search, `office_to_price`, and used/for-quote state are absent. |
-| F-06 quote assessment | **PARTIAL / UNSAFE** | `fieldService.foreman.quote` | `quotes`, `quoteItems`, `activityLogs` `quote_captured` | The workflow persists a draft quote, but it accepts and stores a numeric total. This violates the directive’s no-prices-on-foreman requirement and must be redesigned. |
-| F-07 client sign-off | **ABSENT** | None | None | The current typed consent artifact is not client sign-off. There is no signature canvas, signer-role choice, or unsigned-with-reason outcome. |
-| F-08 completion with gaps | **PARTIAL** | `fieldService.foreman.complete` | `jobs`, `jobVisits`, `activityLogs` `foreman_completed` | Completion moves an in-progress job to `ready_for_invoicing`. There is no checklist, exception table, gap remediation, or office exception queue. |
-| F-09 offline sync status | **ABSENT** | None | None | The rendered sync labels are local UI state. There is no IndexedDB outbox, idempotency key, retry queue, persistence across reboot, or background sync. |
+| F-00 versioned POPIA location consent | PARTIAL | `fieldService.foreman.consent` | `jobEvidence` signature artifact; `activityLogs` `consent_recorded` | Typed consent persists against a job. No versioned consent table, withdrawal, policy record, or check-in gate exists. |
+| F-01 today list | PARTIAL | `fieldService.foreman.today` | Read-only query of `jobs`, `contacts`, `jobVisits` | Assigned scheduled/in-progress/on-hold jobs render. Date navigation, travel gaps, and server-backed sync stamp are absent. |
+| F-02 job card | PARTIAL | Today query and in-page state | No independent job-card contract | A live card and controls render; time counter, evidence thumbnails, and sign-off state are absent. |
+| F-03 geo check-in/check-out | PARTIAL | `fieldService.foreman.checkIn`, `fieldService.foreman.complete` | `jobs`, `jobVisits`, `activityLogs` | Check-in/completion are transactional but use `manual_override` geo state; no GPS, distance flag, or trip intent exists. |
+| F-04 camera/media capture | PARTIAL | `fieldService.foreman.evidence` | `jobEvidence`; `activityLogs` | Evidence metadata persists for before/after/note/job-card; no media bytes, thumbnails, or offline uploads. |
+| F-05 call-out/travel/materials | PARTIAL | `fieldService.foreman.material` | `jobMaterials`; `activityLogs` | Free-text material persists only during active visit. Call-out, travel, catalogue, and office-to-price states are absent. |
+| F-06 quote assessment | PARTIAL / UNSAFE | `fieldService.foreman.quote` | `quotes`, `quoteItems`, `activityLogs` | Draft quote persists but accepts a numeric total, contrary to the no-prices-on-foreman directive. |
+| F-07 client sign-off | ABSENT | None | None | No canvas, signer capacity, or unsigned-with-reason outcome. |
+| F-08 completion with gaps | PARTIAL | `fieldService.foreman.complete` | `jobs`, `jobVisits`, `activityLogs` | Completion reaches `ready_for_invoicing`; no checklist, exception table, gap remediation, or office queue. |
+| F-09 offline sync status | PARTIAL UTILITY / ABSENT PRODUCT | Remote `syncQueue` utility; no wired procedure | Client utility only | Queue code and tests exist on the remote branch, but no field UI integration, service worker, persisted media, or end-to-end replay evidence is accepted. |
 
-## Current execution evidence
+## Observed partial execution
 
-The connected published owner session rendered the field list and opened job `#2041`. The job card visibly showed **READY TO SYNC**, typed-consent guidance, check-in, material/evidence/quote/completion controls, and the four evidence labels. This confirms that the page renders. It does **not** constitute end-to-end evidence that every control completes a persisted workflow, survives an offline reboot, or drains a queue exactly once.
-
-The existing automated suite covers selected procedure authorization and selected workflow behavior. It does not provide the directive-required complete journey of consent, GPS capture, media upload, material capture, client sign-off, completion with recorded gaps, and sync-queue drain.
+In the connected published owner session, synthetic job `#2041` showed the field job card. A typed consent submission displayed `SYNCED TO WORKSPACE`, then a check-in submission displayed a field-workflow confirmation. The authenticated session then reverted to the public sign-in shell before subsequent steps could be executed. This confirms only those two visible submissions; it does not prove a complete workflow or specific resulting row IDs.
 
 ## Required remediation before acceptance
 
-The work remains **incomplete** until the F-00 through F-09 capabilities are implemented with tenant-scoped persistence, authenticated execution logs, and the specific offline/idempotency verification requested in the directive. The previous final acceptance decision is superseded by the retraction in `final-acceptance-report.md`.
+Complete and record consent, GPS check-in, evidence media upload, material, client signature, completion with recorded gaps, and offline queue drain using a dedicated test identity. Capture procedure names, timestamps, queryable resulting row IDs, and exact-once replay outcomes. Until then the workflow remains incomplete.

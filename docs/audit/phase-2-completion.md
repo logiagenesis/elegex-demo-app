@@ -3,24 +3,19 @@
 **Status date:** 21 August 2026  
 **Directive:** `ELEGEX — PHASE 2 BUILD DIRECTIVE` supplied by the user.
 
-> **Overall status: BLOCKED AT WP1.** The directive requires the packages to be completed in order. No later package is represented as started or complete until the WP1 authenticated foreman mutation execution log exists.
+> **Overall status: BLOCKED AT WP1.** The directive requires the packages to pass in order. Remote work from a concurrent branch is recorded below without treating it as accepted out-of-sequence work.
 
 | Work package | Status | Verification artifact | Current result and blocker |
 |---|---|---|---|
-| WP0 — Screenshot defects | BLOCKED | `docs/audit/screenshot-defect-resolution.md` | The directive’s screenshot-finding slot was not populated. No warning triangle can be classified without the user-supplied screenshots or route references. |
-| WP1 — Acceptance contradiction | PARTIAL | `docs/audit/foreman-workflow-ground-truth.md`; retracted `docs/audit/final-acceptance-report.md` | Documentation contradiction is reconciled and the prior acceptance was retracted. The required authenticated, persisted mutation journey cannot currently resume because the connected browser’s authenticated session has reverted to the public sign-in shell. |
-| WP2 — Domain restoration | BLOCKED | Pending WP1 | The directive expressly prohibits beginning this package before WP1 passes. |
-| WP3 — Business-rule enforcement | BLOCKED | Pending WP1–WP2 | The directive expressly prohibits beginning this package before WP1–WP2 pass. |
-| WP4 — Six-month document corpus | BLOCKED | Pending WP1–WP3 | The directive expressly prohibits beginning this package before blocking packages pass. |
-| WP5 — Foreman workflow proper | BLOCKED | Pending WP1–WP4 | The directive expressly prohibits beginning this package before blocking packages pass. |
-| WP6–WP12 — Expansion, isolation, browser coverage, and integrity | BLOCKED | Pending prior packages | Not started under the directive’s required sequence. |
-
-## WP1 execution evidence presently available
-
-The published connected session previously showed the assigned job card for synthetic job `#2041`. A typed consent action produced the visible `SYNCED TO WORKSPACE` confirmation and a check-in action produced the visible confirmation that the field workflow started. The underlying procedure contracts and actual write targets are recorded in `foreman-workflow-ground-truth.md`.
-
-This observation is **insufficient** for directive completion. It does not prove GPS capture, media upload, materials, client signature, completion-with-gaps, offline persistence, queue drain, or exact-once replay. Those steps must be executed and recorded under an authenticated session before WP1 can be marked complete.
+| WP0 — Screenshot defects | BLOCKED | `docs/audit/screenshot-defect-resolution.md` | Directive screenshot slot was not populated. No triangle can be classified without screenshot/route evidence. |
+| WP1 — Acceptance contradiction | PARTIAL | `docs/audit/foreman-workflow-ground-truth.md`; retracted `docs/audit/final-acceptance-report.md` | Contradiction is reconciled and unsupported acceptance retracted. Complete authenticated mutation execution log remains pending. |
+| WP2 — Restore the domain | UNVERIFIED REMOTE WORK | `drizzle/0008_living_skaar.sql`, `0009_sloppy_red_skull.sql`, `0010_groovy_gwen_stacy.sql`, schema | Remote branch added migration and schema work. It must be reviewed for additive safety, applied state, UI configuration, seed impact, and tests before status can advance. |
+| WP3 — Enforce business rules | PARTIAL / UNVERIFIED REMOTE WORK | Remote `syncLogs` implementation; `docs/audit/python-reviewer-audit.md` | Idempotency-oriented remote work exists; the full directive rules are not yet verified as server-enforced invariants. |
+| WP4 — Real documents | INCOMPLETE | `docs/audit/document-routing-verification.md` | Remote audit template exists; directive corpus, checksum, retention, and full routing proof are not complete. |
+| WP5 — Foreman workflow proper | PARTIAL / UNVERIFIED REMOTE WORK | `client/src/lib/syncQueue.ts`, `client/src/lib/syncQueue.test.ts` | Queue utility exists but has not been accepted as an integrated field product with service worker, UI, and replay evidence. |
+| WP6–WP12 | BLOCKED | Pending prior work packages | No status may be promoted until preceding packages satisfy their named verification artifacts. |
 
 ## Specific unblocker
 
-The next necessary condition is an authenticated browser session on the published Elegex domain with a synthetic foreman-capable user and an assigned synthetic job. No credentials should be placed in source code, documentation, or chat. Once a session is available, the execution log will capture timestamps, relevant tRPC procedure names, visible result, and queryable row identifiers for each directive step.
+The next necessary condition is a connected authenticated browser session with a synthetic foreman-capable user and disposable assigned job. No credentials belong in code, documentation, or chat. Once available, the execution log will capture timestamps, tRPC procedures, and queryable resulting row IDs for each directive step.
+
