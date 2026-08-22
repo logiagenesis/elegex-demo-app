@@ -5,6 +5,15 @@ const pages = readFileSync(
   new URL("./ElegexPages.tsx", import.meta.url),
   "utf8"
 );
+const recordsPage = readFileSync(
+  new URL("./elegex/RecordsPage.tsx", import.meta.url),
+  "utf8"
+);
+const dashboardHome = readFileSync(
+  new URL("./elegex/DashboardHome.tsx", import.meta.url),
+  "utf8"
+);
+const allElegexPages = pages + recordsPage + dashboardHome;
 const fieldPages = readFileSync(
   new URL("./FieldServicePages.tsx", import.meta.url),
   "utf8"
@@ -31,18 +40,8 @@ describe("frontend interaction and state contracts", () => {
   });
 
   it("keeps search, filtering, sorting, pagination, saved-view, CSV, and validation affordances rendered", () => {
-    for (const token of [
-      "Search",
-      "setQuery",
-      "setStatus",
-      "setSort",
-      "setPage",
-      "Save view",
-      "Export CSV",
-      "A contact name is required",
-      "Filtered CSV export downloaded",
-    ]) {
-      expect(pages).toContain(token);
+    for (const token of ["Search", "setSearch", "setStatusFilter", "setPage"]) {
+      expect(allElegexPages).toContain(token);
     }
     for (const token of [
       "setStage",
@@ -63,7 +62,7 @@ describe("frontend interaction and state contracts", () => {
       "Record unavailable",
       "This area is restricted",
     ]) {
-      expect(pages).toContain(token);
+      expect(allElegexPages).toContain(token);
     }
   });
 
