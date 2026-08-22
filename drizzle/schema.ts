@@ -800,6 +800,8 @@ export const sitePhotos = mysqlTable(
   {
     id: int("id").autoincrement().primaryKey(),
     organizationId: int("organizationId").notNull(),
+    projectId: int("projectId"),
+    folderId: int("folderId"),
     jobId: int("jobId"),
     siteId: int("siteId"),
     title: varchar("title", { length: 180 }).notNull(),
@@ -822,6 +824,9 @@ export const sitePhotos = mysqlTable(
     storageUrl: varchar("storageUrl", { length: 600 }).notNull(),
     capturedAt: timestamp("capturedAt").defaultNow().notNull(),
     uploadedBy: int("uploadedBy").notNull(),
+    contributorTrade: varchar("contributorTrade", { length: 80 })
+      .default("General field team")
+      .notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
     deletedAt: timestamp("deletedAt"),
@@ -833,10 +838,50 @@ export const sitePhotos = mysqlTable(
     ),
     index("site_photo_job_idx").on(table.organizationId, table.jobId),
     index("site_photo_site_idx").on(table.organizationId, table.siteId),
+    index("site_photo_project_idx").on(table.organizationId, table.projectId),
+    index("site_photo_folder_idx").on(table.organizationId, table.folderId),
+    index("site_photo_contributor_idx").on(
+      table.organizationId,
+      table.contributorTrade
+    ),
     index("site_photo_category_idx").on(table.organizationId, table.category),
     uniqueIndex("site_photo_organization_storage_key_unique").on(
       table.organizationId,
       table.storageKey
+    ),
+  ]
+);
+
+export const photoFolders = mysqlTable(
+  "photoFolders",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    organizationId: int("organizationId").notNull(),
+    projectId: int("projectId").notNull(),
+    name: varchar("name", { length: 120 }).notNull(),
+    slug: varchar("slug", { length: 140 }).notNull(),
+    description: varchar("description", { length: 360 }),
+    trade: varchar("trade", { length: 80 })
+      .default("Shared field evidence")
+      .notNull(),
+    createdBy: int("createdBy").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    deletedAt: timestamp("deletedAt"),
+  },
+  table => [
+    index("photo_folder_organization_project_idx").on(
+      table.organizationId,
+      table.projectId
+    ),
+    index("photo_folder_organization_trade_idx").on(
+      table.organizationId,
+      table.trade
+    ),
+    uniqueIndex("photo_folder_organization_project_slug_unique").on(
+      table.organizationId,
+      table.projectId,
+      table.slug
     ),
   ]
 );

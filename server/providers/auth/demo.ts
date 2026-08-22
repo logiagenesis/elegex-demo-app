@@ -4,7 +4,14 @@ import { ensureDemoPersona } from "../../db";
 
 import type { AuthProvider, ProviderUser } from "./types";
 
-export type DemoPersonaId = "owner" | "manager" | "foreman" | "viewer";
+export type DemoPersonaId =
+  | "owner"
+  | "manager"
+  | "foreman"
+  | "electrician"
+  | "plumber"
+  | "tiler"
+  | "viewer";
 
 export type DemoPersona = {
   id: DemoPersonaId;
@@ -40,6 +47,30 @@ export const DEMO_PERSONAS: readonly DemoPersona[] = [
     role: "member",
     description:
       "Mobile field visits, evidence, materials, and completion work.",
+  },
+  {
+    id: "electrician",
+    name: "Samira Patel",
+    email: "electrician@demo.elegex.app",
+    title: "Electrician",
+    role: "member",
+    description: "Shared project photo uploads for electrical works.",
+  },
+  {
+    id: "plumber",
+    name: "Theo Bennett",
+    email: "plumber@demo.elegex.app",
+    title: "Plumber",
+    role: "member",
+    description: "Shared project photo uploads for plumbing works.",
+  },
+  {
+    id: "tiler",
+    name: "Lina Costa",
+    email: "tiler@demo.elegex.app",
+    title: "Tiler",
+    role: "member",
+    description: "Shared project photo uploads for finish-quality records.",
   },
   {
     id: "viewer",

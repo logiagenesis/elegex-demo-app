@@ -76,22 +76,37 @@ const photoListInput = z.object({
     .optional(),
   jobId: z.number().int().positive().optional(),
   siteId: z.number().int().positive().optional(),
+  projectId: z.number().int().positive().optional(),
+  folderId: z.number().int().positive().optional(),
+  contributorTrade: z.string().trim().min(2).max(80).optional(),
   page: z.number().int().positive().optional(),
   pageSize: z.number().int().positive().max(48).optional(),
 });
-const photoUploadInput = z.object({
-  fileName: z.string().min(1).max(255),
-  mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
-  dataUrl: z.string().max(MAX_UPLOAD_DATA_URL_LENGTH),
-  title: z.string().trim().min(2).max(180),
-  description: z.string().trim().max(2000).optional(),
-  tags: z.array(z.string().trim().min(1).max(40)).max(12).optional(),
-  category: z
-    .enum(["before", "during", "after", "issue", "asset", "other"])
-    .optional(),
-  jobId: z.number().int().positive().optional(),
-  siteId: z.number().int().positive().optional(),
-  capturedAt: z.date().optional(),
+const photoUploadInput = z
+  .object({
+    fileName: z.string().min(1).max(255),
+    mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+    dataUrl: z.string().max(MAX_UPLOAD_DATA_URL_LENGTH),
+    title: z.string().trim().min(2).max(180),
+    description: z.string().trim().max(2000).optional(),
+    tags: z.array(z.string().trim().min(1).max(40)).max(12).optional(),
+    category: z
+      .enum(["before", "during", "after", "issue", "asset", "other"])
+      .optional(),
+    projectId: z.number().int().positive().optional(),
+    folderId: z.number().int().positive().optional(),
+    jobId: z.number().int().positive().optional(),
+    siteId: z.number().int().positive().optional(),
+    capturedAt: z.date().optional(),
+  })
+  .refine(input => !input.folderId || Boolean(input.projectId), {
+    message: "Select the folder's project before uploading a photo.",
+  });
+const photoFolderInput = z.object({
+  projectId: z.number().int().positive(),
+  name: z.string().trim().min(2).max(120),
+  description: z.string().trim().max(360).optional(),
+  trade: z.string().trim().min(2).max(80).optional(),
 });
 const tenantProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   const scope = await db.ensureTenantScope(ctx.user.id);
@@ -742,6 +757,19 @@ export const elegexRouter = router({
       .query(({ ctx, input }) =>
         db.listSitePhotos(ctx.scope.organizationId, input)
       ),
+    folders: tenantProcedure.query(({ ctx }) =>
+      db.listPhotoFolders(ctx.scope.organizationId)
+    ),
+    createFolder: tenantProcedure
+      .input(photoFolderInput)
+      .mutation(({ ctx, input }) => {
+        requireManage(ctx.scope.role);
+        return db.createPhotoFolder(
+          ctx.scope.organizationId,
+          ctx.user.id,
+          input
+        );
+      }),
     upload: tenantProcedure
       .input(photoUploadInput)
       .mutation(async ({ ctx, input }) => {
@@ -761,7 +789,7 @@ export const elegexRouter = router({
           });
         }
         const uploaded = await storagePut(
-          `elegex/${ctx.scope.organizationId}/photos/${input.fileName}`,
+          `elegex/${ctx.scope.organizationId}/photos/project-${input.projectId ?? "shared"}/folder-${input.folderId ?? "unfiled"}/${input.fileName}`,
           bytes,
           input.mimeType
         );
@@ -773,6 +801,13 @@ export const elegexRouter = router({
           sizeBytes: bytes.length,
         });
       }),
+    materializeDemoCorpus: tenantProcedure.mutation(({ ctx }) => {
+      requireAdmin(ctx.scope.role);
+      return db.materializeDemoPhotoCorpus(
+        ctx.scope.organizationId,
+        ctx.user.id
+      );
+    }),
     archive: tenantProcedure
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(({ ctx, input }) => {
