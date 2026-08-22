@@ -7,11 +7,19 @@ import { getDatabase } from "./database";
 
 // In a Python ecosystem, this would be a Celery or RQ worker.
 // Here we implement a simple interval-based poller that drains the outbox.
+// NOTE: This worker simulates delivery. It is a scaffold to demonstrate durable outbox
+// patterns, but lacks atomic claims, lease expiry, and real webhook dispatch.
+// In production, this should be replaced with a real delivery service or disabled by default.
 
 let workerInterval: ReturnType<typeof setInterval> | null = null;
 
 export function startOutboxWorker(pollIntervalMs = 10000) {
   if (workerInterval) return;
+
+  // Explicitly log the boundary condition on startup
+  console.log(
+    "[Worker] WARNING: Outbox worker is running in DEMO mode. Delivery is simulated."
+  );
 
   console.log(
     `[Worker] Starting integration outbox worker (polling every ${pollIntervalMs}ms)`

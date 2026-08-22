@@ -9,12 +9,20 @@ const envSchema = z.object({
     .string()
     .url("DATABASE_URL must be a valid connection string"),
   OAUTH_SERVER_URL: z.string().url("OAUTH_SERVER_URL must be a valid URL"),
+  VITE_OAUTH_PORTAL_URL: z
+    .string()
+    .url(
+      "VITE_OAUTH_PORTAL_URL is required by the client for login redirection"
+    ),
   OWNER_OPEN_ID: z.string().optional(),
+  SEED_OPEN_ID: z.string().optional(),
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
   BUILT_IN_FORGE_API_URL: z.string().optional(),
   BUILT_IN_FORGE_API_KEY: z.string().optional(),
+  VITE_FRONTEND_FORGE_API_URL: z.string().optional(),
+  VITE_FRONTEND_FORGE_API_KEY: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
