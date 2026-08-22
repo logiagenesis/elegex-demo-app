@@ -16,4 +16,4 @@ Disallow: /admin
 Disallow: /settings
 Disallow: /login
 
-Sitemap: /sitemap.xml
+Sitemap: https://elegexapp-jnwgrvvj.manus.space/sitemap.xml
