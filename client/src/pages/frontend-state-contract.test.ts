@@ -43,6 +43,10 @@ const manifest = readFileSync(
   new URL("../../public/manifest.webmanifest", import.meta.url),
   "utf8"
 );
+const publicBrandMark = readFileSync(
+  new URL("../../public/brand/elegex-mark.svg", import.meta.url),
+  "utf8"
+);
 const robots = readFileSync(
   new URL("../../public/robots.txt", import.meta.url),
   "utf8"
@@ -128,6 +132,10 @@ describe("frontend interaction and state contracts", () => {
     expect(browserEntry).toContain("/brand/elegex-mark-mono.svg");
     expect(manifest).toContain("/brand/elegex-mark.svg");
     expect(manifest).toContain("/brand/elegex-tile.svg");
+    expect(publicBrandMark).toContain(
+      "M105 78 H392 V152 H180 V212 H358 V282 H180 V344 H392 V418 H105 Z"
+    );
+    expect(publicBrandMark).not.toContain("egx-slot");
   });
 
   it("keeps public discovery metadata crawlable while preserving zoom and protected-route crawler boundaries", () => {

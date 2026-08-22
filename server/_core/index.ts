@@ -16,6 +16,7 @@ import { startOutboxWorker, stopOutboxWorker } from "../connectors/worker";
 import { appRouter } from "../routers";
 
 import { apiNotFoundHandler } from "./apiFallback";
+import { registerBodyParsers } from "./bodyParser";
 import { createContext } from "./context";
 import { ENV } from "./env";
 import { logger, httpLogger } from "./logger";
@@ -181,11 +182,7 @@ async function startServer() {
     res.type("text/plain; version=0.0.4").send(metricsText());
   });
 
-  // Field evidence and documents currently traverse tRPC as base64 data URLs.
-  // The dedicated upload limiter and schema validation bound those routes; the
-  // parser therefore admits the 25 MB binary ceiling plus base64 overhead.
-  app.use(express.json({ limit: "36mb" }));
-  app.use(express.urlencoded({ limit: "1mb", extended: true }));
+  registerBodyParsers(app);
   app.post("/api/client-errors", (req, res) => {
     const body = req.body as {
       errorId?: unknown;

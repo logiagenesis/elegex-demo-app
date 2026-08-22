@@ -1,15 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="elegex-mark-title">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" role="img" aria-labelledby="elegex-mark-title">
   <title id="elegex-mark-title">Elegex</title>
   <defs>
-    <linearGradient id="egx-chrome" x1="0.08" y1="0" x2="0.92" y2="1">
-      <stop offset="0" stop-color="#FAFCFE"/><stop offset="0.14" stop-color="#DCE6F0"/><stop offset="0.31" stop-color="#A9BCCE"/><stop offset="0.46" stop-color="#E8F0F7"/><stop offset="0.58" stop-color="#B6C7D8"/><stop offset="0.72" stop-color="#7C90A5"/><stop offset="0.86" stop-color="#C6D4E1"/><stop offset="1" stop-color="#8395AA"/>
+    <linearGradient id="egx-face" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#F7FAFC"/><stop offset="0.18" stop-color="#D5E0EB"/><stop offset="0.36" stop-color="#A2B4C6"/><stop offset="0.52" stop-color="#EDF3F8"/><stop offset="0.68" stop-color="#AEC0D1"/><stop offset="0.84" stop-color="#7B8FA4"/><stop offset="1" stop-color="#B9C8D8"/>
     </linearGradient>
-    <linearGradient id="egx-sheen" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.72"/><stop offset="0.30" stop-color="#FFFFFF" stop-opacity="0.10"/><stop offset="0.62" stop-color="#0B1620" stop-opacity="0.06"/><stop offset="1" stop-color="#0B1620" stop-opacity="0.30"/>
+    <linearGradient id="egx-edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8A9BAC"/><stop offset="1" stop-color="#41505F"/>
     </linearGradient>
-    <g id="egx-shapes"><rect x="232" y="168" width="250" height="712" rx="28"/><rect x="456" y="160" width="344" height="196" rx="28"/><rect x="456" y="430" width="306" height="186" rx="28"/><rect x="456" y="692" width="344" height="196" rx="28"/></g>
-    <mask id="egx-slot"><rect width="1024" height="1024" fill="#000"/><use href="#egx-shapes" fill="#fff"/><rect x="336" y="318" width="40" height="398" rx="20" fill="#000"/></mask>
+    <path id="egx-e" d="M105 78 H392 V152 H180 V212 H358 V282 H180 V344 H392 V418 H105 Z"/>
   </defs>
-  <g mask="url(#egx-slot)"><use href="#egx-shapes" fill="url(#egx-chrome)"/><use href="#egx-shapes" fill="url(#egx-sheen)"/><use href="#egx-shapes" fill="none" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="6"/></g>
-  <rect x="336" y="318" width="40" height="398" rx="20" fill="none" stroke="#FFFFFF" stroke-opacity="0.34" stroke-width="5"/>
+  <use href="#egx-e" x="17" y="17" fill="url(#egx-edge)"/>
+  <use href="#egx-e" fill="url(#egx-face)"/>
+  <use href="#egx-e" fill="none" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="3"/>
 </svg>
