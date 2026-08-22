@@ -24,7 +24,14 @@
 
 ## Observed partial execution
 
-In the connected published owner session, synthetic job `#2041` showed the field job card. A typed consent submission displayed `SYNCED TO WORKSPACE`, then a check-in submission displayed a field-workflow confirmation. The authenticated session then reverted to the public sign-in shell before subsequent steps could be executed. This confirms only those two visible submissions; it does not prove a complete workflow or specific resulting row IDs.
+In the connected published owner session, synthetic job `#2041` (`jobs.id = 30031`, organization `1`) showed the field job card. The following real persisted actions were executed before the session reverted to the public sign-in shell:
+
+| Timestamp (UTC) | Action | Procedure | Persisted evidence |
+|---|---|---|---|
+| 2026-08-21 16:57:08 | Typed consent with signer `Elegex Field Foreman` | `fieldService.foreman.consent` | `jobEvidence.id = 90001`, type `signature`, `syncStatus = synced`; `activityLogs.id = 120001`, action `consent_recorded`. |
+| 2026-08-21 16:57:35–16:57:36 | Check-in | `fieldService.foreman.checkIn` | `activityLogs.id = 120002`, action `checked_in`; job `30031` became `in_progress`, with `checkInAt = 2026-08-21 16:57:36` and `geoStatus = manual_override`. |
+
+The database evidence confirms those two procedure writes. It also confirms the directive gap: no GPS coordinate or distance flag was stored. The session reverted before media, material, signature, completion-with-gaps, and offline-drain steps could be executed. This does not prove a complete workflow.
 
 ## Required remediation before acceptance
 
