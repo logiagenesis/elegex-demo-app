@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
+import { ENV } from "../_core/env";
 
 export type DatabaseClient = ReturnType<typeof drizzle>;
 export type TransactionClient = Parameters<
@@ -16,23 +17,23 @@ let connectionPool: mysql.Pool | undefined;
  * health checks, and transactions remain consistent across domains.
  */
 export async function getDatabase(): Promise<DatabaseClient> {
-  if (!process.env.DATABASE_URL)
+  if (!ENV.databaseUrl)
     throw new Error("DATABASE_URL is required for database access");
 
   if (!databaseClient) {
     connectionPool = mysql.createPool({
-      uri: process.env.DATABASE_URL,
+      uri: ENV.databaseUrl,
       connectionLimit: 10,
       waitForConnections: true,
       queueLimit: 0,
       enableKeepAlive: true,
       keepAliveInitialDelay: 10000,
     });
-    // Cast connectionPool to any to bypass the mismatch between mysql2 promise Pool
-    // and the type drizzle expects
-    databaseClient = drizzle(connectionPool as any);
+
+    // We create the drizzle instance from the pool.
+    // By providing `{ mode: "default" }` we avoid type issues with older mysql2 definitions
+    databaseClient = drizzle(connectionPool, { mode: "default" }) as any;
   }
-  // The type of databaseClient is DatabaseClient | undefined, but we know it's defined here
   return databaseClient as DatabaseClient;
 }
 
