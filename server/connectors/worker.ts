@@ -4,11 +4,12 @@ import {
   integrationConnections,
 } from "../../drizzle/schema";
 import { getDatabase } from "./database";
+import { logger } from "../_core/logger";
 
 // In a Python ecosystem, this would be a Celery or RQ worker.
 // Here we implement a simple interval-based poller that drains the outbox.
 // NOTE: This worker simulates delivery. It is a scaffold to demonstrate durable outbox
-// patterns, but lacks atomic claims, lease expiry, and real webhook dispatch.
+// patterns, but lacks lease expiry, and real webhook dispatch.
 // In production, this should be replaced with a real delivery service or disabled by default.
 
 let workerInterval: ReturnType<typeof setInterval> | null = null;
@@ -17,18 +18,18 @@ export function startOutboxWorker(pollIntervalMs = 10000) {
   if (workerInterval) return;
 
   if (process.env.OUTBOX_WORKER_ENABLED !== "true") {
-    console.log(
+    logger.info(
       "[Worker] Outbox worker is disabled by default. Set OUTBOX_WORKER_ENABLED=true to enable."
     );
     return;
   }
 
   // Explicitly log the boundary condition on startup
-  console.log(
+  logger.warn(
     "[Worker] WARNING: Outbox worker is running in DEMO mode. Delivery is simulated."
   );
 
-  console.log(
+  logger.info(
     `[Worker] Starting integration outbox worker (polling every ${pollIntervalMs}ms)`
   );
 
@@ -36,7 +37,7 @@ export function startOutboxWorker(pollIntervalMs = 10000) {
     try {
       await processOutbox();
     } catch (err) {
-      console.error("[Worker] Error processing outbox:", err);
+      logger.error({ err }, "[Worker] Error processing outbox");
     }
   }, pollIntervalMs);
 }
@@ -45,7 +46,7 @@ export function stopOutboxWorker() {
   if (workerInterval) {
     clearInterval(workerInterval);
     workerInterval = null;
-    console.log("[Worker] Stopped integration outbox worker");
+    logger.info("[Worker] Stopped integration outbox worker");
   }
 }
 
@@ -100,7 +101,7 @@ async function processOutbox() {
 
         // In a real app, this would dispatch to the specific provider (webhook, etc.)
         // For now, we just simulate successful delivery (This is a known limitation in the demo boundary)
-        console.log(
+        logger.info(
           `[Worker] Dispatching event ${event.id} (${event.eventType}) to ${connection.provider}`
         );
 
@@ -113,7 +114,10 @@ async function processOutbox() {
           .set({ status: "delivered", processedAt: new Date() })
           .where(eq(integrationEvents.id, event.id));
       } catch (error: any) {
-        console.error(`[Worker] Failed to dispatch event ${event.id}:`, error);
+        logger.error(
+          { err: error },
+          `[Worker] Failed to dispatch event ${event.id}`
+        );
 
         // Apply backoff and retry
         const attemptCount = event.attempts + 1;
