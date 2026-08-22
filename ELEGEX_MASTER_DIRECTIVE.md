@@ -1,4 +1,5 @@
 # ELEGEX MASTER BUILD DIRECTIVE — PHASE 3 "BIG BANG"
+
 Version 1.0 | Authority: supersedes all prior instructions | Owner: logiagenesis
 
 ## 0. STANDING ORDERS — READ BEFORE EVERY ACTION, EVERY RUN
@@ -70,11 +71,12 @@ tiers (Cape Town / Johannesburg / after-hours). Never hardcode a locale again.
 Each has been independently verified against the repo. Do not re-litigate them.
 
 ### 2.1 Repository governance
+
 - **[P0] Git author email is corrupted:** commits carry
   `1.18143711e+08+logiagenesis@users.noreply.github.com` — the user ID
   `118143711` coerced to a float. Every commit returns `"author": null` and is
   unattributed. Set `git config user.email
-  "118143711+logiagenesis@users.noreply.github.com"` and never let a numeric
+"118143711+logiagenesis@users.noreply.github.com"` and never let a numeric
   ID pass through float formatting again. Document the fix.
 - **[P0] All commits unsigned** (`verified: false`). Enable and document commit
   signing; add `web_commit_signoff_required`.
@@ -94,6 +96,7 @@ Each has been independently verified against the repo. Do not re-litigate them.
   Enable auto-delete-on-merge; document it.
 
 ### 2.2 Dependency manifest
+
 - **[P0] `"resolutions"` is Yarn syntax and is SILENTLY IGNORED by pnpm.** The
   nanoid pin has never applied. Move to `pnpm.overrides`. Prove it applied via
   `pnpm why nanoid`.
@@ -104,6 +107,7 @@ Each has been independently verified against the repo. Do not re-litigate them.
 - **[P1] Add `engines` (node >=22) and `.nvmrc`.**
 
 ### 2.3 Security & runtime hardening
+
 - **[P0] Delete `client/public/__manus__/debug-collector.js`** from the
   production build. Third-party telemetry shipping alongside client PII and
   worker GPS is a due-diligence and POPIA failure.
@@ -128,6 +132,7 @@ Each has been independently verified against the repo. Do not re-litigate them.
   `console.log` from server runtime paths.
 
 ### 2.4 Tenancy — structural
+
 - **[P0] Single-column FKs prove parent existence, not same-tenant
   composition.** Add composite unique keys `(organizationId, id)` to every
   referenced table and convert every child FK to composite
@@ -139,10 +144,12 @@ Each has been independently verified against the repo. Do not re-litigate them.
   enumerate the router programmatically so the test cannot be forgotten.
 
 ### 2.5 The outbox worker — currently unsafe
+
 Your own comment admits it "lacks atomic claims, lease expiry, and real webhook
 dispatch." It is worse: `startOutboxWorker()` runs inside `server.listen()`, so
 **every scaled instance polls the same table with no lock**. It also queries
 across all organizations with no tenant scope.
+
 - **[P0] Disable by default** behind `OUTBOX_WORKER_ENABLED=false`.
 - **[P0] Atomic claim** via `SELECT ... FOR UPDATE SKIP LOCKED` (or a
   compare-and-swap claim with a worker UUID + lease expiry).
@@ -154,10 +161,11 @@ across all organizations with no tenant scope.
   independently of the web tier. State the Celery equivalent.
 
 ### 2.6 Code structure
+
 - **[P0] Split `server/db.ts` (99KB)** into `server/domain/<aggregate>/` with
   repository + service layers.
 - **[P0] Split `client/src/pages/ElegexPages.tsx` (98KB)** and
-  `FieldServicePages.tsx` (55KB)** into one file per route plus components.
+  `FieldServicePages.tsx` (55KB)\*\* into one file per route plus components.
 - **[P0] Split the single router** into `server/routers/<domain>.ts` merged by
   a root router.
 
@@ -254,6 +262,7 @@ Transactions, foreign keys, the schema guard, and the idempotency claim are
 therefore never actually tested, and **migrations never run in CI at all**.
 
 Build this pyramid and wire all of it into CI:
+
 1. **ESLint** (typescript-eslint strict, react-hooks, no-floating-promises,
    import/order) — currently ABSENT. Zero warnings allowed.
 2. **Unit** — Vitest, ≥85% line and branch coverage, enforced as a hard gate.
@@ -330,6 +339,7 @@ find reasons NOT to buy. You do not trust the previous author. You have already
 caught this codebase claiming completion once and retracting it.
 
 ### 8.1 Re-fetch and verify from GitHub
+
 1. `git log --oneline` for this run, with the pushed commit SHAs.
 2. Re-fetch every changed file from `raw.githubusercontent.com` and confirm it
    matches your intent. Report any mismatch as a P0.
@@ -339,6 +349,7 @@ caught this codebase claiming completion once and retracting it.
    form and that GitHub attributes the commits.
 
 ### 8.2 Run the full checklist — report EVERY line with PASS/FAIL/N-A + evidence
+
 **Correctness:** unhandled promise rejections; missing `await`; swallowed
 errors (`catch {}`); `any` escape hatches; off-by-one; nullable dereferences;
 timezone/DST bugs; float arithmetic on money; unbounded `Promise.all`.
@@ -367,6 +378,7 @@ inconsistent naming; files over 500 lines; duplicated logic; test names that
 don't describe behaviour; tests that assert nothing; skipped tests.
 
 ### 8.3 Rookie-mistake sweep
+
 Explicitly hunt for and report: hardcoded values that should be config;
 copy-paste errors; inconsistent error handling between similar handlers;
 missing validation on any user input; trusting client-supplied IDs; string
@@ -376,16 +388,20 @@ synchronisation; and any place where the demo simulates behaviour it claims to
 implement.
 
 ### 8.4 Produce the gap register
+
 A table with: ID, Area, Severity (P0/P1/P2/P3), Description, Why it matters,
 Exact remaining work, Estimate, Blocking-for-resale (Y/N).
 
 ### 8.5 Produce the honesty statement
+
 Three explicit sections:
+
 - **What I actually completed and can prove** (with evidence links)
 - **What I claimed or implied but did NOT complete**
 - **What I did not attempt and why**
 
 Then answer, in one word each with a one-line justification:
+
 - Would you deploy this to production tonight?
 - Would you let a paying customer's data into it?
 - Would you sign off on this in an acquisition?
@@ -394,6 +410,7 @@ If any answer is "no", the run's status is **PARTIAL**, not complete. Say so in
 the first line of the audit document and in your closing message to the user.
 
 ### 8.6 Reconcile against prior audits
+
 Open `docs/audit/final-acceptance-report.md`,
 `foreman-workflow-ground-truth.md`, and `python-reviewer-audit.md`. For every
 item previously marked PARTIAL, ABSENT, or "required follow-up", state its
@@ -402,6 +419,7 @@ earlier document overstated progress, retract it explicitly rather than
 quietly overwriting it.
 
 ### 8.7 Commit and report
+
 Commit the audit, push it, re-fetch it from GitHub to confirm it landed, and
 give the user: the commit SHAs, the CI run URL, the count of P0/P1/P2/P3 gaps,
 and the three one-word answers from 8.5. Lead your closing message with the
