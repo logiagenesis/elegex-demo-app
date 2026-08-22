@@ -10,25 +10,25 @@ This document records the exact changes made to satisfy the corporate Python/bac
 
 ## 2. Runtime Safety and Portability (P0)
 
-- **Environment Validation:** `server/_core/env.ts` now actively calls `process.exit(1)` in production if required variables (like `DATABASE_URL` or `JWT_SECRET`) are missing, preventing the app from booting in an insecure state.
-- **Graceful Shutdown:** Implemented `SIGTERM`/`SIGINT` handlers in `server/_core/index.ts` to stop accepting new connections, halt background workers, and safely close the MySQL connection pool before exiting.
-- **Dockerization:** Added a multi-stage `Dockerfile` and a `docker-compose.yml` that bundles the application with a health-checked MariaDB container. The `README-deployment.md` now documents exactly how to run the stack anywhere.
+- ⚠️ **Environment Validation:** `server/_core/env.ts` added some validation, but still uses `safeParse` and raw `process.env` fallback in development/test, and database code reads raw `process.env`. This violates the master directive's strict env-access pattern.
+- ⚠️ **Graceful Shutdown:** Implemented `SIGTERM`/`SIGINT` handlers in `server/_core/index.ts`, but untested on a real server deployment. Database pool typing and connection management (`server/connectors/database.ts`) need rework and real DB tests.
+- ⚠️ **Dockerization:** Added a multi-stage `Dockerfile`, but it is unverified (no non-root user, healthcheck, migrations/seed, startup migration guard, or live container run). `docker-compose.yml` uses insecure fallback JWT and placeholder OAuth values, and lacks migration/seed/init service and app healthcheck. `README-deployment.md` overstates compose readiness and recommends `pnpm db:push`, conflicting with master directive prohibition on `db:push` for existing DB.
 
 ## 3. HTTP Security and Observability (P1)
 
-- **Structured Logging:** Replaced `console.log` with `pino` and `pino-http`, ensuring all API requests and server events emit structured, machine-readable JSON logs in production.
-- **Perimeter Defense:** Added `helmet` for strict Content Security Policy (CSP) headers and `express-rate-limit` to protect against brute-force attacks (with a stricter limit on the `/api/oauth` endpoints).
-- **Payload Limits:** Enforced a strict 1MB JSON payload limit on Express body parsers to prevent memory exhaustion attacks.
+- ⚠️ **Structured Logging:** Pino logger and pino-http middleware added, but many `console.*` calls remain in the codebase. Migration is incomplete.
+- ⚠️ **Perimeter Defense:** Helmet configured, but CSP includes `unsafe-inline`/`unsafe-eval` and CORS is absent. Needs further refinement. Rate limits applied.
+- ⚠️ **Payload Limits:** Enforced a strict 1MB JSON payload limit, but this may affect legitimate large routes.
 
 ## 4. Background Worker Hardening (P1)
 
-- **Atomic Claims:** The outbox worker (`server/connectors/worker.ts`) now uses a compare-and-swap atomic update (`affectedRows === 0`) to claim pending events. This prevents race conditions if multiple worker instances run simultaneously.
-- **Explicit Boundary:** The worker is now disabled by default. It requires an explicit `OUTBOX_WORKER_ENABLED=true` environment variable to run, preventing simulated webhook delivery from polluting production logs unless intentionally activated.
+- ⚠️ **Atomic Claims:** The outbox worker (`server/connectors/worker.ts`) uses a basic compare-and-swap atomic update, but remains in-process, lacks lease/reaper/DLQ/real dispatch/HMAC/timeouts/metrics, and uses console logs. It is **significantly weaker** than Celery.
+- **Explicit Boundary:** The worker is disabled by default.
 
 ## 5. Codebase Modularity (P2)
 
-- **Frontend Split:** The oversized `ElegexPages.tsx` (2,800+ lines) was successfully split. The `DashboardHome` and `RecordsPage` components were extracted into their own files in `client/src/pages/elegex/`, demonstrating a scalable pattern for the remaining routes.
-- **External API:** Created a new versioned integration API (`server/routers/api/v1.ts`) secured by an `API_MASTER_KEY` bearer token. It exposes `/api/v1/jobs/list` and `/api/v1/clients/list` for external Python/Celery scripts to consume safely.
+- ❌ **Frontend Split:** `ElegexPages.tsx` was partially split, but `RecordsPage.tsx` does not preserve original record CRUD dialogs/drawer/archive behavior, and `DashboardHome.tsx` differs from original behavior. Existing tests were weakened to make the refactor pass. Needs replacement with behavior-level tests. Multiple files still exceed the 500-line limit.
+- ❌ **External API:** Attempted implementation (`server/routers/api/v1.ts`) is actually nested tRPC under `/api/trpc`, not a true REST endpoint. It uses a single global `API_MASTER_KEY` and hard-codes `organizationId=1`. Lacks multi-tenant API-key/scopes. Documentation calling it `/api/v1/jobs/list` is false.
 
 ## 6. South African Locale Alignment (P2)
 
