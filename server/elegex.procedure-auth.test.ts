@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   getForemanToday: vi.fn(),
   captureForemanEvidence: vi.fn(),
   createDocumentRecord: vi.fn(),
+  createSitePhoto: vi.fn(),
+  archiveSitePhoto: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -25,6 +27,8 @@ vi.mock("./db", () => ({
   getForemanToday: mocks.getForemanToday,
   captureForemanEvidence: mocks.captureForemanEvidence,
   createDocumentRecord: mocks.createDocumentRecord,
+  createSitePhoto: mocks.createSitePhoto,
+  archiveSitePhoto: mocks.archiveSitePhoto,
   canEditRecords: (role: string) => role !== "viewer",
   canManageRecords: (role: string) =>
     ["owner", "admin", "manager"].includes(role),
@@ -197,6 +201,84 @@ describe("Elegex protected procedure authorization", () => {
       expect.any(Buffer),
       "application/pdf"
     );
+  });
+
+  it("protects tenant-scoped photo uploads and only stores validated image payloads", async () => {
+    mocks.storagePut.mockClear();
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("viewer"));
+    const viewerCaller = appRouter.createCaller(context(user));
+    await expect(
+      viewerCaller.elegex.photos.upload({
+        fileName: "plant-room.png",
+        mimeType: "image/png",
+        dataUrl:
+          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Jb3QAAAAASUVORK5CYII=",
+        title: "Plant room condition",
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(mocks.storagePut).not.toHaveBeenCalled();
+
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("member"));
+    const memberCaller = appRouter.createCaller(context(user));
+    await expect(
+      memberCaller.elegex.photos.upload({
+        fileName: "plant-room.png",
+        mimeType: "image/png",
+        dataUrl: "data:image/jpeg;base64,QQ==",
+        title: "Plant room condition",
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(mocks.storagePut).not.toHaveBeenCalled();
+
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("member"));
+    mocks.storagePut.mockResolvedValueOnce({
+      key: "elegex/7/photos/immutable-plant-room.png",
+      url: "/storage/elegex/7/photos/immutable-plant-room.png",
+    });
+    mocks.createSitePhoto.mockResolvedValueOnce(902);
+    await expect(
+      memberCaller.elegex.photos.upload({
+        fileName: "plant-room.png",
+        mimeType: "image/png",
+        dataUrl:
+          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Jb3QAAAAASUVORK5CYII=",
+        title: "Plant room condition",
+        tags: ["Pump", "Safety"],
+        category: "before",
+        jobId: 33,
+      })
+    ).resolves.toBe(902);
+    expect(mocks.storagePut).toHaveBeenCalledWith(
+      "elegex/7/photos/plant-room.png",
+      expect.any(Buffer),
+      "image/png"
+    );
+    expect(mocks.createSitePhoto).toHaveBeenCalledWith(
+      7,
+      42,
+      expect.objectContaining({
+        title: "Plant room condition",
+        jobId: 33,
+        category: "before",
+        storageKey: "elegex/7/photos/immutable-plant-room.png",
+      })
+    );
+  });
+
+  it("reserves photo archival for managing workspace roles", async () => {
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("viewer"));
+    const viewerCaller = appRouter.createCaller(context(user));
+    await expect(
+      viewerCaller.elegex.photos.archive({ id: 9 })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    mocks.ensureTenantScope.mockResolvedValueOnce(scope("manager"));
+    mocks.archiveSitePhoto.mockResolvedValueOnce(undefined);
+    const managerCaller = appRouter.createCaller(context(user));
+    await expect(
+      managerCaller.elegex.photos.archive({ id: 9 })
+    ).resolves.toBeUndefined();
+    expect(mocks.archiveSitePhoto).toHaveBeenCalledWith(7, 42, 9);
   });
 
   it("blocks viewers from database connector health and configuration procedures", async () => {

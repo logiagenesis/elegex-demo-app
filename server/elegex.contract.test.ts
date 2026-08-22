@@ -47,6 +47,9 @@ describe("Elegex protected workflow contract", () => {
       "elegex.integrations.upsert",
       "elegex.notifications.list",
       "elegex.notifications.markRead",
+      "elegex.photos.archive",
+      "elegex.photos.list",
+      "elegex.photos.upload",
       "elegex.projects.create",
       "elegex.projects.list",
       "elegex.projects.update",
@@ -66,7 +69,7 @@ describe("Elegex protected workflow contract", () => {
   });
 
   it("keeps every declared Elegex procedure behind a composed tRPC contract boundary", () => {
-    expect(procedures).toHaveLength(54);
+    expect(procedures).toHaveLength(57);
     for (const name of procedures) {
       const definition = (appRouter._def.procedures[name] as any)?._def;
       expect(

@@ -23,6 +23,7 @@ export const workspaceRoutePolicy = [
   { path: "/cases/:id", minimumRole: "viewer" },
   { path: "/tasks", minimumRole: "viewer" },
   { path: "/documents", minimumRole: "viewer" },
+  { path: "/photos", minimumRole: "viewer" },
   { path: "/reports", minimumRole: "viewer" },
   { path: "/notifications", minimumRole: "viewer" },
   { path: "/staging", minimumRole: "admin" },

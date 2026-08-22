@@ -46,16 +46,31 @@ afterEach(async () => {
 });
 
 describe("request body parser scope", () => {
-  it("permits an upload-sized body only on the explicit upload procedure path", async () => {
-    const payload = { data: "x".repeat(1_100_000) };
+  it("permits upload-sized bodies for single and batched upload procedures only", async () => {
+    const payload = { data: "x".repeat(3_000_000) };
 
     const uploadResponse = await postJson(
       "/api/trpc/elegex.documents.upload",
       payload
     );
+    const firstBatchResponse = await postJson(
+      "/api/trpc/elegex.photos.upload,elegex.workspace.current",
+      payload
+    );
+    const secondBatchResponse = await postJson(
+      "/api/trpc/elegex.workspace.current,elegex.photos.upload",
+      payload
+    );
+    const readResponse = await postJson(
+      "/api/trpc/elegex.workspace.current",
+      payload
+    );
     const clientErrorResponse = await postJson("/api/client-errors", payload);
 
     expect(uploadResponse.status).toBe(200);
+    expect(firstBatchResponse.status).toBe(200);
+    expect(secondBatchResponse.status).toBe(200);
+    expect(readResponse.status).toBe(413);
     expect(clientErrorResponse.status).toBe(413);
   });
 });

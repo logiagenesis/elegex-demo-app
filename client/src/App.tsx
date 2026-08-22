@@ -20,6 +20,7 @@ const OrganizationSettingsPage = lazy(
   () => import("@/pages/OrganizationSettingsPage")
 );
 const DocumentsPage = lazy(() => import("@/pages/TypedDocumentsPage"));
+const PhotoLibraryPage = lazy(() => import("@/pages/PhotoLibraryPage"));
 const NotificationsPage = lazy(() =>
   import("@/pages/ElegexPages").then(module => ({
     default: module.NotificationsPage,
@@ -196,6 +197,7 @@ function Router() {
             </Route>
             <Route path="/tasks" component={TasksPage} />
             <Route path="/documents" component={DocumentsPage} />
+            <Route path="/photos" component={PhotoLibraryPage} />
             <Route path="/reports" component={FieldReportsPage} />
             <Route path="/staging">
               {() => (

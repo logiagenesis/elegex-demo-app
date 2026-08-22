@@ -2,6 +2,7 @@ import {
   Bell,
   BriefcaseBusiness,
   ChartNoAxesCombined,
+  Camera,
   ClipboardCheck,
   FileText,
   FolderKanban,
@@ -50,6 +51,7 @@ const primaryNavigation = [
 
 const secondaryNavigation = [
   { icon: FileText, label: "Documents", path: "/documents" },
+  { icon: Camera, label: "Photo library", path: "/photos" },
   {
     icon: ChartNoAxesCombined,
     label: "Commercial reporting",

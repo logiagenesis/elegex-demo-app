@@ -27,6 +27,8 @@ import {
   quotes,
   releaseChecks,
   savedViews,
+  sites,
+  sitePhotos,
   syncLogs,
   tasks,
   type InsertUser,
@@ -3842,6 +3844,177 @@ export async function listDocuments(
     ...document,
     health: getDocumentHealth(document),
   }));
+}
+
+const PHOTO_CATEGORIES = [
+  "before",
+  "during",
+  "after",
+  "issue",
+  "asset",
+  "other",
+] as const;
+export type PhotoCategory = (typeof PHOTO_CATEGORIES)[number];
+
+export function normalizePhotoTags(tags: string[]) {
+  return Array.from(
+    new Set(tags.map(tag => tag.trim().toLowerCase()).filter(Boolean))
+  )
+    .slice(0, 12)
+    .join(",");
+}
+
+export async function createSitePhoto(
+  organizationId: number,
+  userId: number,
+  input: {
+    jobId?: number;
+    siteId?: number;
+    title: string;
+    description?: string;
+    tags?: string[];
+    category?: PhotoCategory;
+    originalFileName: string;
+    mimeType: "image/jpeg" | "image/png" | "image/webp";
+    sizeBytes: number;
+    storageKey: string;
+    storageUrl: string;
+    capturedAt?: Date;
+  }
+) {
+  return withTransaction(async tx => {
+    await assertScopedEntity(
+      tx,
+      jobs,
+      organizationId,
+      input.jobId,
+      "Job",
+      true
+    );
+    await assertScopedEntity(
+      tx,
+      sites,
+      organizationId,
+      input.siteId,
+      "Site",
+      true
+    );
+    const result = await tx.insert(sitePhotos).values({
+      organizationId,
+      jobId: input.jobId,
+      siteId: input.siteId,
+      title: input.title.trim(),
+      description: input.description?.trim() || null,
+      tags: normalizePhotoTags(input.tags ?? []),
+      category: input.category ?? "other",
+      originalFileName: input.originalFileName,
+      mimeType: input.mimeType,
+      sizeBytes: input.sizeBytes,
+      storageKey: input.storageKey,
+      storageUrl: input.storageUrl,
+      capturedAt: input.capturedAt ?? new Date(),
+      uploadedBy: userId,
+    });
+    const id = Number(result[0].insertId);
+    await tx.insert(activityLogs).values({
+      organizationId,
+      actorId: userId,
+      action: "photo_uploaded",
+      entityType: "site_photo",
+      entityId: id,
+      summary: `Uploaded site photo: ${input.title.trim()}`,
+      metadata: {
+        category: input.category ?? "other",
+        jobId: input.jobId ?? null,
+        siteId: input.siteId ?? null,
+      },
+    });
+    return id;
+  });
+}
+
+export async function listSitePhotos(
+  organizationId: number,
+  input: {
+    query?: string;
+    category?: PhotoCategory;
+    jobId?: number;
+    siteId?: number;
+    page?: number;
+    pageSize?: number;
+  } = {}
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const page = input.page ?? 1;
+  const pageSize = input.pageSize ?? 24;
+  const query = input.query?.trim();
+  const search = query ? `%${query}%` : undefined;
+  const conditions = [
+    eq(sitePhotos.organizationId, organizationId),
+    isNull(sitePhotos.deletedAt),
+    input.category ? eq(sitePhotos.category, input.category) : undefined,
+    input.jobId ? eq(sitePhotos.jobId, input.jobId) : undefined,
+    input.siteId ? eq(sitePhotos.siteId, input.siteId) : undefined,
+    search
+      ? or(
+          like(sitePhotos.title, search),
+          like(sitePhotos.description, search),
+          like(sitePhotos.tags, search),
+          like(sitePhotos.originalFileName, search)
+        )
+      : undefined,
+  ];
+  const where = and(...conditions);
+  const [items, totals] = await Promise.all([
+    db
+      .select()
+      .from(sitePhotos)
+      .where(where)
+      .orderBy(desc(sitePhotos.capturedAt), desc(sitePhotos.id))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
+    db.select({ total: count() }).from(sitePhotos).where(where),
+  ]);
+  return {
+    items: items.map(photo => ({
+      ...photo,
+      tags: photo.tags ? photo.tags.split(",") : [],
+      health: getDocumentHealth(photo),
+    })),
+    page,
+    pageSize,
+    total: Number(totals[0]?.total ?? 0),
+  };
+}
+
+export async function archiveSitePhoto(
+  organizationId: number,
+  userId: number,
+  photoId: number
+) {
+  return withTransaction(async tx => {
+    const result = await tx
+      .update(sitePhotos)
+      .set({ deletedAt: new Date() })
+      .where(
+        and(
+          eq(sitePhotos.id, photoId),
+          eq(sitePhotos.organizationId, organizationId),
+          isNull(sitePhotos.deletedAt)
+        )
+      );
+    if (!result[0]?.affectedRows)
+      throw new Error("Photo is not available in this workspace");
+    await tx.insert(activityLogs).values({
+      organizationId,
+      actorId: userId,
+      action: "photo_archived",
+      entityType: "site_photo",
+      entityId: photoId,
+      summary: "Archived a site photo from the library",
+    });
+  });
 }
 
 export type DemoResetDependencies = {
