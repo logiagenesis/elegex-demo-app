@@ -3,13 +3,29 @@ import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import { ENV } from "../_core/env";
 
-export type DatabaseClient = ReturnType<typeof drizzle>;
+function createDatabaseClient(pool: mysql.Pool) {
+  return drizzle(pool, { mode: "default" });
+}
+
+export type DatabaseClient = ReturnType<typeof createDatabaseClient>;
 export type TransactionClient = Parameters<
   Parameters<DatabaseClient["transaction"]>[0]
 >[0];
 
+export const DATABASE_POOL_POLICY = {
+  connectionLimit: 10,
+  maxIdle: 10,
+  idleTimeout: 60_000,
+  queueLimit: 25,
+  connectTimeout: 10_000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10_000,
+  resetOnRelease: true,
+} as const;
+
 let databaseClient: DatabaseClient | undefined;
 let connectionPool: mysql.Pool | undefined;
+let closingPool: Promise<void> | undefined;
 
 /**
  * Creates one lazily shared MySQL/TiDB client per server process. All persistence
@@ -23,26 +39,30 @@ export async function getDatabase(): Promise<DatabaseClient> {
   if (!databaseClient) {
     connectionPool = mysql.createPool({
       uri: ENV.databaseUrl,
-      connectionLimit: 10,
+      ...DATABASE_POOL_POLICY,
       waitForConnections: true,
-      queueLimit: 0,
-      enableKeepAlive: true,
-      keepAliveInitialDelay: 10000,
     });
 
-    // We create the drizzle instance from the pool.
-    // By providing `{ mode: "default" }` we avoid type issues with older mysql2 definitions
-    databaseClient = drizzle(connectionPool, { mode: "default" }) as any;
+    databaseClient = createDatabaseClient(connectionPool);
   }
   return databaseClient as DatabaseClient;
 }
 
 export async function closeDatabase(): Promise<void> {
-  if (connectionPool) {
-    await connectionPool.end();
-    connectionPool = undefined;
-    databaseClient = undefined;
+  if (closingPool) {
+    await closingPool;
+    return;
   }
+
+  const poolToClose = connectionPool;
+  connectionPool = undefined;
+  databaseClient = undefined;
+  if (!poolToClose) return;
+
+  closingPool = poolToClose.end().finally(() => {
+    closingPool = undefined;
+  });
+  await closingPool;
 }
 
 /** Executes a business workflow atomically and rolls it back if any operation fails. */
@@ -56,11 +76,13 @@ export async function withTransaction<T>(
 /** Lightweight, deployment-safe database readiness probe used by operational tooling. */
 export async function checkDatabaseHealth() {
   const database = await getDatabase();
-  await database.execute(sql`SELECT 1 AS healthy`);
+  await database.execute(sql`SELECT 1 AS healthy, DATABASE() AS databaseName`);
   return {
     healthy: true as const,
     dialect: "mysql" as const,
     checkedAt: new Date().toISOString(),
+    connectionLimit: DATABASE_POOL_POLICY.connectionLimit,
+    queueLimit: DATABASE_POOL_POLICY.queueLimit,
   };
 }
 
@@ -110,6 +132,6 @@ export async function assertFieldServiceSchema(
   return { verifiedColumns: fieldServiceSchemaColumns.length };
 }
 
-export function resetDatabaseClientForTests() {
-  databaseClient = undefined;
+export async function resetDatabaseClientForTests() {
+  await closeDatabase();
 }

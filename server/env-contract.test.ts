@@ -1,5 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createTestEnvironment, parseEnvironment } from "./_core/env";
+
+const originalPort = process.env.PORT;
+
+afterEach(() => {
+  if (originalPort === undefined) delete process.env.PORT;
+  else process.env.PORT = originalPort;
+  vi.resetModules();
+});
 
 describe("environment configuration contract", () => {
   it("rejects incomplete production configuration with named validation failures", () => {
@@ -22,5 +30,12 @@ describe("environment configuration contract", () => {
     });
     expect(environment.LOG_LEVEL).toBe("debug");
     expect(environment.OUTBOX_WORKER_ENABLED).toBe(true);
+  });
+
+  it("honors explicit test-process overrides at runtime", async () => {
+    process.env.PORT = "4310";
+    vi.resetModules();
+    const { ENV } = await import("./_core/env");
+    expect(ENV.port).toBe(4310);
   });
 });

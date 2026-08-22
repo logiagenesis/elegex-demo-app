@@ -73,9 +73,17 @@ export function createTestEnvironment(
   return parseEnvironment({ ...testDefaults, ...overrides, NODE_ENV: "test" });
 }
 
+function getTestRuntimeOverrides(raw: RawEnvironment): RawEnvironment {
+  return {
+    PORT: raw.PORT,
+    LOG_LEVEL: raw.LOG_LEVEL,
+    OUTBOX_WORKER_ENABLED: raw.OUTBOX_WORKER_ENABLED,
+  };
+}
+
 const runtimeEnvironment =
   process.env.NODE_ENV === "test"
-    ? createTestEnvironment()
+    ? createTestEnvironment(getTestRuntimeOverrides(process.env))
     : parseEnvironment(process.env);
 
 export const ENV = {
