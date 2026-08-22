@@ -21,6 +21,11 @@ vi.mock("@/lib/trpc", () => ({
     elegex: {
       workspace: { current: { useQuery: () => ({ data: state.workspace }) } },
     },
+    auth: {
+      provider: {
+        useQuery: () => ({ data: { label: "Manus", isDemo: false } }),
+      },
+    },
   },
 }));
 

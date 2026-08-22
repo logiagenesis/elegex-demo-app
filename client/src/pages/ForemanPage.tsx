@@ -1,10 +1,3 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { submitQueuedForemanMutation } from "@/lib/foremanSync";
-import { SyncQueue, type ForemanMutationType } from "@/lib/syncQueue";
-import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2,
   ClipboardCheck,
@@ -22,11 +15,29 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { submitQueuedForemanMutation } from "@/lib/foremanSync";
+import { SyncQueue, type ForemanMutationType } from "@/lib/syncQueue";
+import { trpc } from "@/lib/trpc";
+
 const stageLabel = (stage: string) =>
   stage
     .replaceAll("_", " ")
     .replace(/\b\w/g, character => character.toUpperCase());
 type SyncState = "ready" | "syncing" | "synced" | "error";
+type ForemanTodayRow = {
+  job: {
+    id: number;
+    jobNumber: string;
+    serviceAddress: string;
+    stage: string;
+    title: string;
+  };
+  contact: { name: string };
+};
 
 function FieldCard({
   title,
@@ -103,9 +114,9 @@ function SyncPanel({
         <p className="font-bold tracking-[0.08em]">{label}</p>
         <p className="mt-1 leading-5 opacity-90">{detail}</p>
         <p className="mt-1 text-[11px] opacity-75">
-          The queue persists actionable records in this browser. Service-worker
-          registration and background sync are intentionally not claimed in this
-          deployment.
+          The queue persists actionable records in this browser. The service
+          worker caches the app shell but never caches private API or media
+          data.
         </p>
       </div>
     </div>
@@ -116,7 +127,8 @@ export function ForemanPage() {
   const today = trpc.elegex.fieldService.foreman.today.useQuery();
   const utils = trpc.useUtils();
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
-  const selected = today.data?.find((row: any) => row.job.id === selectedJobId);
+  const rows = today.data as ForemanTodayRow[] | undefined;
+  const selected = rows?.find(row => row.job.id === selectedJobId);
   if (today.isLoading)
     return (
       <div className="grid min-h-96 place-items-center text-sm font-medium text-[#667085]">
@@ -131,12 +143,53 @@ export function ForemanPage() {
           <p className="elegex-eyebrow">FOREMAN FIELD WORKFLOW</p>
           <h1 className="elegex-page-title mt-2">My field visits</h1>
           <p className="mt-2 max-w-xl text-sm leading-6 text-[#667085]">
-            Consent, check-in, materials, evidence, quotes, completion, and
-            replayable field synchronization are recorded against assigned jobs.
+            Consent, check-in, materials, evidence, scope requests, completion,
+            and replayable field synchronization are recorded against assigned
+            jobs.
           </p>
         </header>
+        <section
+          className="mb-6 grid gap-3 sm:grid-cols-3"
+          aria-label="Field workflow readiness"
+        >
+          <div className="rounded-2xl border border-[#D7E6FF] bg-[#F5F9FF] p-4">
+            <p className="text-[10px] font-bold tracking-[0.14em] text-[#3164B7]">
+              SYNC SAFETY
+            </p>
+            <p className="mt-2 text-sm font-semibold text-[#14213D]">
+              Local action queue
+            </p>
+            <p className="mt-1 text-xs leading-5 text-[#5B7093]">
+              Record first, replay with an idempotency key when service returns.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-[#D9EFE1] bg-[#F5FBF7] p-4">
+            <p className="text-[10px] font-bold tracking-[0.14em] text-[#238053]">
+              FIELD PRIVACY
+            </p>
+            <p className="mt-2 text-sm font-semibold text-[#14213D]">
+              No prices in field
+            </p>
+            <p className="mt-1 text-xs leading-5 text-[#5B7093]">
+              Commercial totals and invoice references remain with office
+              review.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-[#E5DDF7] bg-[#FAF8FF] p-4">
+            <p className="text-[10px] font-bold tracking-[0.14em] text-[#7652B6]">
+              EVIDENCE READY
+            </p>
+            <p className="mt-2 text-sm font-semibold text-[#14213D]">
+              Media held for replay
+            </p>
+            <p className="mt-1 text-xs leading-5 text-[#5B7093]">
+              Optimized field files are retained locally until a secure upload
+              succeeds.
+            </p>
+          </div>
+        </section>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {(today.data || []).map((row: any) => (
+          {(rows || []).map(row => (
             <button
               key={row.job.id}
               onClick={() => setSelectedJobId(row.job.id)}
@@ -180,7 +233,7 @@ export function ForemanPage() {
     );
   return (
     <ForemanJobWorkspace
-      row={selected as any}
+      row={selected}
       onBack={() => setSelectedJobId(null)}
       onRefresh={() => void utils.elegex.invalidate()}
     />
@@ -192,7 +245,7 @@ function ForemanJobWorkspace({
   onBack,
   onRefresh,
 }: {
-  row: any;
+  row: ForemanTodayRow;
   onBack: () => void;
   onRefresh: () => void;
 }) {
@@ -204,9 +257,13 @@ function ForemanJobWorkspace({
   const [evidenceType, setEvidenceType] = useState<
     "before_photo" | "after_photo" | "note" | "job_card"
   >("note");
+  const [selectedMedia, setSelectedMedia] = useState<{
+    fileName: string;
+    mimeType: string;
+    dataUrl: string;
+  } | null>(null);
   const [note, setNote] = useState("");
   const [quoteNumber, setQuoteNumber] = useState("");
-  const [quoteTotal, setQuoteTotal] = useState("");
   const [completionException, setCompletionException] = useState("");
   const [locallyCheckedIn, setLocallyCheckedIn] = useState(false);
   const [consentId, setConsentId] = useState<string | undefined>();
@@ -322,6 +379,27 @@ function ForemanJobWorkspace({
 
   const pending = syncState === "syncing";
   const activeDependencies = checkInId ? [checkInId] : [];
+  const selectMedia = (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > 5_000_000) {
+      toast.error(
+        "Choose an optimized file of 5 MB or less for reliable mobile replay."
+      );
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string") return;
+      setSelectedMedia({
+        fileName: file.name,
+        mimeType: file.type,
+        dataUrl: reader.result,
+      });
+    };
+    reader.onerror = () =>
+      toast.error("The selected media could not be read on this device.");
+    reader.readAsDataURL(file);
+  };
   return (
     <>
       <button
@@ -484,6 +562,23 @@ function ForemanJobWorkspace({
             placeholder="Optional site note"
             className="mt-2 min-h-20"
           />
+          <label className="mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-dashed border-[#BFD2F4] bg-[#F7FAFF] px-3 py-2.5 text-sm text-[#50617F] transition hover:border-[#75A5F7] hover:bg-[#F2F7FF]">
+            <span className="min-w-0 truncate">
+              {selectedMedia
+                ? `Attached: ${selectedMedia.fileName}`
+                : "Attach a photo, short video, PDF, or field document"}
+            </span>
+            <span className="shrink-0 text-xs font-bold text-[#195FE6]">
+              Choose file
+            </span>
+            <input
+              className="sr-only"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf,text/plain,text/csv,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={event => selectMedia(event.target.files?.[0])}
+              disabled={!active || pending}
+            />
+          </label>
           <Button
             disabled={!active || pending}
             onClick={() =>
@@ -495,6 +590,7 @@ function ForemanJobWorkspace({
                       evidenceType,
                       title: evidenceTitle,
                       note: note || undefined,
+                      ...(selectedMedia ?? {}),
                     },
                     activeDependencies
                   )
@@ -507,42 +603,31 @@ function ForemanJobWorkspace({
           </Button>
         </FieldCard>
         <FieldCard
-          title="Draft quote"
-          description="A field estimate routes to office review; the foreman acknowledgement does not expose the stored numeric price."
+          title="Draft scope request"
+          description="Send a non-commercial scope reference to the office. Pricing and invoice references are never exposed in the field workflow."
           locked={!active}
         >
-          <div className="flex gap-2">
-            <Input
-              disabled={!active || pending}
-              value={quoteNumber}
-              onChange={event => setQuoteNumber(event.target.value)}
-              placeholder="QT-2609"
-            />
-            <Input
-              disabled={!active || pending}
-              value={quoteTotal}
-              onChange={event => setQuoteTotal(event.target.value)}
-              type="number"
-              min="0"
-              placeholder="ZAR"
-              className="w-28"
-            />
-          </div>
+          <Input
+            disabled={!active || pending}
+            value={quoteNumber}
+            onChange={event => setQuoteNumber(event.target.value)}
+            placeholder="Scope reference, e.g. QT-2609"
+          />
           <Button
             disabled={!active || pending}
             onClick={() =>
-              quoteNumber.trim() && Number(quoteTotal) >= 0
+              quoteNumber.trim()
                 ? void queueAction(
                     "quote",
-                    { jobId: job.id, quoteNumber, total: Number(quoteTotal) },
+                    { jobId: job.id, quoteNumber },
                     activeDependencies
                   )
-                : toast.error("Enter quote number and total")
+                : toast.error("Enter a scope reference")
             }
             className="mt-2 w-full"
           >
             <ReceiptText className="mr-2 h-4 w-4" />
-            Capture draft quote
+            Send for office review
           </Button>
         </FieldCard>
         <FieldCard

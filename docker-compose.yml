@@ -1,40 +1,67 @@
-version: "3.8"
-
 services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    command: sh -c "npx drizzle-kit push && node dist/index.js"
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - DATABASE_URL=mysql://elegex:elegex_password@db:3306/elegex
-      # These must be provided in production via .env or secrets manager
-      - JWT_SECRET=${JWT_SECRET:-fallback_secret_must_be_16_chars_for_local_dev_only}
-      - OAUTH_SERVER_URL=${OAUTH_SERVER_URL:-https://auth.example.com}
-      - VITE_OAUTH_PORTAL_URL=${VITE_OAUTH_PORTAL_URL:-https://auth.example.com}
-      - VITE_APP_ID=${VITE_APP_ID:-elegex_local}
-    depends_on:
-      db:
-        condition: service_healthy
-
   db:
     image: mariadb:10.11
     environment:
-      - MARIADB_ROOT_PASSWORD=root_password
-      - MARIADB_DATABASE=elegex
-      - MARIADB_USER=elegex
-      - MARIADB_PASSWORD=elegex_password
+      MARIADB_ROOT_PASSWORD: local_root_only
+      MARIADB_DATABASE: elegex
+      MARIADB_USER: elegex
+      MARIADB_PASSWORD: elegex_local_only
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    build:
+      context: .
+      target: development
+    command: ["corepack", "pnpm", "db:migrate"]
+    environment: &demo_environment
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: mysql://elegex:elegex_local_only@db:3306/elegex
+      JWT_SECRET: local_demo_secret_change_before_exposure
+      VITE_APP_ID: elegex-local-demo
+      OAUTH_SERVER_URL: http://localhost:3000
+      VITE_OAUTH_PORTAL_URL: http://localhost:3000
+      AUTH_PROVIDER: demo
+      STORAGE_PROVIDER: local
+      NOTIFICATION_PROVIDER: noop
+      AI_PROVIDER: noop
+      OUTBOX_WORKER_ENABLED: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build:
+      context: .
+      target: development
+    ports:
+      - "3000:3000"
+    environment: *demo_environment
+    volumes:
+      - local_uploads:/app/var/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
 volumes:
   mariadb_data:
+  local_uploads:

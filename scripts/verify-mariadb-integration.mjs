@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import mysql from "mysql2/promise";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -10,6 +11,9 @@ if (!databaseUrl) {
 }
 
 const pool = mysql.createPool(databaseUrl);
+const journalUrl = new URL("../drizzle/meta/_journal.json", import.meta.url);
+const journal = JSON.parse(await readFile(journalUrl, "utf8"));
+const expectedMigrationCount = journal.entries.length;
 const testTag = `ci-${randomUUID().slice(0, 8)}`;
 let primaryOrganizationId;
 let secondaryOrganizationId;
@@ -27,7 +31,11 @@ try {
   const migrationRow = await scalar(
     "SELECT COUNT(*) AS total FROM __drizzle_migrations"
   );
-  assert.equal(Number(migrationRow.total), 12, "all migrations must apply");
+  assert.equal(
+    Number(migrationRow.total),
+    expectedMigrationCount,
+    "all committed migrations must apply"
+  );
 
   const requiredColumns = await scalar(
     `SELECT COUNT(*) AS total

@@ -1,8 +1,3 @@
-import { PageHeading } from "../ElegexPages";
-import { trpc } from "@/lib/trpc";
-import { formatOrganizationDate } from "@/lib/organizationFormat";
-import { useState } from "react";
-import { useLocation } from "wouter";
 import {
   Activity,
   ArrowUpRight,
@@ -13,6 +8,7 @@ import {
   UsersRound,
   X,
 } from "lucide-react";
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -25,7 +21,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useLocation } from "wouter";
+
+import { PageHeading } from "../ElegexPages";
+
 import { Button } from "@/components/ui/button";
+import { formatOrganizationDate } from "@/lib/organizationFormat";
+import { trpc } from "@/lib/trpc";
 
 const pretty = (value?: string | null) =>
   (value || "—")

@@ -4,7 +4,7 @@
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white) ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=111827) ![tRPC](https://img.shields.io/badge/tRPC-11-398CCB) ![Drizzle](https://img.shields.io/badge/Drizzle-ORM-C5F74F?logo=drizzle&logoColor=111827) ![License](https://img.shields.io/badge/license-MIT-0EA5E9)
 
-Elegex is a full-stack **global job-management and field-service operations platform**. It brings office booking, dispatch, field evidence, quote status, external invoice links, documents, reporting, and workspace administration into one tenant-scoped workspace. It is designed as an engineering showcase: every protected operation is role-gated and backed by a typed API contract.
+Elegex is a full-stack field-service operations platform. Its public landing explains the product, while the protected tenant workspace brings dispatch, evidence, commercial review, documents, reporting, and administration into one role-scoped operating surface. Every protected operation is backed by a typed API contract.
 
 ## Why this repository stands out
 
@@ -35,7 +35,7 @@ flowchart LR
   Workflow --> Storage[Object storage]
 ```
 
-Read the detailed [architecture guide](ARCHITECTURE.md), [connector design](docs/database-connectors.md), [protected contract map](docs/api-contracts.md), [procedure catalogue](docs/procedure-catalogue.md), [entity relationship guide](docs/entity-relationship.md), [migration and reseed runbook](docs/migration-runbook.md), [production operations guide](docs/production-operations.md), [production failure classification](docs/audit/production-failure-classification.md), [database integrity audit](docs/database-integrity-audit.md), [synthetic demo coverage](docs/audit/demo-data-coverage.md), and [reference UX analysis](docs/audit/reference-ux-analysis.md).
+Read the detailed [architecture guide](ARCHITECTURE.md), [deployment and local operations guide](docs/deployment.md), [environment reference](docs/environment.md), [connector design](docs/database-connectors.md), [protected contract map](docs/api-contracts.md), [entity relationship guide](docs/entity-relationship.md), and [migration runbook](docs/migration-runbook.md).
 
 ## Quick start
 
@@ -44,7 +44,7 @@ pnpm install
 pnpm dev
 ```
 
-The managed deployment injects its environment configuration automatically. For an external clone, copy the variable names from [`config/environment.template`](config/environment.template), then configure the [documented variables](docs/environment.md) through your hosting provider’s encrypted secret manager; do not commit an `.env` file.
+For a zero-account local demonstration, run `docker compose up --build`, then open `http://localhost:3000` and choose a demo persona. For a hosted deployment, configure the variable names in [`config/environment.template`](config/environment.template) through an encrypted secret manager; do not commit an `.env` file. See the [deployment guide](docs/deployment.md) for reviewed migrations, health probes, provider choices, and release checks.
 
 ## Database lifecycle
 
@@ -103,8 +103,8 @@ Review [SECURITY.md](SECURITY.md) for vulnerability reporting and handling guida
 
 > All seeded clients, staff names, job histories, commercial values, field evidence, documents, invoice references, and release records are **synthetic demonstration data**. They exist to exercise the product surface and must not be presented as real operating performance or customer records.
 
-## Operational Boundaries (SEO & Infrastructure)
+## Public and protected boundaries
 
-Elegex is a private, authenticated B2B SaaS application. Because all business data is protected behind a login wall and tenant-isolation guards, **public SEO (Search Engine Optimization) and Google Search Console indexing are intentionally not applicable to this repository.** Search engines cannot and should not index private tenant job records. If public marketing is required, a separate static website (e.g., `www.elegex.com`) should be deployed alongside this application.
+The root route is a public landing page with structured social metadata, a sitemap entry, and PWA metadata. Every authenticated route is excluded from crawling through server-side `X-Robots-Tag` headers, `robots.txt` rules, and client-side metadata. Tenant job data must never be indexed.
 
-Furthermore, host-level infrastructure concerns such as SNTP/NTP time synchronization, SMTP mail servers, and database backup orchestration are managed by the deployment environment (e.g., the Linux host or cloud provider) and are not represented as application code within this repository.
+Host-level responsibilities such as backup retention, clock synchronization, SMTP reputation, and network policy remain owned by the deployment environment. Elegex provides clear readiness, liveness, request-correlation, and metrics surfaces so those operators can observe the application safely.
