@@ -108,3 +108,5 @@
 - [x] Audit client state, offline queue replay, asynchronous error handling, retry behavior, and route-level operational resilience. Evidence: unknown-dependency containment, interrupted queue recovery on foreman mount, and explicit sync error presentation.
 - [x] Remediate all verified code defects and add targeted regression tests for each behavioral fix. Evidence: 68 regression tests across 13 files, Recharts 3 type migration, Express 5 route migration, and a clear production dependency audit.
 - [x] Run the full quality suite, publish a hardening audit record, and save the verified deep-audit checkpoint. Evidence: final `pnpm verify` passed TypeScript, 68 tests across 13 files, and the production build; final `pnpm audit --prod --json` returned no advisory records.
+- [ ] Synchronize the verified hardening release with the connected GitHub `main` branch and resolve any safe merge conflicts without overwriting user work.
+- [ ] Confirm GitHub branch integrity and deliver the synchronized current release version.
