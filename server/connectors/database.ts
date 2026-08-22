@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2/promise";
 
 export type DatabaseClient = ReturnType<typeof drizzle>;
 export type TransactionClient = Parameters<
@@ -7,6 +8,7 @@ export type TransactionClient = Parameters<
 >[0];
 
 let databaseClient: DatabaseClient | undefined;
+let connectionPool: mysql.Pool | undefined;
 
 /**
  * Creates one lazily shared MySQL/TiDB client per server process. All persistence
@@ -16,8 +18,30 @@ let databaseClient: DatabaseClient | undefined;
 export async function getDatabase(): Promise<DatabaseClient> {
   if (!process.env.DATABASE_URL)
     throw new Error("DATABASE_URL is required for database access");
-  databaseClient ??= drizzle(process.env.DATABASE_URL);
-  return databaseClient;
+
+  if (!databaseClient) {
+    connectionPool = mysql.createPool({
+      uri: process.env.DATABASE_URL,
+      connectionLimit: 10,
+      waitForConnections: true,
+      queueLimit: 0,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 10000,
+    });
+    // Cast connectionPool to any to bypass the mismatch between mysql2 promise Pool
+    // and the type drizzle expects
+    databaseClient = drizzle(connectionPool as any);
+  }
+  // The type of databaseClient is DatabaseClient | undefined, but we know it's defined here
+  return databaseClient as DatabaseClient;
+}
+
+export async function closeDatabase(): Promise<void> {
+  if (connectionPool) {
+    await connectionPool.end();
+    connectionPool = undefined;
+    databaseClient = undefined;
+  }
 }
 
 /** Executes a business workflow atomically and rolls it back if any operation fails. */
