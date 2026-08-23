@@ -16,7 +16,7 @@ import {
   CheckSquare,
   Wrench,
 } from "lucide-react";
-import React, { useState } from "react";
+import React from "react";
 import { useLocation } from "wouter";
 
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -33,6 +33,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { canAccessWorkspaceAdministration } from "@/lib/access";
@@ -59,6 +60,167 @@ const secondaryNavigation = [
   },
 ];
 
+// Must be a child of SidebarProvider to read real toggle state via
+// useSidebar() — DashboardLayout itself renders the provider, so it
+// can't call the hook directly in its own body.
+function MobileSidebarButton() {
+  const { toggleSidebar } = useSidebar();
+  return (
+    <button
+      onClick={toggleSidebar}
+      className="grid h-10 w-10 place-items-center rounded-xl border border-[#E4EAF4] bg-white text-[#50617F] lg:hidden"
+    >
+      <Menu className="h-5 w-5" />
+    </button>
+  );
+}
+
+// Also a child of SidebarProvider, for the same reason as above: closing
+// the mobile sheet after a nav click needs setOpenMobile from context.
+function AppSidebar({
+  location,
+  onNavigate,
+  isPrivileged,
+  userName,
+  role,
+  organizationName,
+  logout,
+}: {
+  location: string;
+  onNavigate: (path: string) => void;
+  isPrivileged: boolean;
+  userName?: string | null;
+  role?: string;
+  organizationName?: string;
+  logout: () => void;
+}) {
+  const { setOpenMobile } = useSidebar();
+  const navigate = (path: string) => {
+    onNavigate(path);
+    setOpenMobile(false);
+  };
+  const renderNav = (items: typeof primaryNavigation) =>
+    items.map(item => (
+      <SidebarMenuItem key={item.path}>
+        <SidebarMenuButton
+          isActive={location === item.path}
+          onClick={() => navigate(item.path)}
+          tooltip={item.label}
+          className="h-10 rounded-xl px-3 text-[#50617F] data-[active=true]:bg-[#EAF1FF] data-[active=true]:font-semibold data-[active=true]:text-[#195FE6]"
+        >
+          <item.icon className="h-[18px] w-[18px]" />
+          <span>{item.label}</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    ));
+
+  return (
+    <Sidebar className="border-r border-[#E7ECF5] bg-white">
+      <SidebarHeader className="h-20 justify-center px-5">
+        <button
+          onClick={() => navigate("/app")}
+          className="text-left text-sm"
+        >
+          <BrandMark variant="compact" />
+        </button>
+      </SidebarHeader>
+      <SidebarContent className="gap-7 px-3 pb-5">
+        <div>
+          <p className="px-3 pb-2 text-[10px] font-bold tracking-[0.16em] text-[#98A2B3]">
+            WORKSPACE
+          </p>
+          <SidebarMenu>{renderNav(primaryNavigation)}</SidebarMenu>
+        </div>
+        <div>
+          <p className="px-3 pb-2 text-[10px] font-bold tracking-[0.16em] text-[#98A2B3]">
+            INSIGHTS
+          </p>
+          <SidebarMenu>{renderNav(secondaryNavigation)}</SidebarMenu>
+        </div>
+        {isPrivileged ? (
+          <div>
+            <p className="px-3 pb-2 text-[10px] font-bold tracking-[0.16em] text-[#98A2B3]">
+              ADMINISTRATION
+            </p>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={location === "/staging"}
+                  onClick={() => navigate("/staging")}
+                  tooltip="Staging readiness"
+                  className="h-10 rounded-xl px-3 text-[#50617F] data-[active=true]:bg-[#EAF1FF] data-[active=true]:font-semibold data-[active=true]:text-[#195FE6]"
+                >
+                  <ShieldCheck className="h-[18px] w-[18px]" />
+                  <span>Staging readiness</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={location === "/admin"}
+                  onClick={() => navigate("/admin")}
+                  tooltip="Administration"
+                  className="h-10 rounded-xl px-3 text-[#50617F] data-[active=true]:bg-[#EAF1FF] data-[active=true]:font-semibold data-[active=true]:text-[#195FE6]"
+                >
+                  <ShieldCheck className="h-[18px] w-[18px]" />
+                  <span>Administration</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={location === "/settings"}
+                  onClick={() => navigate("/settings")}
+                  tooltip="Settings"
+                  className="h-10 rounded-xl px-3 text-[#50617F] data-[active=true]:bg-[#EAF1FF] data-[active=true]:font-semibold data-[active=true]:text-[#195FE6]"
+                >
+                  <Settings2 className="h-[18px] w-[18px]" />
+                  <span>Settings</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </div>
+        ) : null}
+      </SidebarContent>
+      <SidebarFooter className="border-t border-[#EEF2F7] p-4">
+        {/* Bug fix (2026-08-23): this row previously wrapped the ENTIRE
+            identity display (avatar, name, role) in a single onClick={logout}
+            button, so any click anywhere on "Alex Morgan / Owner" — including
+            an incidental click just to check who's signed in — immediately
+            logged the user out. Only the dedicated icon button below is
+            clickable now; the identity display itself is non-interactive. */}
+        <div className="flex w-full items-center gap-3 rounded-xl px-2 py-2">
+          <Avatar className="h-9 w-9">
+            <AvatarFallback className="bg-[#EAF1FF] text-xs font-bold text-[#195FE6]">
+              {userName
+                ?.split(" ")
+                .map(part => part[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase() || "EU"}
+            </AvatarFallback>
+          </Avatar>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold text-[#24324D]">
+              {userName || "Elegex user"}
+            </span>
+            <span className="block truncate text-xs capitalize text-[#7A879E]">
+              {role || "loading"} · {organizationName || "workspace"}
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={logout}
+            aria-label="Log out"
+            title="Log out"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[#98A2B3] transition-colors hover:bg-[#F5F8FF] hover:text-[#195FE6]"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -66,7 +228,6 @@ export default function DashboardLayout({
 }) {
   const { loading, user, logout } = useAuth();
   const [location, setLocation] = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const workspace = trpc.elegex.workspace.current.useQuery(undefined, {
     enabled: Boolean(user),
   });
@@ -185,129 +346,23 @@ export default function DashboardLayout({
 
   const navigate = (path: string) => {
     setLocation(path);
-    setMobileOpen(false);
   };
-  const renderNav = (items: typeof primaryNavigation) =>
-    items.map(item => (
-      <SidebarMenuItem key={item.path}>
-        <SidebarMenuButton
-          isActive={location === item.path}
-          onClick={() => navigate(item.path)}
-          tooltip={item.label}
-          className="h-10 rounded-xl px-3 text-[#50617F] data-[active=true]:bg-[#EAF1FF] data-[active=true]:font-semibold data-[active=true]:text-[#195FE6]"
-        >
-          <item.icon className="h-[18px] w-[18px]" />
-          <span>{item.label}</span>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-    ));
 
   return (
     <SidebarProvider defaultOpen>
-      <Sidebar
-        className={`border-r border-[#E7ECF5] bg-white ${mobileOpen ? "translate-x-0" : ""}`}
-      >
-        <SidebarHeader className="h-20 justify-center px-5">
-          <button
-            onClick={() => navigate("/app")}
-            className="text-left text-sm"
-          >
-            <BrandMark variant="compact" />
-          </button>
-        </SidebarHeader>
-        <SidebarContent className="gap-7 px-3 pb-5">
-          <div>
-            <p className="px-3 pb-2 text-[10px] font-bold tracking-[0.16em] text-[#98A2B3]">
-              WORKSPACE
-            </p>
-            <SidebarMenu>{renderNav(primaryNavigation)}</SidebarMenu>
-          </div>
-          <div>
-            <p className="px-3 pb-2 text-[10px] font-bold tracking-[0.16em] text-[#98A2B3]">
-              INSIGHTS
-            </p>
-            <SidebarMenu>{renderNav(secondaryNavigation)}</SidebarMenu>
-          </div>
-          {isPrivileged ? (
-            <div>
-              <p className="px-3 pb-2 text-[10px] font-bold tracking-[0.16em] text-[#98A2B3]">
-                ADMINISTRATION
-              </p>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={location === "/staging"}
-                    onClick={() => navigate("/staging")}
-                    tooltip="Staging readiness"
-                    className="h-10 rounded-xl px-3 text-[#50617F] data-[active=true]:bg-[#EAF1FF] data-[active=true]:font-semibold data-[active=true]:text-[#195FE6]"
-                  >
-                    <ShieldCheck className="h-[18px] w-[18px]" />
-                    <span>Staging readiness</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={location === "/admin"}
-                    onClick={() => navigate("/admin")}
-                    tooltip="Administration"
-                    className="h-10 rounded-xl px-3 text-[#50617F] data-[active=true]:bg-[#EAF1FF] data-[active=true]:font-semibold data-[active=true]:text-[#195FE6]"
-                  >
-                    <ShieldCheck className="h-[18px] w-[18px]" />
-                    <span>Administration</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={location === "/settings"}
-                    onClick={() => navigate("/settings")}
-                    tooltip="Settings"
-                    className="h-10 rounded-xl px-3 text-[#50617F] data-[active=true]:bg-[#EAF1FF] data-[active=true]:font-semibold data-[active=true]:text-[#195FE6]"
-                  >
-                    <Settings2 className="h-[18px] w-[18px]" />
-                    <span>Settings</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </div>
-          ) : null}
-        </SidebarContent>
-        <SidebarFooter className="border-t border-[#EEF2F7] p-4">
-          <button
-            onClick={logout}
-            className="group flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-[#F5F8FF]"
-          >
-            <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-[#EAF1FF] text-xs font-bold text-[#195FE6]">
-                {user.name
-                  ?.split(" ")
-                  .map(part => part[0])
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase() || "EU"}
-              </AvatarFallback>
-            </Avatar>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold text-[#24324D]">
-                {user.name || "Elegex user"}
-              </span>
-              <span className="block truncate text-xs capitalize text-[#7A879E]">
-                {workspace.data?.role || "loading"} ·{" "}
-                {workspace.data?.organizationName || "workspace"}
-              </span>
-            </span>
-            <LogOut className="h-4 w-4 text-[#98A2B3] transition-colors group-hover:text-[#195FE6]" />
-          </button>
-        </SidebarFooter>
-      </Sidebar>
+      <AppSidebar
+        location={location}
+        onNavigate={setLocation}
+        isPrivileged={isPrivileged}
+        userName={user.name}
+        role={workspace.data?.role}
+        organizationName={workspace.data?.organizationName}
+        logout={logout}
+      />
       <SidebarInset className="bg-[#F5F7FB]">
         <header className="sticky top-0 z-20 flex h-20 items-center justify-between border-b border-[#E7ECF5] bg-[#F5F7FB]/90 px-5 backdrop-blur-xl md:px-8">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="grid h-10 w-10 place-items-center rounded-xl border border-[#E4EAF4] bg-white text-[#50617F] lg:hidden"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
+            <MobileSidebarButton />
             <div>
               <p className="text-xs font-medium text-[#7A879E]">
                 {workspace.data?.organizationName || "Elegex Operations"}
