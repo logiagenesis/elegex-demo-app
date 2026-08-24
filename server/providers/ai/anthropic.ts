@@ -12,6 +12,10 @@ function featureInstruction(feature: AiDraftInput["feature"]) {
       return "Draft a concise internal quote scope. Do not state that a price is approved or send-ready.";
     case "evidence_caption":
       return "Draft a factual internal evidence caption. Do not invent conditions, measurements, or safety claims.";
+    case "marketing_draft":
+      return "Draft a concise marketing post for internal review. Do not claim outcomes, ratings, customer approval, or external publication.";
+    case "operations_assistant":
+      return "Draft a concise operational response or next-step checklist. Do not execute actions, invent records, send messages, or claim that an external action occurred.";
     default:
       return "Draft a concise internal job summary. Do not invent facts, commitments, or completion status.";
   }

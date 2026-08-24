@@ -376,7 +376,13 @@ export const elegexRouter = router({
     generateDraft: tenantProcedure
       .input(
         z.object({
-          feature: z.enum(["job_summary", "quote_draft", "evidence_caption"]),
+          feature: z.enum([
+            "job_summary",
+            "quote_draft",
+            "evidence_caption",
+            "marketing_draft",
+            "operations_assistant",
+          ]),
           sourceText: z.string().min(10).max(8_000),
         })
       )
@@ -388,6 +394,378 @@ export const elegexRouter = router({
           ...input,
         });
       }),
+  }),
+  contractor: router({
+    overview: tenantProcedure.query(async ({ ctx }) => {
+      const [
+        profile,
+        bookings,
+        invoices,
+        expenses,
+        repairs,
+        maintenance,
+        reviews,
+        marketplace,
+        marketing,
+        guide,
+      ] = await Promise.all([
+        db.getOrCreateContractorProfile(ctx.scope.organizationId, ctx.user.id),
+        db.listBookingRequests(ctx.scope.organizationId),
+        db.listContractorInvoices(ctx.scope.organizationId),
+        db.listJobExpenses(ctx.scope.organizationId),
+        db.listRepairReports(ctx.scope.organizationId),
+        db.listMaintenancePlans(ctx.scope.organizationId),
+        db.listReviewRequests(ctx.scope.organizationId),
+        db.listMarketplaceEntries(ctx.scope.organizationId),
+        db.listMarketingDrafts(ctx.scope.organizationId),
+        db.getGrowthGuide(ctx.scope.organizationId, ctx.user.id),
+      ]);
+      return {
+        profile,
+        bookings,
+        invoices,
+        expenses,
+        repairs,
+        maintenance,
+        reviews,
+        marketplace,
+        marketing,
+        guide,
+      };
+    }),
+    profile: router({
+      get: tenantProcedure.query(({ ctx }) =>
+        db.getOrCreateContractorProfile(ctx.scope.organizationId, ctx.user.id)
+      ),
+      update: tenantProcedure
+        .input(
+          z.object({
+            displayName: z.string().trim().min(2).max(160).optional(),
+            summary: z.string().trim().max(4000).optional(),
+            serviceAreas: z
+              .array(z.string().trim().min(2).max(120))
+              .max(40)
+              .optional(),
+            services: z
+              .array(z.string().trim().min(2).max(120))
+              .max(40)
+              .optional(),
+            bookingEnabled: z.boolean().optional(),
+            reviewRequestsEnabled: z.boolean().optional(),
+            publicContactEmail: z.string().email().optional().nullable(),
+            publicContactPhone: z.string().trim().max(50).optional().nullable(),
+          })
+        )
+        .mutation(({ ctx, input }) => {
+          requireManage(ctx.scope.role);
+          return db.updateContractorProfile(
+            ctx.scope.organizationId,
+            ctx.user.id,
+            input
+          );
+        }),
+    }),
+    bookings: router({
+      list: tenantProcedure.query(({ ctx }) =>
+        db.listBookingRequests(ctx.scope.organizationId)
+      ),
+      setStatus: tenantProcedure
+        .input(
+          z.object({
+            id: z.number().int().positive(),
+            status: z.enum([
+              "new",
+              "reviewing",
+              "quoted",
+              "scheduled",
+              "declined",
+            ]),
+          })
+        )
+        .mutation(({ ctx, input }) => {
+          requireManage(ctx.scope.role);
+          return db.updateBookingRequestStatus(
+            ctx.scope.organizationId,
+            ctx.user.id,
+            input.id,
+            input.status
+          );
+        }),
+    }),
+    approvals: router({
+      create: tenantProcedure
+        .input(
+          z.object({
+            quoteId: z.number().int().positive(),
+            customerName: z.string().trim().min(2).max(160).optional(),
+          })
+        )
+        .mutation(({ ctx, input }) => {
+          requireManage(ctx.scope.role);
+          return db.createQuoteApproval(
+            ctx.scope.organizationId,
+            ctx.user.id,
+            input.quoteId,
+            input.customerName
+          );
+        }),
+    }),
+    invoices: router({
+      list: tenantProcedure.query(({ ctx }) =>
+        db.listContractorInvoices(ctx.scope.organizationId)
+      ),
+      create: tenantProcedure
+        .input(
+          z.object({
+            jobId: z.number().int().positive(),
+            invoiceNumber: z.string().trim().min(3).max(60),
+            amountDue: z.number().int().nonnegative(),
+            dueAt: z.date().optional(),
+          })
+        )
+        .mutation(({ ctx, input }) => {
+          requireManage(ctx.scope.role);
+          return db.createContractorInvoice(
+            ctx.scope.organizationId,
+            ctx.user.id,
+            input
+          );
+        }),
+    }),
+    time: router({
+      start: tenantProcedure
+        .input(
+          z.object({
+            jobId: z.number().int().positive(),
+            geoStatus: z.enum([
+              "not_requested",
+              "verified",
+              "manual_override",
+              "unavailable",
+            ]),
+            notes: z.string().trim().max(500).optional(),
+          })
+        )
+        .mutation(({ ctx, input }) => {
+          requireEdit(ctx.scope.role);
+          return db.startJobTimeEntry(
+            ctx.scope.organizationId,
+            ctx.user.id,
+            input.jobId,
+            input.geoStatus,
+            input.notes
+          );
+        }),
+      end: tenantProcedure
+        .input(z.object({ id: z.number().int().positive() }))
+        .mutation(({ ctx, input }) => {
+          requireEdit(ctx.scope.role);
+          return db.endJobTimeEntry(
+            ctx.scope.organizationId,
+            ctx.user.id,
+            input.id
+          );
+        }),
+    }),
+    expenses: router({
+      list: tenantProcedure.query(({ ctx }) =>
+        db.listJobExpenses(ctx.scope.organizationId)
+      ),
+      create: tenantProcedure
+        .input(
+          z.object({
+            jobId: z.number().int().positive(),
+            category: z.enum([
+              "materials",
+              "travel",
+              "equipment",
+              "subcontractor",
+              "other",
+            ]),
+            amount: z.number().int().positive(),
+            description: z.string().trim().min(2).max(280),
+            incurredAt: z.date().optional(),
+          })
+        )
+        .mutation(({ ctx, input }) => {
+          requireEdit(ctx.scope.role);
+          return db.createJobExpense(
+            ctx.scope.organizationId,
+            ctx.user.id,
+            input
+          );
+        }),
+    }),
+    repairs: router({
+      list: tenantProcedure.query(({ ctx }) =>
+        db.listRepairReports(ctx.scope.organizationId)
+      ),
+      create: tenantProcedure
+        .input(
+          z.object({
+            jobId: z.number().int().positive().optional(),
+            title: z.string().trim().min(3).max(180),
+            description: z.string().trim().min(5).max(4000),
+            priority: z
+              .enum(["low", "standard", "urgent", "critical"])
+              .optional(),
+          })
+        )
+        .mutation(({ ctx, input }) => {
+          requireEdit(ctx.scope.role);
+          return db.createRepairReport(
+            ctx.scope.organizationId,
+            ctx.user.id,
+            input
+          );
+        }),
+      update: tenantProcedure
+        .input(
+          z.object({
+            id: z.number().int().positive(),
+            status: z
+              .enum(["reported", "triaged", "assigned", "resolved", "closed"])
+              .optional(),
+            firstFixOutcome: z
+              .enum(["unknown", "resolved_first_visit", "follow_up_required"])
+              .optional(),
+          })
+        )
+        .mutation(({ ctx, input }) => {
+          requireManage(ctx.scope.role);
+          const { id, ...record } = input;
+          return db.updateRepairReport(ctx.scope.organizationId, id, record);
+        }),
+    }),
+    maintenance: router({
+      list: tenantProcedure.query(({ ctx }) =>
+        db.listMaintenancePlans(ctx.scope.organizationId)
+      ),
+      create: tenantProcedure
+        .input(
+          z.object({
+            projectId: z.number().int().positive().optional(),
+            siteId: z.number().int().positive().optional(),
+            title: z.string().trim().min(3).max(180),
+            description: z.string().trim().max(4000).optional(),
+            intervalDays: z.number().int().min(1).max(3650),
+            nextDueAt: z.date(),
+            assignedTo: z.number().int().positive().optional(),
+          })
+        )
+        .mutation(({ ctx, input }) => {
+          requireManage(ctx.scope.role);
+          return db.createMaintenancePlan(
+            ctx.scope.organizationId,
+            ctx.user.id,
+            input
+          );
+        }),
+    }),
+    reviews: router({
+      list: tenantProcedure.query(({ ctx }) =>
+        db.listReviewRequests(ctx.scope.organizationId)
+      ),
+      create: tenantProcedure
+        .input(
+          z.object({
+            jobId: z.number().int().positive(),
+            contactId: z.number().int().positive().optional(),
+            channel: z.enum(["email", "sms", "manual"]),
+            consentConfirmed: z.literal(true),
+          })
+        )
+        .mutation(({ ctx, input }) => {
+          requireManage(ctx.scope.role);
+          return db.createReviewRequest(
+            ctx.scope.organizationId,
+            ctx.user.id,
+            input
+          );
+        }),
+    }),
+    marketing: router({
+      list: tenantProcedure.query(({ ctx }) =>
+        db.listMarketingDrafts(ctx.scope.organizationId)
+      ),
+      create: tenantProcedure
+        .input(
+          z.object({
+            jobId: z.number().int().positive().optional(),
+            channel: z.enum(["facebook", "instagram", "nextdoor", "general"]),
+            source: z.string().trim().min(2).max(80),
+            content: z.string().trim().min(10).max(8000),
+          })
+        )
+        .mutation(({ ctx, input }) => {
+          requireManage(ctx.scope.role);
+          return db.createMarketingDraft(
+            ctx.scope.organizationId,
+            ctx.user.id,
+            input
+          );
+        }),
+    }),
+    marketplace: router({
+      list: tenantProcedure.query(({ ctx }) =>
+        db.listMarketplaceEntries(ctx.scope.organizationId)
+      ),
+      create: tenantProcedure
+        .input(
+          z.object({
+            name: z.string().trim().min(2).max(180),
+            trade: z.string().trim().min(2).max(100),
+            serviceAreas: z
+              .array(z.string().trim().min(2).max(120))
+              .min(1)
+              .max(30),
+            contactEmail: z.string().email().optional(),
+            contactPhone: z.string().trim().max(50).optional(),
+            notes: z.string().trim().max(4000).optional(),
+            verificationStatus: z
+              .enum(["not_verified", "self_attested", "verified_by_workspace"])
+              .optional(),
+            availabilityStatus: z
+              .enum(["unknown", "accepting_enquiries", "unavailable"])
+              .optional(),
+          })
+        )
+        .mutation(({ ctx, input }) => {
+          requireManage(ctx.scope.role);
+          return db.createMarketplaceEntry(
+            ctx.scope.organizationId,
+            ctx.user.id,
+            input
+          );
+        }),
+    }),
+    growthGuide: router({
+      list: tenantProcedure.query(({ ctx }) =>
+        db.getGrowthGuide(ctx.scope.organizationId, ctx.user.id)
+      ),
+      complete: tenantProcedure
+        .input(
+          z.object({
+            source: z.enum([
+              "google_business_profile",
+              "nextdoor",
+              "facebook",
+              "referrals",
+              "local_partnerships",
+            ]),
+            step: z.string().trim().min(2).max(240),
+          })
+        )
+        .mutation(({ ctx, input }) => {
+          requireEdit(ctx.scope.role);
+          return db.completeGrowthGuideStep(
+            ctx.scope.organizationId,
+            ctx.user.id,
+            input.source,
+            input.step
+          );
+        }),
+    }),
   }),
   fieldService: router({
     dashboard: tenantProcedure.query(({ ctx }) =>

@@ -6,32 +6,44 @@ import {
   activityLogs,
   aiUsage,
   appSettings,
+  bookingRequests,
   callOutTypes,
   cases,
   contacts,
+  contractorInvoices,
+  contractorMarketplaceEntries,
+  contractorProfiles,
   documents,
   environmentReleases,
   integrationConnections,
   integrationEvents,
   invoiceLinks,
   jobEvidence,
+  jobExpenses,
   jobMaterials,
+  jobTimeEntries,
   jobVisits,
   jobs,
   monthlyOperationalSnapshots,
+  marketingDrafts,
+  maintenancePlans,
   notifications,
   organizationMembers,
   organizations,
   photoFolders,
   projects,
   quoteItems,
+  quoteApprovals,
   quotes,
   releaseChecks,
+  repairReports,
+  reviewRequests,
   savedViews,
   sites,
   sitePhotos,
   syncLogs,
   tasks,
+  growthGuideProgress,
   type InsertUser,
   type OrganizationRole,
   users,
@@ -4673,7 +4685,12 @@ export async function ensureDemoPersona(persona: DemoPersonaSeed) {
 export type AiUsageRecord = {
   organizationId: number;
   userId: number;
-  feature: "job_summary" | "quote_draft" | "evidence_caption";
+  feature:
+    | "job_summary"
+    | "quote_draft"
+    | "evidence_caption"
+    | "marketing_draft"
+    | "operations_assistant";
   provider: string;
   model: string;
   inputTokens: number;
@@ -4711,4 +4728,628 @@ export async function getAiTokenUsageLast24Hours(organizationId: number) {
       )
     );
   return Number(rows[0]?.tokens ?? 0);
+}
+
+const growthGuideBlueprints = {
+  google_business_profile: [
+    "Confirm service information and contact details.",
+    "Publish an approved update from real work evidence.",
+    "Set a completed-job follow-up process.",
+  ],
+  nextdoor: [
+    "Define the neighbourhoods genuinely served.",
+    "Prepare an approved completed-job update.",
+    "Document an enquiry response process.",
+  ],
+  facebook: [
+    "List core services in customer-facing language.",
+    "Draft an approved project update from real job evidence.",
+    "Assign an internal enquiry follow-up owner.",
+  ],
+  referrals: [
+    "Define the completed-job handover point.",
+    "Create an internal follow-up reminder process.",
+    "Review services appropriate to refer.",
+  ],
+  local_partnerships: [
+    "Document active collaborator relationships.",
+    "Define consent-based portfolio sharing.",
+    "Set a partnership review cadence.",
+  ],
+} as const;
+
+type GrowthLeadSource = keyof typeof growthGuideBlueprints;
+
+export async function getOrCreateContractorProfile(
+  organizationId: number,
+  userId: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const existing = await db
+    .select()
+    .from(contractorProfiles)
+    .where(eq(contractorProfiles.organizationId, organizationId))
+    .limit(1);
+  if (existing[0]) return existing[0];
+  const organization = await db
+    .select({ name: organizations.name })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .limit(1);
+  await db.insert(contractorProfiles).values({
+    organizationId,
+    slug: `elegex-${organizationId}`,
+    displayName: organization[0]?.name ?? "Field service team",
+    summary:
+      "A field-service team using Elegex to coordinate bookings, evidence, and customer follow-up.",
+    serviceAreas: [],
+    services: [],
+    createdBy: userId,
+  });
+  const created = await db
+    .select()
+    .from(contractorProfiles)
+    .where(eq(contractorProfiles.organizationId, organizationId))
+    .limit(1);
+  return created[0]!;
+}
+
+export async function updateContractorProfile(
+  organizationId: number,
+  userId: number,
+  input: {
+    displayName?: string;
+    summary?: string;
+    serviceAreas?: string[];
+    services?: string[];
+    bookingEnabled?: boolean;
+    reviewRequestsEnabled?: boolean;
+    publicContactEmail?: string | null;
+    publicContactPhone?: string | null;
+  }
+) {
+  const profile = await getOrCreateContractorProfile(organizationId, userId);
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db
+    .update(contractorProfiles)
+    .set(input)
+    .where(eq(contractorProfiles.id, profile.id));
+  return getOrCreateContractorProfile(organizationId, userId);
+}
+
+export async function getPublicContractorProfile(slug: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const profile = await db
+    .select()
+    .from(contractorProfiles)
+    .where(eq(contractorProfiles.slug, slug))
+    .limit(1);
+  return profile[0];
+}
+
+export async function createBookingRequest(
+  profile: Awaited<ReturnType<typeof getPublicContractorProfile>>,
+  input: {
+    customerName: string;
+    email?: string;
+    phone?: string;
+    serviceType: string;
+    address: string;
+    description: string;
+    preferredStart?: Date;
+    preferredEnd?: Date;
+    consentToContact: boolean;
+  }
+) {
+  if (!profile || !profile.bookingEnabled) {
+    throw new Error("This public booking profile is not accepting requests");
+  }
+  if (!input.consentToContact) {
+    throw new Error(
+      "Consent to contact is required before submitting a request"
+    );
+  }
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(bookingRequests).values({
+    organizationId: profile.organizationId,
+    profileId: profile.id,
+    ...input,
+  });
+  return { id: Number(result[0].insertId), status: "new" as const };
+}
+
+export async function listBookingRequests(organizationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(bookingRequests)
+    .where(eq(bookingRequests.organizationId, organizationId))
+    .orderBy(desc(bookingRequests.createdAt));
+}
+
+export async function updateBookingRequestStatus(
+  organizationId: number,
+  userId: number,
+  id: number,
+  status: "new" | "reviewing" | "quoted" | "scheduled" | "declined"
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db
+    .update(bookingRequests)
+    .set({ status, assignedTo: userId })
+    .where(
+      and(
+        eq(bookingRequests.id, id),
+        eq(bookingRequests.organizationId, organizationId)
+      )
+    );
+  if (result[0].affectedRows !== 1)
+    throw new Error("Booking request unavailable");
+  return { id, status };
+}
+
+export async function createQuoteApproval(
+  organizationId: number,
+  userId: number,
+  quoteId: number,
+  customerName?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const quote = await db
+    .select({ id: quotes.id })
+    .from(quotes)
+    .where(
+      and(eq(quotes.id, quoteId), eq(quotes.organizationId, organizationId))
+    )
+    .limit(1);
+  if (!quote[0]) throw new Error("Quote unavailable");
+  const existing = await db
+    .select()
+    .from(quoteApprovals)
+    .where(eq(quoteApprovals.quoteId, quoteId))
+    .limit(1);
+  if (existing[0]) return existing[0];
+  await db.insert(quoteApprovals).values({
+    organizationId,
+    quoteId,
+    approvalToken: randomUUID().replace(/-/g, ""),
+    customerName,
+  });
+  const approval = await db
+    .select()
+    .from(quoteApprovals)
+    .where(eq(quoteApprovals.quoteId, quoteId))
+    .limit(1);
+  return approval[0]!;
+}
+
+export async function createContractorInvoice(
+  organizationId: number,
+  userId: number,
+  input: {
+    jobId: number;
+    invoiceNumber: string;
+    amountDue: number;
+    dueAt?: Date;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await assertScopedEntity(db, jobs, organizationId, input.jobId, "Job", true);
+  const result = await db.insert(contractorInvoices).values({
+    organizationId,
+    jobId: input.jobId,
+    invoiceNumber: input.invoiceNumber,
+    amountDue: input.amountDue,
+    dueAt: input.dueAt,
+    createdBy: userId,
+  });
+  return { id: Number(result[0].insertId) };
+}
+
+export async function listContractorInvoices(organizationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(contractorInvoices)
+    .where(eq(contractorInvoices.organizationId, organizationId))
+    .orderBy(desc(contractorInvoices.createdAt));
+}
+
+export async function startJobTimeEntry(
+  organizationId: number,
+  userId: number,
+  jobId: number,
+  geoStatus: "not_requested" | "verified" | "manual_override" | "unavailable",
+  notes?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await assertScopedEntity(db, jobs, organizationId, jobId, "Job", true);
+  const active = await db
+    .select({ id: jobTimeEntries.id })
+    .from(jobTimeEntries)
+    .where(
+      and(
+        eq(jobTimeEntries.organizationId, organizationId),
+        eq(jobTimeEntries.userId, userId),
+        isNull(jobTimeEntries.endedAt)
+      )
+    )
+    .limit(1);
+  if (active[0])
+    throw new Error("End the active time entry before starting another");
+  const result = await db.insert(jobTimeEntries).values({
+    organizationId,
+    jobId,
+    userId,
+    startedAt: new Date(),
+    geoStatus,
+    notes,
+  });
+  return { id: Number(result[0].insertId) };
+}
+
+export async function endJobTimeEntry(
+  organizationId: number,
+  userId: number,
+  id: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db
+    .update(jobTimeEntries)
+    .set({ endedAt: new Date() })
+    .where(
+      and(
+        eq(jobTimeEntries.id, id),
+        eq(jobTimeEntries.organizationId, organizationId),
+        eq(jobTimeEntries.userId, userId),
+        isNull(jobTimeEntries.endedAt)
+      )
+    );
+  if (result[0].affectedRows !== 1)
+    throw new Error("Active time entry unavailable");
+  return { id, ended: true };
+}
+
+export async function createJobExpense(
+  organizationId: number,
+  userId: number,
+  input: {
+    jobId: number;
+    category: "materials" | "travel" | "equipment" | "subcontractor" | "other";
+    amount: number;
+    description: string;
+    receiptStorageKey?: string;
+    receiptStorageUrl?: string;
+    incurredAt?: Date;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await assertScopedEntity(db, jobs, organizationId, input.jobId, "Job", true);
+  const result = await db.insert(jobExpenses).values({
+    organizationId,
+    ...input,
+    recordedBy: userId,
+  });
+  return { id: Number(result[0].insertId) };
+}
+
+export async function listJobExpenses(organizationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(jobExpenses)
+    .where(eq(jobExpenses.organizationId, organizationId))
+    .orderBy(desc(jobExpenses.incurredAt));
+}
+
+export async function createMarketingDraft(
+  organizationId: number,
+  userId: number,
+  input: {
+    jobId?: number;
+    channel: "facebook" | "instagram" | "nextdoor" | "general";
+    source: string;
+    content: string;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  if (input.jobId) {
+    await assertScopedEntity(
+      db,
+      jobs,
+      organizationId,
+      input.jobId,
+      "Job",
+      true
+    );
+  }
+  const result = await db.insert(marketingDrafts).values({
+    organizationId,
+    ...input,
+    createdBy: userId,
+    reviewRequired: true,
+  });
+  return { id: Number(result[0].insertId) };
+}
+
+export async function listMarketingDrafts(organizationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(marketingDrafts)
+    .where(eq(marketingDrafts.organizationId, organizationId))
+    .orderBy(desc(marketingDrafts.createdAt));
+}
+
+export async function getGrowthGuide(organizationId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const progress = await db
+    .select()
+    .from(growthGuideProgress)
+    .where(
+      and(
+        eq(growthGuideProgress.organizationId, organizationId),
+        eq(growthGuideProgress.userId, userId)
+      )
+    );
+  return (Object.keys(growthGuideBlueprints) as GrowthLeadSource[]).map(
+    source => {
+      const current = progress.find(item => item.leadSource === source);
+      const completedSteps = Array.isArray(current?.completedSteps)
+        ? current.completedSteps
+        : [];
+      return {
+        source,
+        level: current?.level ?? 1,
+        completedSteps,
+        steps: growthGuideBlueprints[source],
+      };
+    }
+  );
+}
+
+export async function completeGrowthGuideStep(
+  organizationId: number,
+  userId: number,
+  source: GrowthLeadSource,
+  step: string
+) {
+  const guide = await getGrowthGuide(organizationId, userId);
+  const entry = guide.find(item => item.source === source);
+  if (!entry || !entry.steps.includes(step as never)) {
+    throw new Error("Growth-guide step unavailable");
+  }
+  const completedSteps = Array.from(new Set([...entry.completedSteps, step]));
+  const level = completedSteps.length >= entry.steps.length ? 2 : 1;
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db
+    .insert(growthGuideProgress)
+    .values({
+      organizationId,
+      userId,
+      leadSource: source,
+      level,
+      completedSteps,
+    })
+    .onDuplicateKeyUpdate({
+      set: { level, completedSteps, updatedAt: new Date() },
+    });
+  return { source, level, completedSteps };
+}
+
+export async function createRepairReport(
+  organizationId: number,
+  userId: number,
+  input: {
+    jobId?: number;
+    title: string;
+    description: string;
+    priority?: "low" | "standard" | "urgent" | "critical";
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  if (input.jobId) {
+    await assertScopedEntity(
+      db,
+      jobs,
+      organizationId,
+      input.jobId,
+      "Job",
+      true
+    );
+  }
+  const result = await db.insert(repairReports).values({
+    organizationId,
+    ...input,
+    reportedBy: userId,
+  });
+  return { id: Number(result[0].insertId) };
+}
+
+export async function listRepairReports(organizationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(repairReports)
+    .where(eq(repairReports.organizationId, organizationId))
+    .orderBy(desc(repairReports.createdAt));
+}
+
+export async function updateRepairReport(
+  organizationId: number,
+  id: number,
+  input: {
+    status?: "reported" | "triaged" | "assigned" | "resolved" | "closed";
+    firstFixOutcome?: "unknown" | "resolved_first_visit" | "follow_up_required";
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db
+    .update(repairReports)
+    .set(input)
+    .where(
+      and(
+        eq(repairReports.id, id),
+        eq(repairReports.organizationId, organizationId)
+      )
+    );
+  if (result[0].affectedRows !== 1)
+    throw new Error("Repair report unavailable");
+  return { id, ...input };
+}
+
+export async function createMaintenancePlan(
+  organizationId: number,
+  userId: number,
+  input: {
+    projectId?: number;
+    siteId?: number;
+    title: string;
+    description?: string;
+    intervalDays: number;
+    nextDueAt: Date;
+    assignedTo?: number;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await assertScopedEntity(
+    db,
+    projects,
+    organizationId,
+    input.projectId,
+    "Project",
+    true
+  );
+  await assertScopedEntity(
+    db,
+    sites,
+    organizationId,
+    input.siteId,
+    "Site",
+    true
+  );
+  const result = await db.insert(maintenancePlans).values({
+    organizationId,
+    ...input,
+    createdBy: userId,
+  });
+  return { id: Number(result[0].insertId) };
+}
+
+export async function listMaintenancePlans(organizationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(maintenancePlans)
+    .where(eq(maintenancePlans.organizationId, organizationId))
+    .orderBy(asc(maintenancePlans.nextDueAt));
+}
+
+export async function createReviewRequest(
+  organizationId: number,
+  userId: number,
+  input: {
+    jobId: number;
+    contactId?: number;
+    channel: "email" | "sms" | "manual";
+    consentConfirmed: boolean;
+  }
+) {
+  if (!input.consentConfirmed) {
+    throw new Error(
+      "Customer contact consent is required for a review request"
+    );
+  }
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await assertScopedEntity(db, jobs, organizationId, input.jobId, "Job", true);
+  await assertScopedEntity(
+    db,
+    contacts,
+    organizationId,
+    input.contactId,
+    "Contact",
+    true
+  );
+  const result = await db.insert(reviewRequests).values({
+    organizationId,
+    ...input,
+    requestedBy: userId,
+  });
+  return { id: Number(result[0].insertId), status: "draft" as const };
+}
+
+export async function listReviewRequests(organizationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(reviewRequests)
+    .where(eq(reviewRequests.organizationId, organizationId))
+    .orderBy(desc(reviewRequests.createdAt));
+}
+
+export async function createMarketplaceEntry(
+  organizationId: number,
+  userId: number,
+  input: {
+    name: string;
+    trade: string;
+    serviceAreas: string[];
+    contactEmail?: string;
+    contactPhone?: string;
+    notes?: string;
+    verificationStatus?:
+      "not_verified" | "self_attested" | "verified_by_workspace";
+    availabilityStatus?: "unknown" | "accepting_enquiries" | "unavailable";
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(contractorMarketplaceEntries).values({
+    organizationId,
+    ...input,
+    createdBy: userId,
+  });
+  return { id: Number(result[0].insertId) };
+}
+
+export async function listMarketplaceEntries(organizationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(contractorMarketplaceEntries)
+    .where(
+      and(
+        eq(contractorMarketplaceEntries.organizationId, organizationId),
+        isNull(contractorMarketplaceEntries.archivedAt)
+      )
+    )
+    .orderBy(
+      asc(contractorMarketplaceEntries.trade),
+      asc(contractorMarketplaceEntries.name)
+    );
 }

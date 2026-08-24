@@ -1,0 +1,1 @@
+ALTER TABLE `aiUsage` MODIFY COLUMN `feature` enum('job_summary','quote_draft','evidence_caption','marketing_draft','operations_assistant') NOT NULL;

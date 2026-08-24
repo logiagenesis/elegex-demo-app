@@ -113,6 +113,27 @@
       "when": 1787440201050,
       "tag": "0015_strong_bloodstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1787441351632,
+      "tag": "0016_majestic_beyonder",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1787441604030,
+      "tag": "0017_fluffy_rogue",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1787441842741,
+      "tag": "0018_shiny_talon",
+      "breakpoints": true
     }
   ]
 }

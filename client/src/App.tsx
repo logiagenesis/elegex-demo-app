@@ -21,6 +21,9 @@ const OrganizationSettingsPage = lazy(
 );
 const DocumentsPage = lazy(() => import("@/pages/TypedDocumentsPage"));
 const PhotoLibraryPage = lazy(() => import("@/pages/PhotoLibraryPage"));
+const ContractorHubPage = lazy(() => import("@/pages/ContractorHubPage"));
+const PublicBookingPage = lazy(() => import("@/pages/PublicBookingPage"));
+const PublicServicePage = lazy(() => import("@/pages/PublicServicePage"));
 const NotificationsPage = lazy(() =>
   import("@/pages/ElegexPages").then(module => ({
     default: module.NotificationsPage,
@@ -160,6 +163,21 @@ function Router() {
   const [location] = useLocation();
   if (location === "/") return <PublicLandingPage />;
   if (location === "/login") return <DemoLoginPage />;
+  if (location.startsWith("/book/"))
+    return (
+      <Suspense fallback={<RouteLoading />}>
+        <Route path="/book/:slug" component={PublicBookingPage} />
+      </Suspense>
+    );
+  if (location.startsWith("/discover/"))
+    return (
+      <Suspense fallback={<RouteLoading />}>
+        <Route
+          path="/discover/:slug/:service/:area"
+          component={PublicServicePage}
+        />
+      </Suspense>
+    );
   return (
     <DashboardLayout>
       <ProtectedAppRobots />
@@ -198,6 +216,7 @@ function Router() {
             <Route path="/tasks" component={TasksPage} />
             <Route path="/documents" component={DocumentsPage} />
             <Route path="/photos" component={PhotoLibraryPage} />
+            <Route path="/contractor" component={ContractorHubPage} />
             <Route path="/reports" component={FieldReportsPage} />
             <Route path="/staging">
               {() => (

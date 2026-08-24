@@ -48,6 +48,7 @@ const primaryNavigation = [
   { icon: FolderKanban, label: "Programmes", path: "/projects" },
   { icon: BriefcaseBusiness, label: "Exceptions", path: "/cases" },
   { icon: CheckSquare, label: "Office tasks", path: "/tasks" },
+  { icon: BriefcaseBusiness, label: "Contractor hub", path: "/contractor" },
 ];
 
 const secondaryNavigation = [

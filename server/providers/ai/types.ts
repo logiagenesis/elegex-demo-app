@@ -1,4 +1,9 @@
-export type AiFeature = "job_summary" | "quote_draft" | "evidence_caption";
+export type AiFeature =
+  | "job_summary"
+  | "quote_draft"
+  | "evidence_caption"
+  | "marketing_draft"
+  | "operations_assistant";
 
 export type AiDraftInput = {
   feature: AiFeature;
